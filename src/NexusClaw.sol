@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -14,12 +13,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract NexusClaw is ERC20, ERC20Burnable, Ownable {
     uint256 public constant TOTAL_SUPPLY = 50_000_000_000 * 10**18;
-    address public treasury;
+    uint256 public constant MAX_MINT_BATCH = 1_000_000_000 * 10**18;
+    uint256 public constant MAX_TOTAL_MINT = 10_000_000_000 * 10**18;
 
-    uint256 public constant MAX_MINT_BATCH = 1_000_000_000 * 10**18; // 1B per mint for treasury
+    address public treasury;
+    uint256 public totalMinted;
 
     event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
     event TokensBurnedFrom(address indexed account, uint256 amount);
+    event TokensMinted(address indexed to, uint256 amount);
 
     constructor(address _treasury) ERC20("NexusClaw", "CLAW") Ownable(msg.sender) {
         require(_treasury != address(0), "Invalid treasury address");
@@ -28,22 +30,24 @@ contract NexusClaw is ERC20, ERC20Burnable, Ownable {
     }
 
     /**
-     * @dev Treasury-only: Burn tokens from any account (requires allowance).
-     * Integrates with tokenomics: 50% of fees to burn.
+     * @dev Owner-only: Burn tokens from any account (requires allowance).
+     * Uses burnFrom() to correctly enforce ERC20 allowance.
      */
     function treasuryBurn(address account, uint256 amount) external onlyOwner {
-        _burn(account, amount);
+        burnFrom(account, amount); // ✅ verifica allowance
         emit TokensBurnedFrom(account, amount);
     }
 
     /**
-     * @dev Treasury-only: Mint additional (capped) for ecosystem rewards.
-     * Rewards pool: 30% fees + staking emissions.
+     * @dev Owner-only: Mint additional tokens (capped per batch and cumulatively).
      */
     function treasuryMint(address to, uint256 amount) external onlyOwner {
         require(amount <= MAX_MINT_BATCH, "Exceeds mint cap");
+        require(totalMinted + amount <= MAX_TOTAL_MINT, "Exceeds total mint cap");
         require(to != address(0), "Invalid recipient");
+        totalMinted += amount;
         _mint(to, amount);
+        emit TokensMinted(to, amount);
     }
 
     /**
@@ -54,7 +58,4 @@ contract NexusClaw is ERC20, ERC20Burnable, Ownable {
         emit TreasuryUpdated(treasury, newTreasury);
         treasury = newTreasury;
     }
-
-    // Optional: Tax on transfers (0.5% total: 50% burn, 20% treasury, 30% rewards)
-    // Implement _update() override for efficiency in v2.
 }
