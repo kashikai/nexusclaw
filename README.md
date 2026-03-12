@@ -10,7 +10,7 @@ NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketp
 - **Self-Improvement Loops**: Agents evolve via on-chain data and RLHF.
 
 ## Tokenomics Draft (v0.1)
-- **Total Supply**: 1B $CLAW
+- **Total Supply**: 50B $CLAW (50_000_000_000 * 10**18)
 - **Allocation**:
   | Category | % | Vesting |
   |----------|---|---------|
@@ -25,20 +25,23 @@ NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketp
 - **Fees Capture**: 0.5% tx fee split: 50% burn, 30% staking rewards, 20% treasury.
 - **Risks**: Impermanent loss mitigation via dynamic AMM, oracle security.
 
-## Getting Started
+## Getting Started (Foundry)
 ```bash
-git clone https://github.com/tiago/nexusclaw.git
+git clone https://github.com/kashikai/nexusclaw.git
 cd nexusclaw
-npm install  # or yarn
+forge install
+forge build
+forge test
 ```
 
-## Structure
+## Structure (Foundry)
 ```
 nexusclaw/
-├── contracts/     # Solidity smart contracts
-├── frontend/      # React/Next.js dApp
-├── docs/          # Tokenomics, whitepaper
-├── scripts/       # Deploy, test scripts
+├── src/          # Solidity smart contracts (NexusClaw.sol)
+├── test/         # Foundry tests (4/4 PASS)
+├── script/       # Deploy scripts
+├── lib/          # Dependencies (forge-std, OZ)
+├── foundry.toml  # Config
 └── README.md
 ```
 
@@ -47,6 +50,11 @@ nexusclaw/
 2. Testnet Launch (Q2)
 3. Mainnet + DEX Listing (Q3)
 4. Agent Marketplace Beta (Q4)
+
+## Current Status (Day 1)
+- Foundry setup green
+- ERC20 contract compiled & tested (4/4 tests passing)
+- Next: Deploy testnet on Base Sepolia + Anchor init for Solana side
 
 Built with ❤️ by Tiago & Hanna 🦞
 
