@@ -11,10 +11,17 @@ NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketp
 
 ## Live Links 🚀
 
+### 🎯 Live Demo
+**Frontend**: [https://nexusclaw.vercel.app](https://nexusclaw.vercel.app) — **LIVE NOW!**
+- Wallet connect (Base Sepolia)
+- Stake UI + contract info
+- Built with Next.js + Wagmi
+
 ### Frontend (Vercel Live)
 - **URL**: [https://nexusclaw.vercel.app](https://nexusclaw.vercel.app)
 - **Stack**: Next.js + Wagmi + Base Sepolia
 - **Features**: Wallet connect, staking UI, contract info
+- **Status**: ✅ Live (Vercel)
 
 ### Deployments (LIVE ✅)
 
