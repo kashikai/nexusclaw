@@ -65,6 +65,40 @@ npm install @nexusclaw/clawtomaton
 - **Self-Evolve**: Prompt → new OpenClaw skill
 - **Multi-Swap**: Cross-chain routing stub
 
+### SDK Usage Example
+```javascript
+const Clawtomaton = require('@nexusclaw/clawtomaton');
+
+const claw = new Clawtomaton();
+
+// Generate wallet
+const wallet = await claw.generateWallet();
+console.log('Address:', wallet.address);
+console.log('Private Key:', wallet.privateKey);
+
+// Check balance on Base Sepolia
+const balance = await claw.getBalance(wallet.address, 'https://sepolia.base.org');
+console.log('Balance:', balance, 'ETH');
+
+// Read contract
+const supply = await claw.callContract(
+  '0x502C37f56CC77F9455490c28a45a34bED225D110',
+  'totalSupply',
+  'https://sepolia.base.org'
+);
+console.log('Supply:', supply, '$NEXUSCLAW');
+```
+
+**Output:**
+```
+Address: 0xb8450Cc58B2DAECAf5b5Ba9097fDB40E28f6c619
+Private Key: 0x9127fec3... (redacted)
+Balance: 0.0 ETH
+Supply: 100000000000 $NEXUSCLAW
+```
+
+Run test: `npm run test` or `node sdk-test/test-sdk.js`
+
 ## Frontend
 ```bash
 cd frontend
