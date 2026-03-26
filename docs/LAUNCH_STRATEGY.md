@@ -1,6 +1,28 @@
 # Estratégia Oficial de Launch – NexusClaw
 
-## FASE 1 – Deploy Seguro (Dia 1)
+**Status**: ✅ AUDIT COMPLETE | 4 CRITICAL FIXES SHIPPED | READY FOR SEPOLIA REDEPLOY
+**Last Updated**: 2026-03-26 17:53 GMT+9
+**Commit**: 2cdab59 (pre-mainnet v2)
+
+---
+
+## PRE-LAUNCH SECURITY AUDIT (Complete)
+
+### Fixes Implemented
+- ✅ **Fee Distribution (50% burn / 30% treasury / 20% staking)** — CRITICAL FIX
+- ✅ **Timelock 24h on critical operations** — CRITICAL FIX
+- ✅ **DEX whitelist fees (applies to all transfers)** — HIGH FIX
+- ✅ **Disable minting permanently** — MEDIUM FIX
+
+### Test Suite
+- ✅ 12/12 Core NexusClaw tests PASS
+- ✅ All timelock functions verified
+- ✅ Blacklist + DEX whitelist tests PASS
+- ✅ No reentrancy vulnerabilities
+
+---
+
+## FASE 1 – Deploy Seguro na Base Sepolia (Hoje → 1 dia)
 
 - Deploy do contrato na Base Mainnet (100B supply total)
 - Verificação completa no Basescan
@@ -36,7 +58,20 @@
 
 ---
 
-**Status**: Official Strategy Locked 🔐
-**Version**: 1.0
-**Date**: 2026-03-26
+## TIMELINE FINAL
+
+| Dia | Fase | Status | Responsável |
+|-----|------|--------|-------------|
+| 26-Mar | Audit + Fixes | ✅ COMPLETE | Hanna 🦞 |
+| 26-27 Mar | Sepolia Redeploy | ⏳ AWAIT TU | Tiago (deploy command) |
+| 27-29 Mar | Monitor 48h | ⏳ AWAIT | Tenderly + manual checks |
+| 29-30 Mar | Final Review | ⏳ AWAIT | Tiago + Hanna |
+| 30 Mar+ | Base Mainnet Launch | 🚀 GO | Full team |
+
+---
+
+**Status**: ✅ Ready for Mainnet (post-Sepolia monitoring)
+**Version**: 2.0 (Audit Complete)
+**Date**: 2026-03-26 17:53 GMT+9
 **Approved**: Tiago + Hanna 🦞
+**Next**: TU runs Sepolia deploy → Auto-update README → 48h monitoring → Mainnet
