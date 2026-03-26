@@ -26,16 +26,19 @@ NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketp
 
 ### Deployments (LIVE ✅)
 
-### Base Sepolia (Real Network)
-- **Contract**: [0x502C37f56CC77F9455490c28a45a34bED225D110](https://sepolia.basescan.org/address/0x502c37f56cc77f9455490c28a45a34bed225d110)
+### Base Sepolia (Testnet - Real)
+- **Contract**: [0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927](https://sepolia.basescan.org/address/0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927)
 - **Supply**: 100B $NEXUSCLAW
-- **Treasury Alloc**: 10B (10%)
-- **Verified**: ✅ Pass
-- **Block**: 39293607
+- **Verified**: ✅ Yes
+- **Deploy Date**: 2026-03-26
+- **Status**: ✅ Live & Verified
+- **Explorer**: https://sepolia.basescan.org/address/0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927
 
 ### Solana Devnet (MVP)
 - **Program ID**: 31HhAozjw37xz9Cj9MudxPJVLuRwDReTiUvHpqpPJoKH
 - **IDL Account**: DWDCDf1aQbQg24XQVujutdHQyxdqvLyih3BMNpNVhTTF
+- **Deploy Date**: 2026-03-24
+- **Status**: ✅ Live & Tested
 
 ## Tokenomics (v0.1)
 - **Total Supply**: 100B $NEXUSCLAW
