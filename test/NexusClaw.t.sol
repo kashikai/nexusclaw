@@ -78,22 +78,50 @@ contract NexusClawTest is Test {
         vm.stopPrank();
     }
 
-    function testBlacklist() public {
-        vm.prank(admin);
-        claw.setBlacklist(user, true);
+    function testBlacklistTimelock() public {
+        vm.startPrank(admin);
+        
+        // Queue blacklist
+        claw.queueSetBlacklist(user, true);
+        
+        // Warp 24h + execute
+        vm.warp(block.timestamp + 24 hours + 1 seconds);
+        claw.executeSetBlacklist(user, true);
         assertTrue(claw.blacklist(user));
         
+        vm.stopPrank();
+        
+        // Try transfer (should fail)
         vm.prank(treasury);
         vm.expectRevert("Address blacklisted");
         claw.transfer(user, 1_000_000 * 10**18);
     }
 
-    function testDexWhitelist() public {
+    function testDexWhitelistTimelock() public {
         address uniswap = makeAddr("uniswap");
         
-        vm.prank(admin);
-        claw.setDexWhitelist(uniswap, true);
+        vm.startPrank(admin);
+        
+        // Queue whitelist
+        claw.queueSetDexWhitelist(uniswap, true);
+        
+        // Warp 24h + execute
+        vm.warp(block.timestamp + 24 hours + 1 seconds);
+        claw.executeSetDexWhitelist(uniswap, true);
         assertTrue(claw.dexWhitelist(uniswap));
+        
+        vm.stopPrank();
+    }
+
+    function testDisableMinting() public {
+        vm.prank(admin);
+        claw.disableMinting();
+        assertTrue(claw.mintingDisabled());
+        
+        // Try to mint (should fail)
+        vm.prank(admin);
+        vm.expectRevert("Minting disabled");
+        claw.mint(user, 1_000_000 * 10**18);
     }
 
     function test_RevertWhen_MintUnauthorized() public {
