@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusClaw — Whitepaper v1.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #070707; --bg-nav: #111111; --bg-card: #0F0F0F;
+    --t1: #EBEBEB; --t2: rgba(235,235,235,0.75); --t3: rgba(235,235,235,0.50);
+    --red: #E63946; --teal: #1DBEAC; --blue: #3A8BFF; --gold: #FFBF47; --purple: #9B7CF4;
+    --border: rgba(235,235,235,0.10);
+    --mono: "SF Mono","Fira Code","JetBrains Mono",monospace;
+    --display: "Syne",system-ui,sans-serif;
+    --ui: system-ui,-apple-system,sans-serif;
+  }
+  html, body { background: var(--bg); color: var(--t1); font-family: var(--ui); min-height: 100vh; -webkit-font-smoothing: antialiased; line-height: 1.6; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 52px; background: var(--bg-nav); border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .nav-logo { font-family: var(--display); font-size: 16px; font-weight: 800; color: var(--t1); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+  .nav-icon { width: 26px; height: 26px; background: var(--blue); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .nav-back { font-size: 12px; color: var(--t3); text-decoration: none; padding: 6px 12px; border: 0.5px solid var(--border); border-radius: 6px; transition: all 0.15s; }
+  .nav-back:hover { color: var(--t1); border-color: rgba(235,235,235,0.25); }
+  .page { max-width: 720px; margin: 0 auto; padding: 64px 24px 96px; }
+  .doc-tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); margin-bottom: 16px; display: block; }
+  .doc-title { font-family: var(--display); font-size: clamp(36px, 6vw, 56px); font-weight: 800; letter-spacing: -2px; line-height: 0.95; margin-bottom: 16px; }
+  .doc-title span { color: var(--blue); }
+  .doc-meta { font-family: var(--mono); font-size: 12px; color: var(--t3); margin-bottom: 48px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .doc-meta span::before { content: '— '; }
+  h2 { font-family: var(--display); font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--t1); margin: 48px 0 16px; padding-top: 48px; border-top: 0.5px solid var(--border); }
+  h2:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  h3 { font-size: 14px; font-weight: 600; color: var(--t2); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin: 28px 0 10px; }
+  p { font-size: 15px; color: var(--t2); margin-bottom: 16px; max-width: 620px; }
+  ul { margin: 0 0 16px 0; padding-left: 0; list-style: none; }
+  ul li { font-size: 15px; color: var(--t2); padding: 6px 0; padding-left: 16px; position: relative; border-bottom: 0.5px solid rgba(235,235,235,0.05); }
+  ul li:last-child { border-bottom: none; }
+  ul li::before { content: '→'; position: absolute; left: 0; color: var(--teal); font-size: 12px; top: 8px; }
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; border: 0.5px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--t3); padding: 10px 16px; text-align: left; border-bottom: 0.5px solid var(--border); background: var(--bg-card); }
+  td { padding: 10px 16px; color: var(--t2); border-bottom: 0.5px solid rgba(235,235,235,0.05); font-family: var(--mono); font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(235,235,235,0.02); }
+  .highlight { color: var(--t1); font-weight: 600; }
+  .teal { color: var(--teal); }
+  .blue { color: var(--blue); }
+  .red { color: var(--red); }
+  .gold { color: var(--gold); }
+  .purple { color: var(--purple); }
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px; font-family: var(--mono); font-size: 10px; font-weight: 600; }
+  .pill.teal { background: rgba(29,190,172,0.10); color: var(--teal); border: 0.5px solid rgba(29,190,172,0.22); }
+  .pill.red { background: rgba(230,57,70,0.10); color: var(--red); border: 0.5px solid rgba(230,57,70,0.22); }
+  .pill.blue { background: rgba(58,139,255,0.10); color: var(--blue); border: 0.5px solid rgba(58,139,255,0.22); }
+  .pill.gold { background: rgba(255,191,71,0.10); color: var(--gold); border: 0.5px solid rgba(255,191,71,0.22); }
+  .callout { background: var(--bg-card); border: 0.5px solid var(--border); border-left: 2px solid var(--blue); border-radius: 6px; padding: 16px 20px; margin: 16px 0 24px; }
+  .callout p { margin: 0; font-size: 14px; }
+  .callout.warn { border-left-color: var(--gold); }
+  .callout.danger { border-left-color: var(--red); }
+  .fee-bar { display: flex; height: 6px; border-radius: 100px; overflow: hidden; gap: 2px; margin: 12px 0 8px; }
+  .fee-seg { height: 100%; border-radius: 2px; }
+  .toc { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 48px; }
+  .toc-title { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t3); margin-bottom: 12px; }
+  .toc a { display: block; font-size: 13px; color: var(--t2); text-decoration: none; padding: 5px 0; border-bottom: 0.5px solid rgba(235,235,235,0.05); transition: color 0.15s; }
+  .toc a:last-child { border-bottom: none; }
+  .toc a:hover { color: var(--blue); }
+  .toc a span { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-right: 8px; }
+  footer { text-align: center; padding: 32px 24px 48px; border-top: 0.5px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--t3); }
+  footer a { color: var(--blue); text-decoration: none; }
+  @media (max-width: 480px) {
+    nav { padding: 0 16px; }
+    .page { padding: 40px 16px 72px; }
+    .doc-meta { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-icon">🦞</div>
+    NexusClaw
+  </a>
+  <a class="nav-back" href="/">← App</a>
+</nav>
+
+<div class="page">
+
+  <span class="doc-tag">Whitepaper v1.0</span>
+  <h1 class="doc-title">Nexus<span>Claw</span></h1>
+  <div class="doc-meta">
+    <span>March 2026</span>
+    <span>Base Network</span>
+    <span>$NEXUSCLAW</span>
+    <span>Built by Tiago &amp; Hanna</span>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">// table of contents</div>
+    <a href="#overview"><span>01</span>Overview</a>
+    <a href="#token"><span>02</span>Token — $NEXUSCLAW</a>
+    <a href="#tokenomics"><span>03</span>Tokenomics</a>
+    <a href="#fees"><span>04</span>Fee Distribution</a>
+    <a href="#security"><span>05</span>Security</a>
+    <a href="#roadmap"><span>06</span>Roadmap</a>
+    <a href="#contracts"><span>07</span>Contract Addresses</a>
+    <a href="#risks"><span>08</span>Risk Disclosures</a>
+  </div>
+
+  <!-- 01 -->
+  <h2 id="overview">01 · Overview</h2>
+  <p>NexusClaw is a multi-chain crypto protocol designed to become the economic backbone for autonomous AI agent ecosystems. Agents built on NexusClaw can deploy tokens, trade assets, provide liquidity, and pay for their own compute costs — all autonomously, using fees they generate themselves.</p>
+  <p>Inspired by the agent-launch model pioneered by Clawnch, NexusClaw extends the concept to a global, multilingual, multi-chain infrastructure.</p>
+
+  <h3>Core Value Proposition</h3>
+  <ul>
+    <li>Agents launch tokens with one click and self-finance via fee capture</li>
+    <li>Multi-chain from day one: Base, Solana, Arbitrum</li>
+    <li>Multilingual agent interactions: EN, PT, JP, ES, CN</li>
+    <li>Agent-to-agent marketplace: buy and sell skills in $NEXUSCLAW</li>
+    <li>Deflationary tokenomics: burns tied to every transfer</li>
+  </ul>
+
+  <!-- 02 -->
+  <h2 id="token">02 · Token — $NEXUSCLAW</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Token Name</td><td class="highlight">NexusClaw</td></tr>
+        <tr><td>Ticker</td><td class="highlight">$NEXUSCLAW</td></tr>
+        <tr><td>Total Supply</td><td class="highlight">100,000,000,000 (100 Billion)</td></tr>
+        <tr><td>Decimals</td><td>18</td></tr>
+        <tr><td>Chain</td><td>Base (EVM)</td></tr>
+        <tr><td>Burn Mechanism</td><td><span class="pill red">1% per swap</span></td></tr>
+        <tr><td>Staking APY</td><td><span class="pill teal">20% bootstrap</span></td></tr>
+        <tr><td>Anti-snipe</td><td>Max 0.5% supply per buy · first 24h</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 03 -->
+  <h2 id="tokenomics">03 · Tokenomics</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Category</th><th>%</th><th>Amount</th><th>Vesting</th></tr></thead>
+      <tbody>
+        <tr><td>Liquidity Pool</td><td class="teal">20%</td><td>20,000,000,000</td><td>Immediate</td></tr>
+        <tr><td>Ecosystem &amp; Rewards</td><td class="blue">25%</td><td>25,000,000,000</td><td>12 months linear</td></tr>
+        <tr><td>Staking Rewards</td><td class="teal">20%</td><td>20,000,000,000</td><td>Ongoing emissions</td></tr>
+        <tr><td>Team</td><td>15%</td><td>15,000,000,000</td><td>24 month cliff + linear</td></tr>
+        <tr><td>Marketing</td><td>10%</td><td>10,000,000,000</td><td>6 months linear</td></tr>
+        <tr><td>Community Airdrop</td><td>5%</td><td>5,000,000,000</td><td>Immediate</td></tr>
+        <tr><td>Advisors</td><td>5%</td><td>5,000,000,000</td><td>18 months linear</td></tr>
+        <tr><td class="highlight">Total</td><td class="highlight">100%</td><td class="highlight">100,000,000,000</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 04 -->
+  <h2 id="fees">04 · Fee Distribution</h2>
+  <p>Every transfer of $NEXUSCLAW incurs a 1% fee, distributed as follows:</p>
+
+  <div class="fee-bar">
+    <div class="fee-seg" style="width:50%;background:#E63946;"></div>
+    <div class="fee-seg" style="width:30%;background:#3A8BFF;"></div>
+    <div class="fee-seg" style="width:20%;background:#1DBEAC;"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Recipient</th><th>Share</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Burn → address(0)</td><td class="red">50%</td><td>Permanent supply reduction</td></tr>
+        <tr><td>Treasury</td><td class="blue">30%</td><td>Development &amp; operations</td></tr>
+        <tr><td>Staking Pool</td><td class="teal">20%</td><td>Rewards for stakers</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <p>Fee applies to <span class="highlight">all transfers including DEX pairs</span>. Whitelisted DEX pairs are exempt from the anti-snipe max buy limit only — not from the burn fee.</p>
+  </div>
+
+  <!-- 05 -->
+  <h2 id="security">05 · Security</h2>
+
+  <h3>Multisig — 3/5</h3>
+  <p>All admin operations require 3 of 5 multisig signers. The deployer wallet has had all roles permanently revoked.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Multisig threshold</td><td class="teal">3 / 5 signers</td></tr>
+        <tr><td>Timelock on admin ops</td><td class="teal">24 hours</td></tr>
+        <tr><td>Deployer roles</td><td class="teal">Revoked ✓</td></tr>
+        <tr><td>Minting</td><td class="teal">Permanently disabled ✓</td></tr>
+        <tr><td>Reentrancy guards</td><td class="teal">OpenZeppelin ✓</td></tr>
+        <tr><td>Audit</td><td><a href="https://github.com/kashikai/nexusclaw/blob/main/AUDIT_REPORT.md" style="color:var(--blue);">AUDIT_REPORT.md ↗</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <p>The contract has been internally audited. An independent third-party audit is planned before full mainnet launch.</p>
+  </div>
+
+  <!-- 06 -->
+  <h2 id="roadmap">06 · Roadmap</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Phase</th><th>Timeline</th><th>Milestones</th></tr></thead>
+      <tbody>
+        <tr><td>Phase 0 — Foundation</td><td class="gold">Q1 2026 ✓</td><td>Testnet, audit, docs, brand</td></tr>
+        <tr><td>Phase 1 — Soft Launch</td><td class="gold">Q1–Q2 2026</td><td>Base mainnet, staking live, DEX listing</td></tr>
+        <tr><td>Phase 2 — Multi-chain</td><td>Q2–Q3 2026</td><td>Solana + Arbitrum, SDK, 1k agents</td></tr>
+        <tr><td>Phase 3 — Marketplace</td><td>Q3 2026</td><td>Agent-to-agent skill marketplace</td></tr>
+        <tr><td>Phase 4 — Scale</td><td>Q4 2026</td><td>100k tokens, CEX listing, compute payments</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 07 -->
+  <h2 id="contracts">07 · Contract Addresses</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Address</th><th>Network</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--mono);font-size:11px;">0x502C...D110</td><td>Base Sepolia</td><td class="red">Deprecated</td></tr>
+        <tr><td style="font-family:var(--mono);font-size:11px;">0x4DB5...3927</td><td>Base Sepolia</td><td class="red">Deprecated (pre-audit)</td></tr>
+        <tr><td style="font-family:var(--mono);font-size:11px;">0xb7Df...b68a</td><td>Base Sepolia</td><td class="teal">Current Testnet ✓</td></tr>
+        <tr><td style="font-family:var(--mono);font-size:11px;">TBA</td><td>Base Mainnet</td><td class="gold">Pending</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 08 -->
+  <h2 id="risks">08 · Risk Disclosures</h2>
+
+  <div class="callout danger">
+    <p>$NEXUSCLAW is an experimental protocol in early development. Do not invest more than you can afford to lose.</p>
+  </div>
+
+  <ul>
+    <li>Smart contract risk: independent audit pending — use testnet before committing real funds</li>
+    <li>Market risk: $NEXUSCLAW is a speculative digital asset with no guaranteed value</li>
+    <li>Regulatory risk: crypto regulations vary by jurisdiction</li>
+    <li>Technology risk: multi-chain bridging and agent automation involve complex systems</li>
+    <li>Liquidity risk: early-stage token with limited DEX liquidity at launch</li>
+  </ul>
+
+</div>
+
+<footer>
+  NexusClaw Whitepaper v1.0 · March 2026 ·
+  <a href="https://github.com/kashikai/nexusclaw">GitHub</a> ·
+  <a href="/">App</a> ·
+  Built by Tiago &amp; Hanna 🦞
+</footer>
+
+</body>
+</html>
+
