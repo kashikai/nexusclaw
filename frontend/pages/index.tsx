@@ -235,6 +235,7 @@ export default function Home() {
           <span className="footer-copy">© 2026 NexusClaw · Built by Tiago & Hanna 🦞</span>
           <div className="footer-links">
             <a className="footer-link" href="https://github.com/kashikai/nexusclaw" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+            <a className="footer-link" href="/whitepaper.html" target="_blank" rel="noopener noreferrer">Whitepaper ↗</a>
             <a className="footer-link" href={`https://sepolia.basescan.org/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer">Basescan ↗</a>
           </div>
         </div>
