@@ -1,1 +1,1 @@
-testFailMintOverCap
+testDisableMinting|testMint|testTreasuryBurn|testExit|testStakeAndEarn|testWithdraw
