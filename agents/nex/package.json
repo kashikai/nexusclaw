@@ -10,13 +10,14 @@
     "test": "ts-node test-draft.ts"
   },
   "dependencies": {
+    "dotenv": "^17.3.1",
     "node-telegram-bot-api": "^0.64.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/node-telegram-bot-api": "^0.64.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
+    "@types/node-telegram-bot-api": "^0.64.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "nexusclaw",
