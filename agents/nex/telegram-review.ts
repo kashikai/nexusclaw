@@ -9,16 +9,24 @@ console.log('Starting Nex Bot with buttons...');
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const pendingDrafts = new Map();
 
-// /start command
+// /start
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, '🦞⚡ Nex online! Aguardando drafts para revisão.');
+  bot.sendMessage(msg.chat.id, '🦞⚡ Nex online! Use /draft <texto> para testar.');
 });
 
-// Send draft for review (function to be called)
+// /draft <texto> — MUST come before bot.on('message')
+bot.onText(/\/draft (.+)/, async (msg, match) => {
+  if (msg.chat.id.toString() !== TIAGO_CHAT_ID) return;
+  const draftText = match[1].trim();
+  await sendDraftForReview(draftText, 'test', 'en');
+  await bot.sendMessage(TIAGO_CHAT_ID, '✅ Draft enviado para revisão!');
+});
+
+// Send draft for review
 async function sendDraftForReview(draftText, postType = 'update', language = 'en') {
   const draftId = Date.now().toString();
   pendingDrafts.set(draftId, { draft: draftText, type: postType, lang: language });
-  
+
   const message = `🦞⚡ *NEX DRAFT — Aguardando Aprovação*
 
 *Tipo:* ${postType}
@@ -29,99 +37,76 @@ ${draftText}
 
 *ID:* ${draftId}`;
 
-  const keyboard = {
-    inline_keyboard: [
-      [
+  await bot.sendMessage(TIAGO_CHAT_ID, message, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [[
         { text: '✅ Aprovar', callback_data: `approve_${draftId}` },
         { text: '✏️ Editar', callback_data: `edit_${draftId}` },
         { text: '❌ Rejeitar', callback_data: `reject_${draftId}` }
-      ]
-    ]
-  };
-
-  await bot.sendMessage(TIAGO_CHAT_ID, message, {
-    parse_mode: 'Markdown',
-    reply_markup: keyboard
+      ]]
+    }
   });
-  
+
   console.log(`Draft ${draftId} sent for review`);
 }
 
 // Handle button clicks
 bot.on('callback_query', async (query) => {
-  const [action, draftId] = query.data.split('_');
+  const parts = query.data.split('_');
+  const action = parts[0];
+  const draftId = parts[1];
   const pending = pendingDrafts.get(draftId);
-  
-  console.log(`Action: ${action}, Draft: ${draftId}`);
-  
+
   if (!pending) {
     await bot.answerCallbackQuery(query.id, { text: 'Draft não encontrado ou já processado.' });
     return;
   }
 
   if (action === 'approve') {
-    // Save to approved queue
     const approvedPath = path.join(__dirname, 'approved-queue.json');
-    const queue = fs.existsSync(approvedPath) 
-      ? JSON.parse(fs.readFileSync(approvedPath, 'utf-8')) 
+    const queue = fs.existsSync(approvedPath)
+      ? JSON.parse(fs.readFileSync(approvedPath, 'utf-8'))
       : [];
     queue.push({ ...pending, approvedAt: new Date().toISOString(), id: draftId });
     fs.writeFileSync(approvedPath, JSON.stringify(queue, null, 2));
-    
+
     await bot.editMessageText(
-      `✅ *APROVADO* — Draft ${draftId} adicionado à fila do Moltbook.\n\n${pending.draft}`,
-      {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id,
-        parse_mode: 'Markdown'
-      }
+      `✅ *APROVADO* — Draft adicionado à fila do Moltbook.\n\n${pending.draft}`,
+      { chat_id: query.message.chat.id, message_id: query.message.message_id, parse_mode: 'Markdown' }
     );
     pendingDrafts.delete(draftId);
-    
+
   } else if (action === 'reject') {
     await bot.editMessageText(
-      `❌ *REJEITADO* — Draft ${draftId} descartado.\n\n${pending.draft}`,
-      {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id,
-        parse_mode: 'Markdown'
-      }
+      `❌ *REJEITADO* — Draft descartado.\n\n${pending.draft}`,
+      { chat_id: query.message.chat.id, message_id: query.message.message_id, parse_mode: 'Markdown' }
     );
     pendingDrafts.delete(draftId);
-    
+
   } else if (action === 'edit') {
-    await bot.answerCallbackQuery(query.id, { text: 'Envie o texto editado como resposta a esta mensagem.' });
+    await bot.answerCallbackQuery(query.id, { text: 'Envie o texto editado como resposta.' });
     await bot.sendMessage(
       query.message.chat.id,
       `✏️ *EDITAR DRAFT ${draftId}*\n\nEnvie o texto final aprovado:`,
       { parse_mode: 'Markdown' }
     );
   }
-  
+
   await bot.answerCallbackQuery(query.id);
 });
 
-// Handle edited drafts (replies)
+// Handle text messages (NEX PAUSE/RESUME only)
 bot.on('message', async (msg) => {
   if (msg.chat.id.toString() !== TIAGO_CHAT_ID) return;
-  
-  console.log('Message from Tiago:', msg.text);
-  
+  if (msg.text?.startsWith('/')) return; // ignora comandos — já tratados acima
+
   if (msg.text === 'NEX PAUSE') {
     await bot.sendMessage(TIAGO_CHAT_ID, '🛑 Entendido. Pausando posts. Aguardando Tiago.');
     process.env.NEX_PAUSED = 'true';
-    
   } else if (msg.text === 'NEX RESUME') {
     await bot.sendMessage(TIAGO_CHAT_ID, '✅ Nex resumido. Voltando ao fluxo normal. 🦞⚡');
     process.env.NEX_PAUSED = 'false';
-    
-  } else if (msg.text?.startsWith('/draft')) {
-    // Test command: /draft <text>
-    const draftText = msg.text.replace('/draft', '').trim();
-    if (draftText) {
-      await sendDraftForReview(draftText, 'test', 'en');
-      await bot.sendMessage(TIAGO_CHAT_ID, 'Draft enviado para revisão!');
-    }
   }
 });
 
