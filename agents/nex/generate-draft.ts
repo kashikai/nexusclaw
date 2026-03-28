@@ -36,3 +36,15 @@ async function generateDraft(input: DraftInput): Promise<DraftOutput> {
 }
 
 export { generateDraft, DraftInput, DraftOutput };
+
+// Example usage
+const example: DraftInput = {
+  techUpdate: "Fixed fee calculation bug, tests green, saves 12% gas",
+  postType: 'update',
+  language: 'en',
+  urgency: 'routine'
+};
+
+generateDraft(example).then(output => {
+  console.log(JSON.stringify(output, null, 2));
+});
