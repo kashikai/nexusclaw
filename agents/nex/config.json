@@ -1,0 +1,27 @@
+{
+  "name": "nex",
+  "version": "1.0.0",
+  "role": "marketing-community",
+  "soul": "./SOUL.md",
+  "model": "openrouter/moonshotai/kimi-k2.5",
+  "channels": ["moltbook", "telegram"],
+  "languages": ["en", "pt", "ko", "jp", "es"],
+  "approval_required": true,
+  "approval_contact": "tiago",
+  "kill_switch": "NEX PAUSE",
+  "resume_switch": "NEX RESUME",
+  "post_schedule": {
+    "frequency": "2x daily",
+    "times": ["09:00 JST", "20:00 JST"],
+    "rotation": ["update", "vision", "engagement"]
+  },
+  "metrics": {
+    "tracking": true,
+    "baseline_days": 14,
+    "targets": {
+      "engagement_rate": 0.05,
+      "positive_sentiment": 0.70,
+      "actionable_insights_per_week": 3
+    }
+  }
+}
