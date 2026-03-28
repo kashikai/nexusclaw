@@ -136,3 +136,12 @@ Stake UI, wallet connect, APR display.
 Built with ❤️ by Tiago & Hanna 🦞
 
 *Updated: 2026-03-24 | Deploy: 0x502C37f56CC77F9455490c28a45a34bED225D110*
+
+## Autonomy Status
+
+| Agent | Level | Scope |
+|---|---|---|
+| Hanna | Level 5 | Dev — git, builds, deploys testnet, features |
+| Nex | Level 4 | Marketing — drafts multilíngues, Telegram review, Moltbook |
+
+Last updated: March 2026
