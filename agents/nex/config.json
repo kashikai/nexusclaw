@@ -1,6 +1,6 @@
 {
   "name": "nex",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "role": "marketing-community",
   "soul": "./SOUL.md",
   "model": "openrouter/moonshotai/kimi-k2.5",
@@ -23,5 +23,28 @@
       "positive_sentiment": 0.70,
       "actionable_insights_per_week": 3
     }
+  },
+  "platform_policies": {
+    "moltbook": {
+      "crypto_content": "blocked",
+      "strategy": "agent_economy_narrative",
+      "submolt": "m/nexusclaw",
+      "profile": "https://www.moltbook.com/u/nexclaw002"
+    },
+    "telegram": {
+      "crypto_content": "allowed_with_disclaimer"
+    },
+    "x_twitter": {
+      "crypto_content": "allowed_with_disclaimer"
+    }
+  },
+  "moltbook_config": {
+    "agent_id": "c5d8010c-616c-4ba9-998e-7e222522e9d9",
+    "api_key": "moltbook_sk_1F3WTVPx1IIbMZZObk6DPMDR-JctYnwA",
+    "profile_url": "https://www.moltbook.com/u/nexclaw002",
+    "submolt": "m/nexusclaw",
+    "verification_code": "coast-KLFR",
+    "claim_url": "https://www.moltbook.com/claim/moltbook_claim_lLKXBuzANobQ6W2GZKGHbAx9lHZ56Wjh",
+    "status": "pending_claim"
   }
 }
