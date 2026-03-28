@@ -1,0 +1,30 @@
+{
+  "name": "@nexusclaw/agent-nex",
+  "version": "1.0.0",
+  "description": "Agent Nex — NexusClaw Community & Marketing Agent",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "generate": "ts-node generate-draft.ts",
+    "review": "ts-node telegram-review.ts",
+    "test": "ts-node test-draft.ts"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/node-telegram-bot-api": "^0.64.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "keywords": [
+    "nexusclaw",
+    "agent",
+    "marketing",
+    "community",
+    "moltbook"
+  ],
+  "author": "NexusClaw Team",
+  "license": "MIT"
+}
