@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 
-const CONTRACT_ADDRESS = '0xb7Df4A46455594923150628cEA54f0a173f1b68a';
-const MULTISIG_ADDRESS = '0xDde691ce2a083DEC8Ad8C8a117657045da60d93c';
-const CHAIN_NAME = 'Base Sepolia';
+const CONTRACT_ADDRESS = '0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6';
+const MULTISIG_ADDRESS = '0x02320eCCB3B67e802C29f9e9F8703D5756535515';
+const CHAIN_NAME = 'Base Mainnet';
 const TICKER = '$NEXUSCLAW';
 
 const DS = `
@@ -147,18 +147,18 @@ export default function Home() {
           <div className="nav-divider" />
           <div className="nav-chain">
             <div className="nav-dot" />
-            Base Sepolia
+            Base Mainnet
           </div>
         </div>
         <div className="nav-right">
           <a className="btn-ghost" href="https://github.com/kashikai/nexusclaw" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
-          <a className="btn-ghost" href={`https://sepolia.basescan.org/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer">Basescan ↗</a>
+          <a className="btn-ghost" href={`https://basescan.org/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer">Basescan ↗</a>
         </div>
       </nav>
 
       <div className="page">
         <div className="hero">
-          <div className="hero-tag">🦞 Testnet Live</div>
+          <div className="hero-tag">🦞 Mainnet Live</div>
           <h1 className="hero-title">Stake<br /><span>{TICKER}</span></h1>
           <p className="hero-sub">The worldwide economic layer for autonomous AI agents. Earn 20% APY while powering the agent economy on Base.</p>
         </div>
@@ -171,10 +171,10 @@ export default function Home() {
 
         <div className="card" style={{animation:'fade-up 0.5s 0.08s ease both'}}>
           <div className="card-label">// wallet</div>
-          <button className={connected ? 'btn-teal' : 'btn-primary'} onClick={() => { setConnected(v => !v); notify(connected ? 'Wallet disconnected' : 'Connected to Base Sepolia'); }}>
+          <button className={connected ? 'btn-teal' : 'btn-primary'} onClick={() => { setConnected(v => !v); notify(connected ? 'Wallet disconnected' : 'Connected to Base Mainnet'); }}>
             {connected ? '✓ Connected · 0xB097...E572' : 'Connect Wallet'}
           </button>
-          {connected && <div className="wallet-info"><div className="pulse" />0xB097...E572 · Base Sepolia · Chain 84532</div>}
+          {connected && <div className="wallet-info"><div className="pulse" />0xB097...E572 · Base Mainnet · Chain 84532</div>}
         </div>
 
         {connected && (
@@ -199,7 +199,7 @@ export default function Home() {
             <tr><td className="td-k">supply</td><td className="td-v">100,000,000,000</td></tr>
             <tr><td className="td-k">burn fee</td><td className="td-v"><span className="status-pill">1% active</span></td></tr>
             <tr><td className="td-k">staking apy</td><td className="td-v" style={{color:'var(--teal)'}}>20% bootstrap</td></tr>
-            <tr><td className="td-k">status</td><td className="td-v" style={{color:'var(--gold)'}}>testnet · mainnet soon</td></tr>
+            <tr><td className="td-k">status</td><td className="td-v" style={{color:'var(--gold)'}}>live · Base Mainnet</td></tr>
           </tbody></table>
         </div>
 
@@ -236,7 +236,7 @@ export default function Home() {
           <div className="footer-links">
             <a className="footer-link" href="https://github.com/kashikai/nexusclaw" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             <a className="footer-link" href="/whitepaper.html" target="_blank" rel="noopener noreferrer">Whitepaper ↗</a>
-            <a className="footer-link" href={`https://sepolia.basescan.org/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer">Basescan ↗</a>
+            <a className="footer-link" href={`https://basescan.org/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer">Basescan ↗</a>
           </div>
         </div>
       </div>

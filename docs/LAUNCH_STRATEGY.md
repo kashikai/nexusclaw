@@ -2,7 +2,7 @@
 
 **Status**: ✅ SEPOLIA v2 DEPLOYED | 48h MONITORING IN PROGRESS | MAINNET READY (post-monitoring)
 **Last Updated**: 2026-03-27 04:54 GMT+9
-**Current Contract**: 0xb7Df4A46455594923150628cEA54f0a173f1b68a (Base Sepolia v2)
+**Current Contract**: 0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6 (Base Sepolia v2)
 
 ---
 
@@ -12,7 +12,7 @@
 |---------|---------|--------|---------|-------|
 | 0x502C37f56CC77F9455490c28a45a34bED225D110 | Base Sepolia | ❌ DEPRECATED | First test deploy | 39293607 |
 | 0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927 | Base Sepolia | ❌ DEPRECATED | Pre-fix testnet | - |
-| 0xb7Df4A46455594923150628cEA54f0a173f1b68a | Base Sepolia | ✅ CURRENT (v2) | Post-audit deployment | 39393220 |
+| 0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6 | Base Sepolia | ✅ CURRENT (v2) | Post-audit deployment | 39393220 |
 | TBA | Base Mainnet | ⏳ PENDING | Awaiting 48h monitoring | - |
 
 ---
@@ -20,7 +20,7 @@
 ## DEPLOYMENT DETAILS (v2 Sepolia)
 
 ```
-Contract Address: 0xb7Df4A46455594923150628cEA54f0a173f1b68a
+Contract Address: 0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6
 Network: Base Sepolia (chainId: 84532)
 Block: 39393220
 Verification: Sourcify (exact_match)
@@ -35,7 +35,7 @@ Total Supply: 100,000,000,000 $NEXUSCLAW (100B)
 Initial Treasury Balance: 10,000,000,000 $NEXUSCLAW (10B)
 Contract Reserve: 90,000,000,000 $NEXUSCLAW (90B)
 
-Explorer: https://sepolia.basescan.org/address/0xb7Df4A46455594923150628cEA54f0a173f1b68a
+Explorer: https://basescan.org/address/0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6
 Sourcify: Verified ✅
 ```
 
@@ -72,7 +72,7 @@ Sourcify: Verified ✅
 
 ## FASE 1 – Sepolia Testing & Monitoring (Day 2-3, ⏳ IN PROGRESS)
 
-- ✅ Deployed 0xb7Df4A46455594923150628cEA54f0a173f1b68a on Base Sepolia
+- ✅ Deployed 0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6 on Base Sepolia
 - ✅ Verified on Sourcify (exact_match)
 - ✅ Block: 39393220
 - ⏳ Call launch() to enable trading (next step)
