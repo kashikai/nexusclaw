@@ -3,16 +3,29 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TIAGO = process.env.TIAGO_TELEGRAM_ID;
 const API_KEY = process.env.OPENROUTER_API_KEY;
 const MOLTBOOK_KEY = process.env.MOLTBOOK_API_KEY;
+
+console.log('🦞⚡ Nex Pipeline v3.0 — Telegram → Approve → Moltbook');
+const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const drafts = new Map();
 
 const LANG = { pt: 'PT', en: 'EN', ko: 'KO', es: 'ES', jp: 'JP' };
 
+// Check if paused
+function isPaused() {
+  return process.env.NEX_PAUSED === 'true';
+}
+
 // Generate draft using OpenRouter
-async function gen(update, lang) {
+async function generate(update, lang) {
+  if (isPaused()) {
+    console.log('⏸️ Bot is PAUSED');
+    return null;
+  }
+  
   try {
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -22,157 +35,184 @@ async function gen(update, lang) {
       },
       body: JSON.stringify({
         model: 'moonshotai/kimi-k2.5',
+        max_tokens: 400,
         messages: [
-          { role: 'system', content: 'You are Nex, NexusClaw community agent. Write in ' + LANG[lang] + '. Energetic but credible. No price promises.' },
-          { role: 'user', content: 'Tech update: ' + update }
+          { role: 'system', content: 'You are Nex, NexusClaw community agent. Write in ' + (LANG[lang] || 'English') + '. Focus on agent economy, infrastructure, building in public. NO crypto talk, NO token prices, NO "buy/stake/invest" language. Moltbook-compliant philosophy posts.' },
+          { role: 'user', content: 'Tech update: ' + update + '\n\nGenerate community post for Moltbook (agent economy narrative).' }
         ]
       })
     });
+    
     const d = await r.json();
     return d.choices[0].message.content.trim();
   } catch(e) {
-    return '🦞 ' + update;
+    console.error('Gen error:', e);
+    return '🦞⚡ Update:\n\n' + update + '\n\n#AgentEconomy #BuildInPublic';
   }
 }
 
-// Send draft for review
-async function send(draft, lang) {
-  const id = Date.now().toString();
-  drafts.set(id, { draft, lang });
-  bot.sendMessage(TIAGO, 
-    '🦞⚡ DRAFT (' + LANG[lang] + ')\n\n' + draft,
-    { 
-      parse_mode: 'Markdown', 
-      reply_markup: { 
-        inline_keyboard: [[
-          { text: '✅ Aprovar', callback_data: 'a_' + id },
-          { text: '❌ Rejeitar', callback_data: 'r_' + id }
-        ]] 
-      }
-    }
-  );
-}
-
-// Post approved draft to Moltbook
-async function postToMoltbook(draft, lang) {
+// Post to Moltbook
+async function postToMoltbook(content, lang) {
   if (!MOLTBOOK_KEY) {
-    console.error('❌ MOLTBOOK_API_KEY not set');
     return { success: false, error: 'MOLTBOOK_API_KEY not configured' };
   }
   
-  const submoltMap = {
-    en: 'm/NexusClaw',
-    pt: 'm/NexusClaw', 
-    ko: 'm/NexusClaw',
-    jp: 'm/NexusClaw',
-    es: 'm/NexusClaw'
-  };
-  
   try {
-    const res = await fetch('https://api.moltbook.com/posts', {
+    const res = await fetch('https://www.moltbook.com/api/v1/posts', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + MOLTBOOK_KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        type: 'text',
-        title: draft.split('\n')[0].replace(/[*_~]/g, '').slice(0, 100),
-        content: draft,
-        submolt: submoltMap[lang] || 'm/NexusClaw'
+        submolt: 'nexusclaw',
+        title: content.split('\n')[0].slice(0, 100),
+        content: content,
+        type: 'text'
       })
     });
     
     const data = await res.json();
     
-    if (data.id || data.post_id) {
-      console.log('✅ Posted to Moltbook:', data.id || data.post_id);
-      return { success: true, postId: data.id || data.post_id };
-    } else {
-      console.error('❌ Moltbook error:', JSON.stringify(data));
-      return { success: false, error: JSON.stringify(data) };
+    if (data.success && data.post) {
+      return { 
+        success: true, 
+        postId: data.post.id,
+        url: `https://www.moltbook.com/m/nexusclaw/post/${data.post.id}`
+      };
     }
+    return { success: false, error: JSON.stringify(data) };
   } catch(e) {
-    console.error('❌ Moltbook post failed:', e.message);
     return { success: false, error: e.message };
   }
 }
 
-// Language-specific generators
-bot.onText(/\/gen (pt|en|ko|es|jp) (.+)/, async (msg, match) => {
-  if (msg.chat.id.toString() !== TIAGO) return;
-  const lang = match[1], update = match[2];
-  bot.sendMessage(TIAGO, '🦞 Gerando ' + LANG[lang] + '...');
-  const draft = await gen(update, lang);
-  await send(draft, lang);
-  bot.sendMessage(TIAGO, '✅ ' + LANG[lang] + ' pronto!');
+// Send draft for review
+async function sendDraft(draft, lang, originalUpdate) {
+  if (isPaused()) {
+    await bot.sendMessage(TIAGO, '⏸️ Bot is PAUSED. NEX RESUME to continue.');
+    return;
+  }
+  
+  const id = Date.now().toString();
+  drafts.set(id, { draft, lang, originalUpdate });
+  
+  const message = '🦞⚡ *NEX DRAFT* (' + (LANG[lang] || lang) + ')\n\n' +
+    '*Original:* ' + originalUpdate.slice(0, 100) + '...\n\n' +
+    '*Generated:*\n' + draft + '\n\n' +
+    '*ID:* ' + id;
+  
+  await bot.sendMessage(TIAGO, message, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '✅ Approve & Post', callback_data: 'approve_' + id }],
+        [{ text: '🔄 Regenerate', callback_data: 'regen_' + id }],
+        [{ text: '❌ Reject', callback_data: 'reject_' + id }]
+      ]
+    }
+  });
+}
+
+// /start
+bot.onText(/\\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, 
+    '🦞⚡ *Nex Pipeline v3.0*\n\n' +
+    '/gen <lang> <update> — Generate & review\n' +
+    'NEX PAUSE — Stop all posts\n' +
+    'NEX RESUME — Continue posting\n\n' +
+    '*Flow:* Telegram → Approve → Moltbook',
+    { parse_mode: 'Markdown' }
+  );
 });
 
-// Approve/Reject handler with Moltbook integration
+// /gen command
+bot.onText(/\\/gen (pt|en|ko|es|jp) (.+)/, async (msg, match) => {
+  if (msg.chat.id.toString() !== TIAGO) return;
+  
+  if (isPaused()) {
+    return bot.sendMessage(TIAGO, '⏸️ Bot is PAUSED. Send NEX RESUME to continue.');
+  }
+  
+  const lang = match[1];
+  const update = match[2].trim();
+  
+  await bot.sendMessage(TIAGO, '🦞⚡ Generating ' + LANG[lang] + ' with Kimi K2...');
+  
+  const draft = await generate(update, lang);
+  if (!draft) return;
+  
+  await sendDraft(draft, lang, update);
+});
+
+// Callback handlers
 bot.on('callback_query', async (q) => {
-  const [action, id] = q.data.split('_');
-  const p = drafts.get(id);
-  if (!p) return bot.answerCallbackQuery(q.id, { text: 'Draft não encontrado.' });
+  const data = q.data;
+  const [action, id] = data.split('_');
+  const draft = drafts.get(id);
   
-  if (action === 'a') {
-    // Save to approved queue
-    const approvedPath = path.join(__dirname, 'approved-queue.json');
-    const queue = fs.existsSync(approvedPath) ? JSON.parse(fs.readFileSync(approvedPath, 'utf-8')) : [];
-    queue.push({ ...p, approvedAt: new Date().toISOString(), id });
-    fs.writeFileSync(approvedPath, JSON.stringify(queue, null, 2));
-    
-    // Post to Moltbook
-    const result = await postToMoltbook(p.draft, p.lang || 'en');
-    
-    const statusMsg = result.success 
-      ? '✅ *APROVADO & POSTADO* no Moltbook!\n\nPost ID: ' + result.postId + '\n\n' + p.draft
-      : '✅ *APROVADO* mas falhou no Moltbook: ' + result.error + '\n\n' + p.draft;
-    
-    bot.editMessageText(statusMsg, { 
-      chat_id: q.message.chat.id, 
-      message_id: q.message.message_id,
-      parse_mode: 'Markdown'
-    });
-    drafts.delete(id);
-    
-  } else if (action === 'r') {
-    bot.editMessageText('❌ *REJEITADO*\n\n' + p.draft, { 
-      chat_id: q.message.chat.id, 
-      message_id: q.message.message_id 
-    });
-    drafts.delete(id);
+  if (!draft) {
+    return bot.answerCallbackQuery(q.id, { text: 'Draft expired.' });
   }
   
-  bot.answerCallbackQuery(q.id);
-});
-
-// Check Nex status on Moltbook
-bot.onText(/\/status/, async (msg) => {
-  if (msg.chat.id.toString() !== TIAGO) return;
-  
-  if (!MOLTBOOK_KEY) {
-    return bot.sendMessage(TIAGO, '❌ MOLTBOOK_API_KEY não configurado.\nAdicione ao .env para ativar integração.');
-  }
-  
-  try {
-    const res = await fetch('https://api.moltbook.com/agents/me', {
-      headers: { 'Authorization': 'Bearer ' + MOLTBOOK_KEY }
-    });
-    const agent = await res.json();
+  if (action === 'approve') {
+    await bot.answerCallbackQuery(q.id, { text: 'Posting to Moltbook...' });
     
-    bot.sendMessage(TIAGO, 
-      '🦞⚡ *NEX STATUS*\n\n' +
-      '• Nome: ' + (agent.name || 'Nex') + '\n' +
-      '• Karma: ' + (agent.karma || 0) + '\n' +
-      '• Posts: ' + (agent.post_count || 0) + '\n' +
-      '• Followers: ' + (agent.follower_count || 0),
-      { parse_mode: 'Markdown' }
+    const result = await postToMoltbook(draft.draft, draft.lang);
+    
+    if (result.success) {
+      await bot.editMessageText(
+        '✅ *APPROVED & POSTED*\n\n' +
+        '📍 ' + result.url + '\n\n' +
+        draft.draft,
+        { 
+          chat_id: q.message.chat.id, 
+          message_id: q.message.message_id,
+          parse_mode: 'Markdown'
+        }
+      );
+    } else {
+      await bot.editMessageText(
+        '✅ *APPROVED* but failed to post:\n' + result.error + '\n\n' + draft.draft,
+        { chat_id: q.message.chat.id, message_id: q.message.message_id }
+      );
+    }
+    drafts.delete(id);
+    
+  } else if (action === 'regen') {
+    await bot.answerCallbackQuery(q.id, { text: 'Regenerating...' });
+    const newDraft = await generate(draft.originalUpdate, draft.lang);
+    if (newDraft) {
+      await sendDraft(newDraft, draft.lang, draft.originalUpdate);
+      await bot.editMessageText('🔄 *REGENERATED* — see new draft above.', 
+        { chat_id: q.message.chat.id, message_id: q.message.message_id }
+      );
+    }
+    drafts.delete(id);
+    
+  } else if (action === 'reject') {
+    await bot.answerCallbackQuery(q.id, { text: 'Rejected.' });
+    await bot.editMessageText(
+      '❌ *REJECTED*\n\n' + draft.draft,
+      { chat_id: q.message.chat.id, message_id: q.message.message_id }
     );
-  } catch(e) {
-    bot.sendMessage(TIAGO, '❌ Erro ao consultar Moltbook: ' + e.message);
+    drafts.delete(id);
   }
 });
 
-console.log('🦞⚡ Nex + Moltbook integration ready...');
-console.log('Moltbook API:', MOLTBOOK_KEY ? '✅ Configured' : '⏳ Pending setup');
-module.exports = { bot, gen, send, postToMoltbook };
+// KILL SWITCH
+bot.on('message', async (msg) => {
+  if (msg.chat.id.toString() !== TIAGO) return;
+  if (msg.text?.startsWith('/')) return;
+
+  if (msg.text === 'NEX PAUSE') {
+    process.env.NEX_PAUSED = 'true';
+    await bot.sendMessage(TIAGO, '🛑 Understood. Pausing all posts. Waiting for Tiago.');
+  } else if (msg.text === 'NEX RESUME') {
+    process.env.NEX_PAUSED = 'false';
+    await bot.sendMessage(TIAGO, '✅ Nex resumed. Back to normal flow. 🦞⚡');
+  }
+});
+
+console.log('🦞⚡ Nex Pipeline v3.0 running — Telegram → Approve → Moltbook');
+module.exports = { bot, generate, postToMoltbook };
