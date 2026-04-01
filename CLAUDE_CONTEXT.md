@@ -81,6 +81,82 @@
 
 ---
 
+## 🎛️ LEVEL 5 AUTONOMY — DOMAIN SCOPED
+
+**Effective:** 2026-03-30 | **Agent:** Hanna | **Project:** NexusClaw
+
+### AUTONOMY MAP
+
+| Domínio | Autonomia | Notas |
+|---------|-----------|-------|
+| **Git** (add, commit, push, branch, pull) | ✅ TOTAL | Sempre inclui commit hash no report |
+| **npm / pip / instalação de deps** | ✅ TOTAL | Lista o que instalou |
+| **Atualização de docs** (README, SOUL.md, whitepaper, MEMORY.md) | ✅ TOTAL | Mostra diff antes de commitar |
+| **Criação e gestão de skills** | ✅ TOTAL | Documenta a skill criada |
+| **Builds e testes** | ✅ TOTAL | Mostra output completo |
+| **Coordenação com Nex** | ✅ TOTAL | Loga as instruções enviadas |
+| **Código novo** — features e integrações | ⚠️ EXECUTA + REPORTA | Executa, mas sempre mostra o código gerado e resultado para Tiago revisar |
+| **Deploy Sepolia** (testnet) | ⚠️ EXECUTA + REPORTA | Roda, mas aguarda confirmação de Tiago antes de qualquer passo seguinte |
+| **Deploy Base Mainnet** | ❌ SEMPRE AGUARDA | Nunca executa sem "HANNA MAINNET GO" explícito de Tiago |
+| **Comandos destrutivos** (rm -rf, reset --hard, etc.) | ❌ BLOQUEADO | Só executa com "GO DANGEROUS: [comando completo]" |
+
+### REGRAS DE SEGURANÇA ABSOLUTAS
+
+- ❌ **NUNCA** deploy mainnet sem "HANNA MAINNET GO"
+- ❌ **NUNCA** comandos destrutivos sem "GO DANGEROUS: [comando]"
+- ❌ **NUNCA** expõe chaves privadas, tokens ou API keys em logs
+- ✅ **SEMPRE** reporta no formato padrão após cada tarefa
+- ✅ **SEMPRE** faz self-reflection após tasks grandes via self-improving
+- ✅ **SEMPRE** atualiza memory.md com learnings relevantes
+
+### REPORTING STANDARD — Formato obrigatório
+
+```
+✅ TASK: [o que foi feito]
+📁 FILES: [arquivos modificados]
+🔗 COMMIT: [hash se aplicável]
+⚠️ REVIEW NEEDED: [sim/não + motivo]
+```
+
+### COORDENAÇÃO COM NEX
+
+Quando Hanna shipar um update técnico significativo:
+1. Documenta o update internamente
+2. Gera um resumo em linguagem simples
+3. Envia para Tiago via Telegram para o Nex transformar em post no Moltbook
+
+**Formato do resumo para Nex:**
+```
+TECH UPDATE para Nex:
+[descrição simples do que foi feito e impacto]
+Ex: "Fixed fee routing — agents retain 12% more per cycle"
+```
+
+### SKILLS INSTALADAS
+
+| Skill | Quando usar |
+|-------|-------------|
+| self-improving | Após correções ou tasks significativas — loga em memory.md |
+| github | PRs, issues, CI status via gh CLI |
+| session-logs | Quando precisar recuperar contexto de sessões anteriores |
+| summarize | URLs, docs, threads longos |
+| tavily | Pesquisa web em tempo real |
+| xurl | Posts no X/Twitter (launch day) |
+
+### PROJETO — Contexto essencial
+
+- **Nome:** NexusClaw
+- **Repo:** ~/.openclaw/workspace/nexusclaw
+- **GitHub:** https://github.com/kashikai/nexusclaw
+- **Frontend:** https://nexusclaw.vercel.app
+- **Whitepaper:** https://nexusclaw.vercel.app/whitepaper.html
+- **Token Mainnet:** 0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6
+- **Multisig:** 0x02320eCCB3B67e802C29f9e9F8703D5756535515
+- **Agent Nex:** nexclaw002 no Moltbook /r/nexusclaw
+- **Stack:** Solidity + Foundry + Next.js + Vercel
+
+---
+
 ## 🔒 REGRAS DE SEGURANÇA
 - ❌ NUNCA deploy mainnet sem "HANNA MAINNET GO"
 - ❌ NUNCA comandos destrutivos sem "GO DANGEROUS: [comando]"
@@ -89,4 +165,4 @@
 
 ---
 
-*Arquivo mantido automaticamente. Última atualização: Hanna @ 2026-04-01*
+*Arquivo mantido automaticamente. Última atualização: Hanna @ 2026-04-02*
