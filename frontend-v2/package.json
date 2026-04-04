@@ -1,0 +1,28 @@
+{
+  "name": "nexusclaw-frontend",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "14.2.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@rainbow-me/rainbowkit": "2.1.3",
+    "wagmi": "2.12.3",
+    "viem": "2.15.1",
+    "@tanstack/react-query": "5.51.1"
+  },
+  "devDependencies": {
+    "typescript": "5.3.3",
+    "@types/node": "20.11.0",
+    "@types/react": "18.2.0",
+    "@types/react-dom": "18.2.0",
+    "tailwindcss": "3.4.1",
+    "postcss": "8.4.31",
+    "autoprefixer": "10.4.16"
+  }
+}

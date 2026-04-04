@@ -1,6 +1,8 @@
 lib/
-lib/
 sdk/node_modules/
 .env
-.env
-.env
+node_modules/
+.next/
+out/
+cache/
+broadcast/
