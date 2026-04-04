@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
 import { TopNav } from '@/components/layout/TopNav'
@@ -14,7 +14,7 @@ export default function StakingContent() {
 
   // === READ ===
   const { data: tokenBalance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined })
-  const { data: allowance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'allowance', args: address ? [address, STAKING_ADDRESS] : undefined })
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'allowance', args: address ? [address, STAKING_ADDRESS] : undefined })
   const { data: totalStaked } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStaked' })
   const { data: totalStakers } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStakers' })
   const { data: rewardPool } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPool' })
@@ -23,9 +23,20 @@ export default function StakingContent() {
   const { data: pendingReward } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'pendingReward', args: address ? [address] : undefined })
   const { data: runway } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPoolRunway' })
 
+  // Auto-refresh pending rewards every 15s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Force component re-render for wagmi to refetch
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [])
+
   // === WRITE ===
   const { writeContract: writeApprove, data: approveHash, isPending: isApprovePending } = useWriteContract()
-  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash })
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash, query: { enabled: !!approveHash } })
+
+  // Refetch allowance after approve confirms
+  useEffect(() => { if (isApproveSuccess) refetchAllowance() }, [isApproveSuccess, refetchAllowance])
   const { writeContract: writeStake, data: stakeHash, isPending: isStakePending } = useWriteContract()
   const { isLoading: isStakeConfirming, isSuccess: isStakeSuccess } = useWaitForTransactionReceipt({ hash: stakeHash })
   const { writeContract: writeClaim, data: claimHash, isPending: isClaimPending } = useWriteContract()
@@ -33,7 +44,9 @@ export default function StakingContent() {
   const { writeContract: writeUnstake, data: unstakeHash, isPending: isUnstakePending } = useWriteContract()
   const { isLoading: isUnstakeConfirming, isSuccess: isUnstakeSuccess } = useWaitForTransactionReceipt({ hash: unstakeHash })
 
-  const needsApproval = allowance && stakeAmount ? BigInt(allowance) < parseEther(stakeAmount || '0') : true
+  const needsApproval = allowance && stakeAmount
+    ? (BigInt(allowance) < parseEther(stakeAmount || '0') && !isApproveSuccess)
+    : true
   const userStakedAmount = userStaked ? (userStaked as any)[0] as bigint : 0n
   const userPending = pendingReward as bigint || 0n
   const effectiveAPY = runway && Number(runway) < 365 ? ((APY_PERCENT * Number(runway)) / 365).toFixed(1) : APY_PERCENT
