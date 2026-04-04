@@ -13,31 +13,46 @@ export default function StakingContent() {
   const [unstakeAmount, setUnstakeAmount] = useState('')
 
   // === READ ===
-  const { data: tokenBalance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined })
+  const { data: tokenBalance, refetch: refetchBalance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined })
   const { data: allowance, refetch: refetchAllowance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'allowance', args: address ? [address, STAKING_ADDRESS] : undefined })
-  const { data: totalStaked } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStaked' })
-  const { data: totalStakers } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStakers' })
-  const { data: rewardPool } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPool' })
+  const { data: totalStaked, refetch: refetchTotalStaked } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStaked' })
+  const { data: totalStakers, refetch: refetchTotalStakers } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStakers' })
+  const { data: rewardPool, refetch: refetchRewardPool } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPool' })
   const { data: launched } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'launched' })
-  const { data: userStaked } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'stakes', args: address ? [address] : undefined })
-  const { data: pendingReward } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'pendingReward', args: address ? [address] : undefined })
+  const { data: userStaked, refetch: refetchStakes } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'stakes', args: address ? [address] : undefined })
+  const { data: pendingReward, refetch: refetchPending } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'pendingReward', args: address ? [address] : undefined })
   const { data: runway } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPoolRunway' })
 
   // Auto-refresh pending rewards every 15s
   useEffect(() => {
     const interval = setInterval(() => {
-      // Force component re-render for wagmi to refetch
+      refetchPending()
     }, 15000)
     return () => clearInterval(interval)
-  }, [])
+  }, [refetchPending])
 
   // === WRITE ===
   const { writeContract: writeApprove, data: approveHash, isPending: isApprovePending } = useWriteContract()
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash, query: { enabled: !!approveHash } })
 
-  // Refetch allowance after approve confirms
+  // Refetch data after approve confirms
   useEffect(() => { if (isApproveSuccess) refetchAllowance() }, [isApproveSuccess, refetchAllowance])
   const { writeContract: writeStake, data: stakeHash, isPending: isStakePending } = useWriteContract()
+  const { isLoading: isStakeConfirming, isSuccess: isStakeSuccess } = useWaitForTransactionReceipt({ hash: stakeHash, query: { enabled: !!stakeHash } })
+
+  // Refetch all data after stake/claim/unstake confirms
+  useEffect(() => {
+    if (isStakeSuccess || isClaimSuccess || isUnstakeSuccess) {
+      refetchStakes()
+      refetchPending()
+      refetchBalance()
+      refetchTotalStaked()
+      refetchTotalStakers()
+      refetchRewardPool()
+      setStakeAmount('')
+      setUnstakeAmount('')
+    }
+  }, [isStakeSuccess, isClaimSuccess, isUnstakeSuccess])
   const { isLoading: isStakeConfirming, isSuccess: isStakeSuccess } = useWaitForTransactionReceipt({ hash: stakeHash })
   const { writeContract: writeClaim, data: claimHash, isPending: isClaimPending } = useWriteContract()
   const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimHash })
