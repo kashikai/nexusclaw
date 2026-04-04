@@ -1,0 +1,225 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { parseEther, formatEther } from 'viem'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { TOKEN_ADDRESS, STAKING_ADDRESS, TOKEN_ABI, STAKING_ABI, APY_PERCENT, BASESCAN_URL } from '@/config/contracts'
+import { formatToken, formatTokenShort, shortenAddress } from '@/lib/utils'
+
+export default function StakingContent() {
+  const { address, isConnected } = useAccount()
+  const [stakeAmount, setStakeAmount] = useState('')
+  const [unstakeAmount, setUnstakeAmount] = useState('')
+
+  // === READ ===
+  const { data: tokenBalance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined })
+  const { data: allowance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'allowance', args: address ? [address, STAKING_ADDRESS] : undefined })
+  const { data: totalStaked } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStaked' })
+  const { data: totalStakers } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStakers' })
+  const { data: rewardPool } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPool' })
+  const { data: launched } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'launched' })
+  const { data: userStaked } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'stakes', args: address ? [address] : undefined })
+  const { data: pendingReward } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'pendingReward', args: address ? [address] : undefined })
+  const { data: runway } = useReadContract({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'rewardPoolRunway' })
+
+  // === WRITE ===
+  const { writeContract: writeApprove, data: approveHash, isPending: isApprovePending } = useWriteContract()
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash })
+  const { writeContract: writeStake, data: stakeHash, isPending: isStakePending } = useWriteContract()
+  const { isLoading: isStakeConfirming, isSuccess: isStakeSuccess } = useWaitForTransactionReceipt({ hash: stakeHash })
+  const { writeContract: writeClaim, data: claimHash, isPending: isClaimPending } = useWriteContract()
+  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimHash })
+  const { writeContract: writeUnstake, data: unstakeHash, isPending: isUnstakePending } = useWriteContract()
+  const { isLoading: isUnstakeConfirming, isSuccess: isUnstakeSuccess } = useWaitForTransactionReceipt({ hash: unstakeHash })
+
+  const needsApproval = allowance && stakeAmount ? BigInt(allowance) < parseEther(stakeAmount || '0') : true
+  const userStakedAmount = userStaked ? (userStaked as any)[0] as bigint : 0n
+  const userPending = pendingReward as bigint || 0n
+  const effectiveAPY = runway && Number(runway) < 365 ? ((APY_PERCENT * Number(runway)) / 365).toFixed(1) : APY_PERCENT
+  const runwayDays = runway ? (Number(runway) > 1000 ? '999+' : Number(runway).toFixed(0)) : '—'
+  const isBusy = isApprovePending || isApproveConfirming || isStakePending || isStakeConfirming || isClaimPending || isClaimConfirming || isUnstakePending || isUnstakeConfirming
+
+  function handleApprove() { writeApprove({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'approve', args: [STAKING_ADDRESS, parseEther(stakeAmount || '0')] }) }
+  function handleStake() { writeStake({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'stake', args: [parseEther(stakeAmount || '0')] }) }
+  function handleClaim() { writeClaim({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'claimRewards' }) }
+  function handleUnstake() { writeUnstake({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'unstake', args: [parseEther(unstakeAmount || '0')] }) }
+  function setMaxStake() { if (tokenBalance) setStakeAmount(formatEther(tokenBalance)) }
+  function setMaxUnstake() { if (userStaked) setUnstakeAmount(formatEther((userStaked as any)[0])) }
+
+  return (
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+      {/* Top Nav */}
+      <nav className="fixed top-0 w-full z-50 bg-[#070707]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+        <div className="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
+          <Link href="/" className="text-2xl font-black tracking-tighter text-[#e5e2e1] italic font-['Space_Grotesk'] uppercase">NEXUS CLAW</Link>
+          <div className="hidden md:flex items-center gap-10">
+            <Link href="/staking" className="text-[#3A8BFF] border-b-2 border-[#3A8BFF] pb-1 font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold">Staking</Link>
+            <Link href="/analytics" className="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold">Analytics</Link>
+          </div>
+          <ConnectButton.Custom>
+            {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
+              const connected = mounted && account && chain
+              return (
+                <div {...(!mounted && { 'aria-hidden': true, style: { opacity: 0, pointerEvents: 'none', userSelect: 'none' } })}>
+                  {connected ? (
+                    <button onClick={openAccountModal} className="bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest">{account.displayName}</button>
+                  ) : (
+                    <button onClick={openConnectModal} className="bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest">Connect Wallet</button>
+                  )}
+                </div>
+              )
+            }}
+          </ConnectButton.Custom>
+        </div>
+        <div className="bg-gradient-to-r from-transparent via-[#414754]/30 to-transparent h-[1px] w-full" />
+      </nav>
+
+      <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">
+        {/* Header */}
+        <div className="mb-10 mt-8">
+          <h1 className="text-5xl font-['Space_Grotesk'] font-black tracking-tighter text-[#e5e2e1] leading-none mb-2">STAKING TERMINAL</h1>
+          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.3em] text-[#8b919f]">Secure Node Environment // Base Mainnet</p>
+        </div>
+
+        {/* Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <MetricCard label="Total Staked" value={totalStaked ? formatTokenShort(totalStaked as bigint) : '0'} sub="$NEXUSCLAW" color="#abc7ff" icon="token" />
+          <MetricCard label="Your Staked" value={userStakedAmount ? formatTokenShort(userStakedAmount) : '0'} sub="$NEXUSCLAW" color="#abc7ff" icon="account_balance_wallet" />
+          <MetricCard label="Pending Rewards" value={userPending ? formatTokenShort(userPending) : '0'} sub="$NEXUSCLAW" color="#4ddbc9" icon="redeem" />
+          <MetricCard label="APY" value={`${effectiveAPY}%`} sub={`Runway: ${runwayDays}d`} color="#3A8BFF" icon="trending_up" />
+        </div>
+
+        {/* Staking Interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8">
+            <div className="bg-[#1c1b1b] border border-[#414754]/20 p-8 rounded-lg">
+              <h3 className="font-['Space_Grotesk'] text-2xl font-bold text-[#e5e2e1] mb-6 tracking-tight">Stake $NEXUSCLAW</h3>
+
+              {!isConnected ? (
+                <div className="text-center py-16 text-[#8b919f]">
+                  <span className="material-symbols-outlined text-6xl mb-4 block">wallet</span>
+                  <p className="text-xl mb-2">Connect your wallet to start staking</p>
+                  <p className="text-sm text-[#414754]">Base Mainnet — 20% APY rewards</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center font-['JetBrains_Mono'] text-xs text-[#8b919f] uppercase tracking-widest">
+                    <span>Balance: {tokenBalance ? formatToken(tokenBalance as bigint) : '0'} $NEXUSCLAW</span>
+                    <span className={launched ? 'text-[#4ddbc9]' : 'text-[#ffb4ab]'}>{launched ? '● Active' : '● Offline'}</span>
+                  </div>
+
+                  <div>
+                    <label className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] mb-2 block">Amount to stake</label>
+                    <div className="relative">
+                      <input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="0.00"
+                        className="w-full bg-[#201f1f] border border-[#414754]/30 rounded-lg py-5 px-6 text-2xl font-bold text-[#abc7ff] focus:ring-2 focus:ring-[#3A8BFF]/30 focus:outline-none transition-all" />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                        <button onClick={setMaxStake} className="font-['JetBrains_Mono'] text-[10px] px-2 py-1 bg-[#353534] hover:bg-[#414754] rounded transition-colors">MAX</button>
+                        <span className="font-['JetBrains_Mono'] text-sm font-bold text-[#c1c6d6]">$NEXUS</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    {needsApproval ? (
+                      <button onClick={handleApprove} disabled={!stakeAmount || isBusy}
+                        className="flex-1 py-4 bg-[#4ddbc9] text-[#00201c] font-['Space_Grotesk'] font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50">
+                        {isApprovePending || isApproveConfirming ? 'Approving...' : 'Approve'}
+                      </button>
+                    ) : (
+                      <button onClick={handleStake} disabled={!stakeAmount || isBusy}
+                        className="flex-1 py-4 bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] font-['Space_Grotesk'] font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50">
+                        {isStakePending || isStakeConfirming ? 'Staking...' : 'Stake $NEXUS'}
+                      </button>
+                    )}
+                    <button onClick={handleClaim} disabled={userPending === 0n || isBusy}
+                      className="py-4 px-6 bg-[#4ddbc9]/20 text-[#4ddbc9] border border-[#4ddbc9]/30 font-['Space_Grotesk'] font-bold uppercase tracking-widest text-sm rounded-lg hover:bg-[#4ddbc9]/30 active:scale-[0.98] transition-all disabled:opacity-50">
+                      {isClaimPending || isClaimConfirming ? 'Claiming...' : `Claim ${userPending > 0n ? formatTokenShort(userPending) : ''}`}
+                    </button>
+                  </div>
+
+                  {userStakedAmount > 0n && (
+                    <div className="border-t border-[#414754]/20 pt-6">
+                      <label className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] mb-2 block">Amount to unstake</label>
+                      <div className="relative mb-3">
+                        <input type="number" value={unstakeAmount} onChange={(e) => setUnstakeAmount(e.target.value)} placeholder="0.00"
+                          className="w-full bg-[#201f1f] border border-[#414754]/30 rounded-lg py-4 px-6 text-lg font-bold text-[#ffb4ab] focus:ring-2 focus:ring-[#ffb4ab]/30 focus:outline-none transition-all" />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                          <button onClick={setMaxUnstake} className="font-['JetBrains_Mono'] text-[10px] px-2 py-1 bg-[#353534] hover:bg-[#414754] rounded transition-colors">MAX</button>
+                        </div>
+                      </div>
+                      <button onClick={handleUnstake} disabled={!unstakeAmount || isBusy}
+                        className="py-3 px-6 bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/30 font-['Space_Grotesk'] font-bold uppercase tracking-widest text-sm rounded-lg hover:bg-[#ffb4ab]/30 active:scale-[0.98] transition-all disabled:opacity-50">
+                        {isUnstakePending || isUnstakeConfirming ? 'Unstaking...' : 'Unstake'}
+                      </button>
+                    </div>
+                  )}
+
+                  {(isApproveSuccess || isStakeSuccess || isClaimSuccess || isUnstakeSuccess) && (
+                    <div className="bg-[#4ddbc9]/10 border border-[#4ddbc9]/20 p-4 rounded-lg font-['JetBrains_Mono'] text-xs text-[#4ddbc9]">
+                      ✅ Transaction confirmed!
+                      {stakeHash && <p className="mt-1">Stake: <a href={`https://basescan.org/tx/${stakeHash}`} target="_blank" rel="noopener noreferrer" className="underline">{stakeHash.slice(0, 10)}...</a></p>}
+                      {claimHash && <p className="mt-1">Claim: <a href={`https://basescan.org/tx/${claimHash}`} target="_blank" rel="noopener noreferrer" className="underline">{claimHash.slice(0, 10)}...</a></p>}
+                      {unstakeHash && <p className="mt-1">Unstake: <a href={`https://basescan.org/tx/${unstakeHash}`} target="_blank" rel="noopener noreferrer" className="underline">{unstakeHash.slice(0, 10)}...</a></p>}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Sidebar */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="bg-[#1c1b1b] border border-[#414754]/20 p-6 rounded-lg">
+              <h4 className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] tracking-widest mb-4">Protocol Stats</h4>
+              <div className="space-y-4">
+                <StatRow label="Total Stakers" value={totalStakers?.toString() || '0'} />
+                <StatRow label="Total Staked" value={totalStaked ? formatTokenShort(totalStaked as bigint) : '0'} />
+                <StatRow label="Reward Pool" value={rewardPool ? formatTokenShort(rewardPool as bigint) : '0'} />
+                <StatRow label="APY" value={`${effectiveAPY}%`} />
+                <StatRow label="Runway" value={`${runwayDays} days`} />
+                <StatRow label="Status" value={launched ? 'Active' : 'Inactive'} />
+              </div>
+            </div>
+            <div className="bg-[#1c1b1b] border border-[#414754]/20 p-6 rounded-lg">
+              <h4 className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] tracking-widest mb-4">Your Position</h4>
+              <div className="space-y-4">
+                <StatRow label="Staked" value={userStakedAmount ? formatTokenShort(userStakedAmount) : '0'} />
+                <StatRow label="Pending Rewards" value={userPending ? formatTokenShort(userPending) : '0'} />
+                <StatRow label="APY" value={`${effectiveAPY}%`} />
+              </div>
+            </div>
+            <a href={`${BASESCAN_URL}/address/${STAKING_ADDRESS}`} target="_blank" rel="noopener noreferrer"
+              className="block text-center py-3 bg-[#201f1f] border border-[#414754]/20 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-[#abc7ff] hover:bg-[#353534] rounded-lg transition-all">
+              View on Basescan →
+            </a>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function MetricCard({ label, value, sub, color, icon }: { label: string; value: string; sub: string; color: string; icon: string }) {
+  return (
+    <div className="bg-[#1c1b1b] p-5 rounded-lg border-l-4" style={{ borderLeftColor: color }}>
+      <div className="flex items-start justify-between mb-4">
+        <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] tracking-widest uppercase">{label}</span>
+        <span className="material-symbols-outlined text-lg opacity-60" style={{ color }}>{icon}</span>
+      </div>
+      <h3 className="font-['Space_Grotesk'] text-3xl font-bold tracking-tight" style={{ color }}>{value}</h3>
+      <p className="font-['JetBrains_Mono'] text-xs opacity-60 mt-1 text-[#8b919f]">{sub}</p>
+    </div>
+  )
+}
+
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase">{label}</span>
+      <span className="font-['Space_Grotesk'] font-bold text-sm text-[#e5e2e1]">{value}</span>
+    </div>
+  )
+}

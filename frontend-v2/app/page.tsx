@@ -2,10 +2,7 @@
 
 import dynamic from 'next/dynamic'
 
-const HomeContent = dynamic(
-  () => import('./HomeContent'),
-  { ssr: false }
-)
+const HomeContent = dynamic(() => import('./HomeContent'), { ssr: false })
 
 export default function HomePage() {
   return <HomeContent />

@@ -5,9 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { config } from '@/config/wagmi'
-import { Sidebar } from '@/components/layout/Sidebar'
-import { TopBar } from '@/components/layout/TopBar'
-import { Footer } from '@/components/layout/Footer'
 
 const queryClient = new QueryClient()
 
@@ -18,19 +15,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <RainbowKitProvider
           theme={darkTheme({
             accentColor: '#abc7ff',
-            accentColorForeground: '#131313',
+            accentColorForeground: '#00285a',
             borderRadius: 'small',
             fontStack: 'system',
           })}
         >
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <div className="flex-1 ml-64 flex flex-col">
-              <TopBar />
-              <main className="flex-1 pt-20 pb-20 px-8">{children}</main>
-              <Footer />
-            </div>
-          </div>
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
