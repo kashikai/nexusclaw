@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { parseEther, formatEther } from 'viem'
+import { parseEther } from 'viem'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { TOKEN_ADDRESS, STAKING_ADDRESS, TOKEN_ABI, STAKING_ABI, APY_PERCENT, BASESCAN_URL } from '@/config/contracts'
 import { formatToken, formatTokenShort, shortenAddress } from '@/lib/utils'
@@ -45,8 +45,8 @@ export default function StakingContent() {
   function handleStake() { writeStake({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'stake', args: [parseEther(stakeAmount || '0')] }) }
   function handleClaim() { writeClaim({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'claimRewards' }) }
   function handleUnstake() { writeUnstake({ address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'unstake', args: [parseEther(unstakeAmount || '0')] }) }
-  function setMaxStake() { if (tokenBalance) setStakeAmount(formatEther(tokenBalance)) }
-  function setMaxUnstake() { if (userStaked) setUnstakeAmount(formatEther((userStaked as any)[0])) }
+  function setMaxStake() { if (tokenBalance) setStakeAmount(formatToken(tokenBalance)) }
+  function setMaxUnstake() { if (userStaked) setUnstakeAmount(formatToken((userStaked as any)[0])) }
 
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
