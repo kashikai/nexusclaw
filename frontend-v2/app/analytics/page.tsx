@@ -2,10 +2,7 @@
 
 import dynamic from 'next/dynamic'
 
-const AnalyticsContent = dynamic(
-  () => import('./AnalyticsContent'),
-  { ssr: false }
-)
+const AnalyticsContent = dynamic(() => import('./AnalyticsContent'), { ssr: false })
 
 export default function AnalyticsPage() {
   return <AnalyticsContent />
