@@ -117,7 +117,7 @@ export default function StakingContent() {
                         className="w-full bg-[#201f1f] border border-[#414754]/30 rounded-lg py-5 px-6 text-2xl font-bold text-[#abc7ff] focus:ring-2 focus:ring-[#3A8BFF]/30 focus:outline-none transition-all" />
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
                         <button onClick={setMaxStake} className="font-['JetBrains_Mono'] text-[10px] px-2 py-1 bg-[#353534] hover:bg-[#414754] rounded transition-colors">MAX</button>
-                        <span className="font-['JetBrains_Mono'] text-sm font-bold text-[#c1c6d6]">$NEXUS</span>
+                        <span className="font-['JetBrains_Mono'] text-sm font-bold text-[#c1c6d6]">$NEXUSCLAW</span>
                       </div>
                     </div>
                   </div>
@@ -131,7 +131,7 @@ export default function StakingContent() {
                     ) : (
                       <button onClick={handleStake} disabled={!stakeAmount || isBusy}
                         className="flex-1 py-4 bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] font-['Space_Grotesk'] font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50">
-                        {isStakePending || isStakeConfirming ? 'Staking...' : 'Stake $NEXUS'}
+                        {isStakePending || isStakeConfirming ? 'Staking...' : 'Stake $NEXUSCLAW'}
                       </button>
                     )}
                     <button onClick={handleClaim} disabled={userPending === 0n || isBusy}

@@ -57,7 +57,11 @@ export default function HomeContent() {
           <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(58, 139, 255, 0.15) 0%, transparent 70%)' }} />
           {/* Lobster Watermark */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
-            <span className="material-symbols-outlined text-[600px] text-white">deployed_code</span>
+            <img
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7gI3q19CF0q6f4SFhhodsd9ZEV4zvIl-dAbG2LlajH1CSSTQxkSS_pvOTh3oaZer0SEnv5A6ipLwI94zGcVhiaFhpWKGJkzeKnWsFjhiLu3MwUKhzAyFY-q6sGLXst28gvTVZvbJI1qAMPO6eBqHMtnk-rzFJj7r1VVL2Vu-FxWjP6VdXBZ6VqsTe5mDp1pEevs_e6dIzzaTPc8EU_ZV6yv0EJkuDKZ2K6vj5Ae1GCIFr7D9zFf3zrBABwqip7zG0yo7zl9VWxi_h"
+              alt="NexusClaw Lobster"
+              className="w-[500px] h-[500px] object-contain"
+            />
           </div>
           <div className="relative z-10 max-w-5xl text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#353534] rounded-full mb-8 border border-[#414754]/20">
