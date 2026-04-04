@@ -23,6 +23,9 @@ export default function HomeContent() {
             <Link href="/analytics" className="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold">
               Stats
             </Link>
+            <Link href="/governance" className="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold">
+              Governance
+            </Link>
             <a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold">
               Docs
             </a>
