@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NEXUS CLAW | The Future of Staking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "secondary-fixed-dim": "#4ddbc9",
+                "surface-container-highest": "#353534",
+                "on-error": "#690005",
+                "on-surface": "#e5e2e1",
+                "on-primary-container": "#00285a",
+                "surface-tint": "#abc7ff",
+                "on-primary": "#002f66",
+                "inverse-surface": "#e5e2e1",
+                "on-surface-variant": "#c1c6d6",
+                "on-primary-fixed-variant": "#004590",
+                "outline-variant": "#414754",
+                "primary-fixed-dim": "#abc7ff",
+                "primary-container": "#448fff",
+                "background": "#131313",
+                "on-tertiary-fixed-variant": "#92001c",
+                "surface-container-low": "#1c1b1b",
+                "surface-container": "#201f1f",
+                "tertiary-container": "#ff535b",
+                "tertiary": "#ffb3b1",
+                "surface-container-lowest": "#0e0e0e",
+                "inverse-on-surface": "#313030",
+                "on-secondary": "#003731",
+                "secondary-fixed": "#6ef8e5",
+                "on-error-container": "#ffdad6",
+                "on-primary-fixed": "#001b3f",
+                "surface": "#131313",
+                "inverse-primary": "#005cbc",
+                "on-secondary-fixed-variant": "#005048",
+                "on-tertiary": "#680011",
+                "tertiary-fixed": "#ffdad8",
+                "secondary-container": "#04b7a5",
+                "surface-container-high": "#2a2a2a",
+                "on-tertiary-container": "#5b000e",
+                "primary-fixed": "#d7e2ff",
+                "secondary": "#4ddbc9",
+                "surface-variant": "#353534",
+                "surface-dim": "#131313",
+                "error": "#ffb4ab",
+                "on-secondary-fixed": "#00201c",
+                "on-secondary-container": "#00413a",
+                "on-background": "#e5e2e1",
+                "error-container": "#93000a",
+                "surface-bright": "#3a3939",
+                "primary": "#abc7ff",
+                "outline": "#8b919f",
+                "tertiary-fixed-dim": "#ffb3b1",
+                "on-tertiary-fixed": "#410007"
+              },
+              fontFamily: {
+                "headline": ["Space Grotesk"],
+                "body": ["Inter"],
+                "label": ["Space Grotesk"],
+                "mono": ["JetBrains Mono"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(28, 27, 27, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 50%, rgba(58, 139, 255, 0.15) 0%, transparent 70%);
+        }
+        .glow-border:hover {
+            box-shadow: 0 0 20px rgba(58, 139, 255, 0.3);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #070707; }
+        ::-webkit-scrollbar-thumb { background: #414754; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #abc7ff; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-[#070707]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-3">
+<span class="text-2xl font-black tracking-tighter text-[#e5e2e1] italic font-headline uppercase">NEXUS CLAW</span>
+</div>
+<div class="hidden md:flex items-center gap-10">
+<a class="text-[#3A8BFF] border-b-2 border-[#3A8BFF] pb-1 font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold" href="#">Staking</a>
+<a class="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold" href="#">Tokenomics</a>
+<a class="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold" href="#">Stats</a>
+<a class="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold" href="#">Docs</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors cursor-pointer" data-icon="terminal">terminal</button>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary-container px-6 py-2 rounded-sm font-headline font-bold text-xs uppercase tracking-widest scale-95 active:scale-90 transition-transform">
+                    Connect Wallet
+                </button>
+</div>
+</div>
+<div class="bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent h-[1px] w-full"></div>
+</nav>
+<main class="pt-24">
+<!-- Section 1: Hero Area -->
+<section class="relative min-h-[870px] flex items-center justify-center px-6 overflow-hidden">
+<div class="absolute inset-0 hero-gradient"></div>
+<!-- Subtle Lobster Watermark -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
+<img alt="" class="w-[600px] h-[600px]" data-alt="minimalist geometric lobster icon, white line art on black background, futuristic tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMQWMF6iIc5tTj8IifDl9LGklpcNZaDWb70IM-Ip2YsY0ynopYvutYBIlCe8KEhTGMCTrQx2TNBB9-urMiMcn7BpMLgeYaFXJvu0p0fO2_Yt3Yl_yXFioQOwpa7iripK_MLRYjPjGnwBZuEjAgefdimu0lnM-kXQVSBQ6EmLsFQv_5LMbgXyrcs6RjPGKH3bSlF-xKwpxGhzKf9UDuM5G9wiss1jwTdAawcQWG4q9CZfBSp80m-02q_u0czVRjBrFyw-8InGthQMCJ"/>
+</div>
+<div class="relative z-10 max-w-5xl text-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-high rounded-full mb-8 border border-outline-variant/20">
+<span class="flex h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-[10px] font-mono tracking-[0.2em] text-secondary uppercase">Network Status: Online</span>
+</div>
+<h1 class="text-6xl md:text-8xl font-black font-headline tracking-tighter uppercase leading-[0.9] mb-6">
+                    Stake <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-container to-secondary">$NEXUSCLAW</span>
+</h1>
+<p class="text-on-surface-variant max-w-2xl mx-auto text-lg mb-12 font-light leading-relaxed">
+                    Unleash the power of the deep. Access institutional-grade staking yields and deflationary mechanics on the most secure terminal in the ecosystem.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="px-10 py-5 bg-gradient-to-br from-primary to-primary-container text-on-primary-container font-headline font-bold uppercase tracking-wider rounded-sm shadow-xl hover:shadow-primary/20 transition-all">
+                        Launch Staking App
+                    </button>
+<button class="px-10 py-5 bg-surface-container-low border border-outline-variant/30 text-on-surface font-headline font-bold uppercase tracking-wider rounded-sm hover:bg-surface-container transition-all">
+                        View Analytics
+                    </button>
+</div>
+</div>
+<!-- Scroll Indicator -->
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
+<span class="text-[10px] font-mono tracking-widest uppercase">System Scroll</span>
+<div class="w-[1px] h-12 bg-gradient-to-b from-primary to-transparent"></div>
+</div>
+</section>
+<!-- Section 2: Key Stats Grid -->
+<section class="py-24 px-8 max-w-[1440px] mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Stat Card 1 -->
+<div class="bg-surface-container-low p-8 rounded-lg border-l-4 border-primary group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="trending_up">trending_up</span>
+<span class="text-[10px] font-mono text-outline uppercase tracking-tighter">Live Yield</span>
+</div>
+<div class="space-y-1">
+<h3 class="text-4xl font-headline font-black text-on-surface">20% APY</h3>
+<p class="text-on-surface-variant text-sm">Dynamic rewards distributed every 3 seconds to active stakers.</p>
+</div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-container-low p-8 rounded-lg border-l-4 border-secondary group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined text-secondary text-3xl" data-icon="local_fire_department">local_fire_department</span>
+<span class="text-[10px] font-mono text-outline uppercase tracking-tighter">Token Burn</span>
+</div>
+<div class="space-y-1">
+<h3 class="text-4xl font-headline font-black text-on-surface">1% Fee</h3>
+<p class="text-on-surface-variant text-sm">Every transaction contributes to manual buybacks and permanent burns.</p>
+</div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-container-low p-8 rounded-lg border-l-4 border-tertiary group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined text-tertiary text-3xl" data-icon="database">database</span>
+<span class="text-[10px] font-mono text-outline uppercase tracking-tighter">Circulation</span>
+</div>
+<div class="space-y-1">
+<h3 class="text-4xl font-headline font-black text-on-surface">100B Supply</h3>
+<p class="text-on-surface-variant text-sm">Fixed cap architecture ensuring long-term scarcity and protocol value.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Connect Wallet / Interactive Section -->
+<section class="py-24 px-8">
+<div class="max-w-4xl mx-auto relative group">
+<!-- Background Glow -->
+<div class="absolute -inset-1 bg-gradient-to-r from-primary/20 via-secondary/20 to-primary/20 rounded-xl blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+<div class="relative glass-panel rounded-xl border border-outline-variant/20 p-12 overflow-hidden">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+<div>
+<h2 class="text-3xl font-headline font-bold mb-4 uppercase tracking-tight">Access Terminal</h2>
+<p class="text-on-surface-variant mb-8 text-sm leading-relaxed">
+                                Connect your decentralized wallet to view your $NEXUSCLAW balance, projected earnings, and governance weight. 
+                            </p>
+<ul class="space-y-4 mb-8">
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="verified_user">verified_user</span>
+                                    Encrypted P2P Connection
+                                </li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="security">security</span>
+                                    Zero-Knowledge Auth
+                                </li>
+</ul>
+<button class="w-full py-4 bg-primary text-on-primary font-headline font-black uppercase tracking-widest rounded-sm hover:brightness-110 transition-all">
+                                Initialize Connection
+                            </button>
+</div>
+<div class="bg-surface-container-lowest/50 rounded-lg p-6 border border-outline-variant/10 aspect-square flex flex-col items-center justify-center text-center">
+<img alt="" class="w-48 h-48 mb-6 opacity-80" data-alt="futuristic QR code with glowing neon blue lines on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBknO54XVKwznAY7Gen11B7EUI6Jj3eCbaoE3fIr_IMdRUdck6nBt54RqrllIUgy6nrFc0jbTEF7Yx1xUSE6uDp3UcOQzz-y4_6MDp-tUUZHW-gRwCHHExYYv-A9qmXZYAelVmIh372QC-5SK9y9RlfM07P839uf_xE51ldFFam0GoCnTKzCkNhG4a63ew46r0Q6HvzIpH58KWbXndnTBb_0Fi33zaaw3KgQrRHHwTJfCNlSY2BkfNhGFwrDDJ9_oKwXUOLTwKEfM0b"/>
+<span class="font-mono text-[10px] tracking-widest text-outline uppercase">Scan to connect mobile</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Detailed Contract Stats -->
+<section class="py-24 bg-surface-container-low/30">
+<div class="max-w-[1440px] mx-auto px-8">
+<div class="mb-16">
+<h2 class="text-4xl font-headline font-black uppercase tracking-tighter mb-2">Protocol Architecture</h2>
+<div class="h-1 w-24 bg-primary"></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left: Fee Breakdown -->
+<div class="lg:col-span-7 space-y-12">
+<div class="space-y-6">
+<h3 class="text-xs font-mono uppercase tracking-[0.3em] text-secondary">Fee Distribution Breakdown</h3>
+<div class="space-y-4">
+<!-- Bar 1 -->
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-mono uppercase">
+<span class="text-on-surface">Yield Rewards</span>
+<span class="text-secondary">40%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[40%]"></div>
+</div>
+</div>
+<!-- Bar 2 -->
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-mono uppercase">
+<span class="text-on-surface">Ecosystem Growth</span>
+<span class="text-primary">35%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[35%]"></div>
+</div>
+</div>
+<!-- Bar 3 -->
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-mono uppercase">
+<span class="text-on-surface">Burn Protocol</span>
+<span class="text-tertiary">25%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[25%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container p-6 rounded border border-outline-variant/10">
+<span class="text-[10px] font-mono text-outline block mb-2 uppercase">Total Value Locked</span>
+<span class="text-2xl font-headline font-bold text-on-surface">$142,504,221.00</span>
+</div>
+<div class="bg-surface-container p-6 rounded border border-outline-variant/10">
+<span class="text-[10px] font-mono text-outline block mb-2 uppercase">Total Wallets</span>
+<span class="text-2xl font-headline font-bold text-on-surface">12,492 Users</span>
+</div>
+</div>
+</div>
+<!-- Right: Security & Audit -->
+<div class="lg:col-span-5">
+<div class="bg-surface-container-high p-8 rounded-lg border border-outline-variant/20">
+<div class="flex items-center gap-4 mb-8">
+<div class="p-3 bg-secondary/10 rounded">
+<span class="material-symbols-outlined text-secondary" data-icon="security" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div>
+<h4 class="font-headline font-bold uppercase">Security Audit</h4>
+<p class="text-xs text-on-surface-variant font-mono">v1.2.0-certified</p>
+</div>
+</div>
+<p class="text-sm text-on-surface-variant mb-8 leading-relaxed">
+                                Our smart contracts have undergone rigorous stress testing and multi-layer audits by leading cybersecurity firms. Locked liquidity and renounced ownership ensure protocol integrity.
+                            </p>
+<div class="space-y-3">
+<a class="flex items-center justify-between p-4 bg-background/50 rounded hover:bg-background transition-colors border border-outline-variant/5" href="#">
+<span class="text-xs font-headline font-bold uppercase">TechRate Certificate</span>
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+<a class="flex items-center justify-between p-4 bg-background/50 rounded hover:bg-background transition-colors border border-outline-variant/5" href="#">
+<span class="text-xs font-headline font-bold uppercase">CertiK Skynet Report</span>
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+<a class="flex items-center justify-between p-4 bg-background/50 rounded hover:bg-background transition-colors border border-outline-variant/5" href="#">
+<span class="text-xs font-headline font-bold uppercase">Contract Source (Verified)</span>
+<span class="material-symbols-outlined text-sm" data-icon="code">code</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#070707] border-t border-[#414754]/10">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 py-8 w-full max-w-[1440px] mx-auto">
+<div class="mb-6 md:mb-0">
+<p class="font-['SF_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f]">
+                    © 2024 NEXUS CLAW PROTOCOL. ALL RIGHTS RESERVED.
+                </p>
+</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="font-['SF_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] underline-offset-4 transition-all opacity-80 hover:opacity-100" href="#">Security Audit</a>
+<a class="font-['SF_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] underline-offset-4 transition-all opacity-80 hover:opacity-100" href="#">Whitepaper</a>
+<a class="font-['SF_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] underline-offset-4 transition-all opacity-80 hover:opacity-100" href="#">Terms of Power</a>
+<a class="font-['SF_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] underline-offset-4 transition-all opacity-80 hover:opacity-100" href="#">Privacy</a>
+</div>
+</div>
+</footer>
+</body></html>

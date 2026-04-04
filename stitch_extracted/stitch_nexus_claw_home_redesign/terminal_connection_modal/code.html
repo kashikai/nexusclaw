@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#7df4ff",
+                        "inverse-on-surface": "#313030",
+                        "surface-container-high": "#2a2a2a",
+                        "on-error": "#690005",
+                        "on-primary-container": "#00285a",
+                        "tertiary-fixed-dim": "#f6adff",
+                        "secondary": "#d3fbff",
+                        "on-secondary-fixed-variant": "#004f54",
+                        "surface-variant": "#353534",
+                        "surface-dim": "#131313",
+                        "on-tertiary-fixed-variant": "#7a0092",
+                        "primary": "#abc7ff",
+                        "on-primary": "#002f66",
+                        "primary-fixed-dim": "#abc7ff",
+                        "primary-container": "#448fff",
+                        "outline": "#8b919f",
+                        "on-primary-fixed": "#001b3f",
+                        "on-tertiary-fixed": "#350041",
+                        "error": "#ffb4ab",
+                        "surface-container": "#201f1f",
+                        "on-secondary": "#00363a",
+                        "surface-container-low": "#1c1b1b",
+                        "surface": "#131313",
+                        "surface-container-highest": "#353534",
+                        "background": "#131313",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-tertiary": "#560068",
+                        "tertiary-fixed": "#fed6ff",
+                        "on-secondary-fixed": "#002022",
+                        "on-surface": "#e5e2e1",
+                        "inverse-primary": "#005cbc",
+                        "primary-fixed": "#d7e2ff",
+                        "on-primary-fixed-variant": "#004590",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary-container": "#4b005b",
+                        "on-surface-variant": "#c1c6d6",
+                        "outline-variant": "#414754",
+                        "tertiary": "#f6adff",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#e04cff",
+                        "surface-tint": "#abc7ff",
+                        "on-secondary-container": "#00686f",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-fixed-dim": "#00dbe9",
+                        "secondary-container": "#00eefc",
+                        "on-background": "#e5e2e1",
+                        "error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Space Grotesk"],
+                        "label": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #131313; font-family: 'Space Grotesk', sans-serif; overflow: hidden; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .obsidian-glow { box-shadow: 0 0 40px rgba(171, 199, 255, 0.05); }
+        .neon-accent { filter: drop-shadow(0 0 8px #00eefc); }
+        .mask-gradient { mask-image: linear-gradient(to bottom, black 50%, transparent 100%); }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Background Canvas (Blurred Home Screen) -->
+<div class="fixed inset-0 z-0 overflow-hidden">
+<div class="absolute inset-0 bg-surface opacity-90"></div>
+<!-- Decorative Home Screen Content -->
+<div class="relative w-full h-full p-12 blur-md opacity-40">
+<div class="flex justify-between items-start mb-24">
+<div class="w-64 h-8 bg-surface-container-high"></div>
+<div class="flex gap-8">
+<div class="w-24 h-4 bg-surface-container-high"></div>
+<div class="w-24 h-4 bg-surface-container-high"></div>
+<div class="w-24 h-4 bg-surface-container-high"></div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-8">
+<div class="col-span-2 h-[500px] bg-surface-container-low border border-outline-variant/20"></div>
+<div class="h-[500px] bg-surface-container-high border border-outline-variant/20"></div>
+</div>
+</div>
+<!-- Bioluminescent lobster-inspired texture layer -->
+<div class="absolute inset-0 opacity-10 pointer-events-none mix-blend-screen" data-alt="close-up of iridescent bioluminescent deep sea organism with glowing cyan filaments and deep obsidian textures">
+<img alt="background texture" class="w-full h-full object-cover grayscale contrast-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBl7xO4NZKW-tK5xob0o2thV9LdYb3nUyfKYW5L6AgVqsqyHCBXrsMYgY0bDipSWploKa0Qn48qO8j9fMgHBSyk622iTGT4pvJNikqYvuCmGF9ly_8haiUhiC4EXpZI3N4WF9ycoZywkpN0dWNVJ172s2g5u0x_jNp4K8WNKV3JEmS3jvtrqLT1d60ElBijtZJPGaymP15MiVj0YV1ZVq9LgGheUXgzCpCoWOdxCcu7pFdGfWIArvWy6HzbJGRAMzFIEqxpcngEFCei"/>
+</div>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+<!-- Modal Container -->
+<div class="relative w-full max-w-lg bg-surface border border-outline-variant/30 obsidian-glow">
+<!-- Header Accent Line -->
+<div class="h-1 w-full bg-gradient-to-r from-primary via-secondary-container to-primary"></div>
+<div class="p-8 md:p-12">
+<!-- Branding Header -->
+<div class="mb-10 flex items-center justify-between">
+<div>
+<h2 class="text-3xl font-black tracking-tighter leading-tight text-primary uppercase">
+                            ESTABLISH TERMINAL CONNECTION
+                        </h2>
+<p class="font-mono text-[10px] tracking-[0.2em] text-on-surface-variant uppercase mt-1">
+                            Auth Protocol: V3.1 // Obsidian_DeFi
+                        </p>
+</div>
+<div class="h-10 w-10 border border-outline-variant/30 flex items-center justify-center text-primary group hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-sm">close</span>
+</div>
+</div>
+<!-- Wallet Provider List -->
+<div class="space-y-3">
+<!-- MetaMask -->
+<button class="w-full group flex items-center justify-between p-5 bg-surface-container-high border border-transparent hover:border-primary/50 transition-all active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-secondary-container" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<div class="text-left">
+<p class="font-bold text-sm tracking-tight text-on-surface">MetaMask</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-mono">Internal Browser Extension</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/20 group-hover:text-primary transition-colors">arrow_forward_ios</span>
+</button>
+<!-- Coinbase -->
+<button class="w-full group flex items-center justify-between p-5 bg-surface-container-high border border-transparent hover:border-primary/50 transition-all active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary-container" data-icon="security">security</span>
+</div>
+<div class="text-left">
+<p class="font-bold text-sm tracking-tight text-on-surface">Coinbase Wallet</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-mono">Secured Custodial Link</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/20 group-hover:text-primary transition-colors">arrow_forward_ios</span>
+</button>
+<!-- WalletConnect -->
+<button class="w-full group flex items-center justify-between p-5 bg-surface-container-high border border-transparent hover:border-primary/50 transition-all active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary-container" data-icon="hub">hub</span>
+</div>
+<div class="text-left">
+<p class="font-bold text-sm tracking-tight text-on-surface">WalletConnect</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-mono">Universal Protocol Bridge</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/20 group-hover:text-primary transition-colors">arrow_forward_ios</span>
+</button>
+<!-- Rainbow -->
+<button class="w-full group flex items-center justify-between p-5 bg-surface-container-high border border-transparent hover:border-primary/50 transition-all active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 bg-surface-container-lowest border border-outline-variant/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary-container" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div class="text-left">
+<p class="font-bold text-sm tracking-tight text-on-surface">Rainbow</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-mono">Optimized Mobile Interface</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/20 group-hover:text-primary transition-colors">arrow_forward_ios</span>
+</button>
+</div>
+<!-- Terms Acceptance -->
+<div class="mt-10 pt-8 border-t border-outline-variant/20">
+<label class="flex items-start gap-4 cursor-pointer group">
+<div class="relative flex items-center h-5">
+<input class="peer h-5 w-5 bg-surface-container-lowest border-outline-variant/40 text-primary focus:ring-0 focus:ring-offset-0 transition-colors" type="checkbox"/>
+<div class="absolute inset-0 bg-primary opacity-0 peer-checked:opacity-20 transition-opacity"></div>
+</div>
+<div class="flex-1">
+<p class="text-[11px] leading-relaxed text-on-surface-variant uppercase tracking-wider font-mono">
+                                I confirm that I have read and accept the <a class="text-primary hover:underline decoration-primary/50 underline-offset-4" href="#">Terms of Service</a> and <a class="text-primary hover:underline decoration-primary/50 underline-offset-4" href="#">Privacy Protocol</a>.
+                            </p>
+</div>
+</label>
+</div>
+<!-- Connection Status -->
+<div class="mt-8 flex items-center gap-3">
+<div class="flex gap-1">
+<div class="h-1 w-4 bg-secondary-container animate-pulse"></div>
+<div class="h-1 w-4 bg-secondary-container/30"></div>
+<div class="h-1 w-4 bg-secondary-container/30"></div>
+</div>
+<span class="font-mono text-[9px] text-secondary-container tracking-widest uppercase">Awaiting handshake...</span>
+</div>
+</div>
+<!-- Footer Decorative Details -->
+<div class="absolute -bottom-1 left-0 right-0 flex justify-between px-2">
+<div class="h-1 w-12 bg-primary/40"></div>
+<div class="h-1 w-12 bg-primary/40"></div>
+</div>
+</div>
+<!-- Background Decorative Element: Grid Overlay -->
+<div class="absolute inset-0 pointer-events-none opacity-20" style="background-image: linear-gradient(#414754 1px, transparent 1px), linear-gradient(90deg, #414754 1px, transparent 1px); background-size: 40px 40px;"></div>
+</div>
+<!-- Hidden Navigation Shell Logic (Suppressed per task context: Modal Focus) -->
+<!-- The TopNavBar and SideNavBar are omitted to maintain focus on the Connect Wallet journey as per the "Task-Focused" rule. -->
+</body></html>

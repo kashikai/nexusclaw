@@ -1,0 +1,29 @@
+# Arquitetura de Integração: Nexus Claw (Design -> Live)
+
+Para tirar o projeto do papel e conectá-lo à rede (Ethereum/Base/etc), você deve seguir esta estrutura:
+
+## 1. Stack Recomendada
+- **Framework:** Next.js (já que você usa Vercel).
+- **Estilização:** Tailwind CSS (o código que eu gerei usa Tailwind).
+- **Web3 SDK:** [wagmi](https://wagmi.sh) + [viem](https://viem.sh).
+- **Interface de Carteira:** [RainbowKit](https://www.rainbowkit.com) (combina perfeitamente com o visual Obsidian).
+
+## 2. Conectando Dados Reais (Fetching)
+Para substituir os números estáticos do design por dados da blockchain:
+- **Preços e Market Cap:** Use a API gratuita do **CoinGecko** ou **Pyth Network**.
+- **TVL e Saldos:** Use o hook `useReadContract` do wagmi. Você precisará do endereço do Smart Contract e da ABI (disponível no seu GitHub).
+- **Exemplo:** No Dashboard de Staking, o valor "14,250.00 $NEXUS" virá de uma chamada ao contrato de staking buscando o `balanceOf(userAddress)`.
+
+## 3. Tornando os Botões Funcionais (Transações)
+Para o botão "STAKE $NEXUS":
+1. **Approval:** O usuário primeiro precisa aprovar o contrato para gastar o token (`approve`).
+2. **Deposit:** Após a aprovação, chame a função `deposit` ou `stake` do seu contrato usando `useWriteContract`.
+3. **Feedback:** Mostre um modal de "Processando Transação" (vou desenhar isso a seguir).
+
+## 4. Deploy Contínuo (Vercel)
+Como seu projeto já está em `nexusclaw.vercel.app`:
+- Conecte o repositório do GitHub à Vercel.
+- Cada `git push` com o novo código Tailwind que você exportar daqui atualizará o site automaticamente.
+
+---
+**Próximo passo:** Exportar o HTML clicando em **"</> View Code"** em cada tela.

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NEXUS CLAW // TOKENOMICS TERMINAL</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #131313;
+            color: #e5e2e1;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glow-sm {
+            text-shadow: 0 0 10px rgba(171, 199, 255, 0.5);
+        }
+        .glow-cyan {
+            text-shadow: 0 0 15px rgba(0, 238, 252, 0.6);
+        }
+        .bg-grid-subtle {
+            background-image: radial-gradient(circle, #abc7ff10 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .gradient-border {
+            position: relative;
+        }
+        .gradient-border::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00eefc, transparent);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed": "#d7e2ff",
+                        "tertiary-fixed-dim": "#f6adff",
+                        "on-tertiary-fixed": "#350041",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-highest": "#353534",
+                        "secondary-container": "#00eefc",
+                        "outline": "#8b919f",
+                        "on-primary-fixed-variant": "#004590",
+                        "background": "#131313",
+                        "tertiary-container": "#e04cff",
+                        "tertiary-fixed": "#fed6ff",
+                        "on-error": "#690005",
+                        "on-surface": "#e5e2e1",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed-dim": "#abc7ff",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary": "#00363a",
+                        "inverse-surface": "#e5e2e1",
+                        "primary": "#abc7ff",
+                        "on-tertiary-fixed-variant": "#7a0092",
+                        "secondary-fixed": "#7df4ff",
+                        "surface-container": "#201f1f",
+                        "surface-dim": "#131313",
+                        "primary-container": "#448fff",
+                        "on-secondary-container": "#00686f",
+                        "surface-tint": "#abc7ff",
+                        "on-secondary-fixed-variant": "#004f54",
+                        "on-surface-variant": "#c1c6d6",
+                        "outline-variant": "#414754",
+                        "inverse-primary": "#005cbc",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-tertiary-container": "#4b005b",
+                        "on-primary-container": "#00285a",
+                        "on-secondary-fixed": "#002022",
+                        "inverse-on-surface": "#313030",
+                        "surface": "#131313",
+                        "surface-container-high": "#2a2a2a",
+                        "error-container": "#93000a",
+                        "on-background": "#e5e2e1",
+                        "surface-variant": "#353534",
+                        "on-primary": "#002f66",
+                        "tertiary": "#f6adff",
+                        "secondary": "#d3fbff",
+                        "on-tertiary": "#560068",
+                        "on-primary-fixed": "#001b3f",
+                        "secondary-fixed-dim": "#00dbe9"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Space Grotesk"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-primary/15 bg-[#131313]/80 backdrop-blur-xl flex flex-col py-8 px-4 z-50">
+<div class="mb-12 px-2">
+<h1 class="text-xl font-black text-primary tracking-widest uppercase font-headline">NEXUS CLAW</h1>
+<p class="text-[10px] text-slate-500 tracking-[0.3em] font-mono mt-1">WEB3 TERMINAL</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-primary transition-colors transition-all duration-300 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span class="font-headline tracking-tighter uppercase text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-primary transition-colors transition-all duration-300 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-headline tracking-tighter uppercase text-sm">Staking</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#00eefc] bg-[#2a2a2a] border-r-2 border-[#00eefc] transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="water_drop">water_drop</span>
+<span class="font-headline tracking-tighter uppercase text-sm">Liquidity</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-primary transition-colors transition-all duration-300 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="shortcut">shortcut</span>
+<span class="font-headline tracking-tighter uppercase text-sm">Bridge</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-primary transition-colors transition-all duration-300 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="gavel">gavel</span>
+<span class="font-headline tracking-tighter uppercase text-sm">Governance</span>
+</a>
+</nav>
+<div class="mt-auto px-2">
+<button class="w-full py-4 bg-primary-container text-on-primary-container font-headline font-bold text-xs tracking-widest uppercase hover:shadow-[0_0_20px_rgba(68,143,255,0.4)] transition-all active:scale-95">
+                CONNECT WALLET
+            </button>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-[#131313]/50 backdrop-blur-lg border-b border-primary/15 flex justify-between items-center px-8 z-40 ml-64">
+<div class="flex items-center gap-8 font-mono text-[10px] tracking-widest text-slate-400">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+<span class="text-secondary-container">LIVE_PRICE: $1.42</span>
+</div>
+<span>MCAP: $2.4B</span>
+<span>VOL: $120M</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-slate-400">
+<span class="material-symbols-outlined cursor-pointer hover:text-secondary-container transition-all" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-secondary-container transition-all" data-icon="settings">settings</span>
+</div>
+<div class="h-8 w-8 bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="person">person</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen bg-grid-subtle">
+<section class="p-12 space-y-12">
+<!-- Hero Title Section -->
+<div class="flex justify-between items-end border-l-4 border-secondary-container pl-8 py-4">
+<div>
+<h2 class="text-6xl font-black font-headline tracking-tighter text-on-surface uppercase leading-none">
+                        NEXUS <span class="text-secondary-container glow-cyan">TOKENOMICS</span>
+</h2>
+<p class="font-mono text-xs text-primary mt-4 tracking-[0.2em] uppercase">V3.0 Smart Emission Protocol // Allocation Readout</p>
+</div>
+<div class="text-right">
+<p class="font-mono text-[10px] text-slate-500 uppercase">Current Supply Status</p>
+<p class="text-2xl font-black font-headline text-on-surface tracking-widest">74.2M / 100M</p>
+</div>
+</div>
+<!-- Bento Grid Content -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Allocation Visualizer (Large Card) -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-lowest border border-outline-variant/10 p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 font-mono text-[8px] text-slate-700 opacity-50 select-none">DATA_REF_0x291A</div>
+<h3 class="font-headline font-bold text-lg tracking-widest uppercase mb-8 flex items-center gap-2">
+<span class="w-1 h-4 bg-primary"></span>
+                        Token Allocation
+                    </h3>
+<div class="flex flex-col md:flex-row items-center justify-between gap-12">
+<!-- Custom CSS SVG Chart representation -->
+<div class="relative w-64 h-64 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<!-- Treasury 25% -->
+<circle cx="18" cy="18" fill="transparent" r="16" stroke="#2a2a2a" stroke-width="3"></circle>
+<circle cx="18" cy="18" fill="transparent" r="16" stroke="#448fff" stroke-dasharray="25, 100" stroke-width="3"></circle>
+<!-- Community Rewards 40% -->
+<circle cx="18" cy="18" fill="transparent" r="16" stroke="#00eefc" stroke-dasharray="40, 100" stroke-dashoffset="-25" stroke-width="3"></circle>
+<!-- Liquidity 20% -->
+<circle cx="18" cy="18" fill="transparent" r="16" stroke="#abc7ff" stroke-dasharray="20, 100" stroke-dashoffset="-65" stroke-width="3"></circle>
+<!-- Team 15% -->
+<circle cx="18" cy="18" fill="transparent" r="16" stroke="#353534" stroke-dasharray="15, 100" stroke-dashoffset="-85" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-mono text-[10px] text-slate-500 uppercase">Total Cap</span>
+<span class="font-headline text-xl font-bold">100.00M</span>
+</div>
+</div>
+<div class="flex-1 w-full space-y-4">
+<div class="group/item cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-mono text-xs uppercase text-slate-400">Community Rewards</span>
+<span class="font-headline font-bold text-secondary-container">40%</span>
+</div>
+<div class="h-1 bg-surface-container-high w-full overflow-hidden">
+<div class="h-full bg-secondary-container w-[40%] transition-all duration-700 group-hover/item:w-[45%]"></div>
+</div>
+</div>
+<div class="group/item cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-mono text-xs uppercase text-slate-400">Treasury Reserve</span>
+<span class="font-headline font-bold text-primary-container">25%</span>
+</div>
+<div class="h-1 bg-surface-container-high w-full">
+<div class="h-full bg-primary-container w-[25%]"></div>
+</div>
+</div>
+<div class="group/item cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-mono text-xs uppercase text-slate-400">Liquidity Provision</span>
+<span class="font-headline font-bold text-primary">20%</span>
+</div>
+<div class="h-1 bg-surface-container-high w-full">
+<div class="h-full bg-primary w-[20%]"></div>
+</div>
+</div>
+<div class="group/item cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-mono text-xs uppercase text-slate-400">Team &amp; Advisors</span>
+<span class="font-headline font-bold text-surface-variant">15%</span>
+</div>
+<div class="h-1 bg-surface-container-high w-full">
+<div class="h-full bg-surface-variant w-[15%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Burn Tracker (Side Card) -->
+<div class="col-span-12 lg:col-span-5 bg-surface-container-high p-8 flex flex-col justify-between border-b border-primary/20">
+<div>
+<h3 class="font-headline font-bold text-lg tracking-widest uppercase mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-error" data-icon="local_fire_department">local_fire_department</span>
+                            Burn Tracker
+                        </h3>
+<p class="font-mono text-[10px] text-slate-400 uppercase tracking-widest">Hyper-Deflationary Mechanism Active</p>
+</div>
+<div class="py-12 text-center">
+<div class="text-xs font-mono text-error/60 mb-2">TOTAL_BURNED.LOG</div>
+<div class="text-5xl font-black font-headline tracking-tight text-on-surface glow-sm">
+                            1,482,903
+                        </div>
+<div class="text-sm font-mono text-primary mt-2">$NEXUSCLAW</div>
+</div>
+<div class="bg-surface-container-lowest p-4 space-y-2 border-l-2 border-error">
+<div class="flex justify-between font-mono text-[9px] uppercase">
+<span class="text-slate-500">Last Burn Event</span>
+<span class="text-error">12 Minutes Ago</span>
+</div>
+<div class="flex justify-between font-mono text-[9px] uppercase">
+<span class="text-slate-500">Burn Rate (24h)</span>
+<span class="text-on-surface">12,402 $NEXUS</span>
+</div>
+</div>
+</div>
+<!-- Emissions Schedule (Full Width Chart Area) -->
+<div class="col-span-12 bg-surface-container-lowest border border-outline-variant/10 p-8">
+<div class="flex justify-between items-start mb-12">
+<div>
+<h3 class="font-headline font-bold text-lg tracking-widest uppercase mb-1">Emissions Schedule</h3>
+<p class="font-mono text-[10px] text-slate-500 uppercase tracking-widest">Projected Supply Unlock (48 Months)</p>
+</div>
+<div class="flex gap-4">
+<span class="flex items-center gap-2 font-mono text-[10px] text-slate-400">
+<span class="w-3 h-3 bg-secondary-container"></span> CIRCULATING
+                            </span>
+<span class="flex items-center gap-2 font-mono text-[10px] text-slate-400">
+<span class="w-3 h-3 border border-secondary-container"></span> TOTAL CAP
+                            </span>
+</div>
+</div>
+<!-- Mock Chart Visualization -->
+<div class="relative h-64 w-full flex items-end gap-[2px]">
+<!-- Simple visual bars for a chart look -->
+<div class="h-[20%] w-full bg-surface-container-high hover:bg-primary/20 transition-colors"></div>
+<div class="h-[25%] w-full bg-surface-container-high"></div>
+<div class="h-[32%] w-full bg-surface-container-high"></div>
+<div class="h-[38%] w-full bg-surface-container-high"></div>
+<div class="h-[42%] w-full bg-secondary-container/20 border-t border-secondary-container"></div>
+<div class="h-[48%] w-full bg-secondary-container/30 border-t border-secondary-container"></div>
+<div class="h-[55%] w-full bg-secondary-container/40 border-t border-secondary-container"></div>
+<div class="h-[60%] w-full bg-secondary-container/50 border-t border-secondary-container shadow-[0_-5px_15px_rgba(0,238,252,0.2)]"></div>
+<div class="h-[64%] w-full bg-secondary-container/60 border-t border-secondary-container shadow-[0_-5px_20px_rgba(0,238,252,0.3)]"></div>
+<div class="h-[68%] w-full bg-secondary-container/70 border-t border-secondary-container"></div>
+<div class="h-[70%] w-full bg-secondary-container border-t-2 border-white"></div>
+<div class="h-[72%] w-full bg-surface-container-high opacity-50 border-t border-dashed border-slate-500"></div>
+<div class="h-[74%] w-full bg-surface-container-high opacity-40 border-t border-dashed border-slate-500"></div>
+<div class="h-[76%] w-full bg-surface-container-high opacity-30 border-t border-dashed border-slate-500"></div>
+<div class="h-[78%] w-full bg-surface-container-high opacity-20 border-t border-dashed border-slate-500"></div>
+<div class="absolute inset-0 border-b border-l border-outline-variant/30"></div>
+<div class="absolute -bottom-6 left-0 font-mono text-[9px] text-slate-600">MONTH 0</div>
+<div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 font-mono text-[9px] text-slate-600">MONTH 24</div>
+<div class="absolute -bottom-6 right-0 font-mono text-[9px] text-slate-600">MONTH 48</div>
+</div>
+</div>
+<!-- Verified Smart Contract Section -->
+<div class="col-span-12 lg:col-span-12 bg-surface-container-lowest border border-outline-variant/10 overflow-hidden">
+<div class="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-outline-variant/10">
+<div class="p-8 flex-1">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-12 h-12 bg-secondary-container/10 flex items-center justify-center border border-secondary-container/20">
+<span class="material-symbols-outlined text-secondary-container" data-icon="verified_user">verified_user</span>
+</div>
+<div>
+<h4 class="font-headline font-bold uppercase tracking-widest text-sm">Verified Smart Contract</h4>
+<p class="font-mono text-[10px] text-slate-500 uppercase">Deployed on Ethereum Mainnet &amp; Base L2</p>
+</div>
+</div>
+<div class="flex items-center gap-2 bg-surface-container p-3 border-l-2 border-primary">
+<span class="font-mono text-[10px] text-primary truncate">0x71C7656EC7ab88b098defB751B7401B5f6d8976F</span>
+<button class="material-symbols-outlined text-xs text-slate-500 hover:text-white" data-icon="content_copy">content_copy</button>
+</div>
+</div>
+<div class="p-8 flex items-center justify-center gap-8 bg-surface-container-high/30">
+<a class="flex items-center gap-2 group" href="#">
+<div class="w-10 h-10 bg-surface-container flex items-center justify-center group-hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-sm group-hover:text-on-primary" data-icon="open_in_new">open_in_new</span>
+</div>
+<span class="font-mono text-[10px] uppercase text-slate-400 group-hover:text-primary">Etherscan</span>
+</a>
+<a class="flex items-center gap-2 group" href="#">
+<div class="w-10 h-10 bg-surface-container flex items-center justify-center group-hover:bg-secondary-container transition-colors">
+<span class="material-symbols-outlined text-sm group-hover:text-on-secondary" data-icon="open_in_new">open_in_new</span>
+</div>
+<span class="font-mono text-[10px] uppercase text-slate-400 group-hover:text-secondary-container">Basescan</span>
+</a>
+<a class="flex items-center gap-2 group" href="#">
+<div class="w-10 h-10 bg-surface-container flex items-center justify-center group-hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-sm group-hover:text-black" data-icon="description">description</span>
+</div>
+<span class="font-mono text-[10px] uppercase text-slate-400 group-hover:text-white">Audit Report</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Aesthetic Image/Graphic Break -->
+<div class="col-span-12 relative h-48 overflow-hidden bg-surface-container-lowest">
+<img class="w-full h-full object-cover mix-blend-overlay opacity-30 grayscale" data-alt="Abstract futuristic digital network with glowing neon lines and crystalline structures in dark deep sea environment aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHWBEZwGqWJmdAajGjQG449XdElPvKFqdhg647dHNn1IFuVgsa4hqwAA4Q3L0Ht7Ok--9zxbYuTMHI9oxJ4UjINUiUPQRLOBThlnGn0us-hZkf6F1rpyU_iTqNppNrya7OTHX-k9YdwVgn86x-KzvV741sR8Xie8o48ZL4R6yshi5GmKjoOTbKpPL0969lh6EJLwdViLbQQtm8SmZY21QG50aCtukVRX92zBA3Xh_JPZwfmY8waMzFjytBqVymj1kb_GSdsRlmxWKn"/>
+<div class="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="text-center px-4">
+<p class="font-headline font-black text-2xl tracking-[0.5em] text-primary/50 uppercase">Security Over Everything</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="ml-64 w-[calc(100%-16rem)] border-t border-primary/10 bg-[#0e0e0e] py-8 px-12 flex justify-between items-center z-40">
+<div class="flex items-center gap-8">
+<span class="font-mono text-[10px] uppercase tracking-[0.2em] text-primary font-bold">NEXUS CLAW</span>
+<div class="flex gap-6">
+<a class="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600 hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600 hover:text-primary transition-colors" href="#">Security Audit</a>
+<a class="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600 hover:text-primary transition-colors" href="#">Whitepaper</a>
+<a class="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600 hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+<p class="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600">
+            © 2024 NEXUS CLAW // SECURED BY QUANTSTAMP
+        </p>
+</footer>
+</body></html>
