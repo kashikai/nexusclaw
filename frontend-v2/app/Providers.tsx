@@ -2,8 +2,8 @@
 
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RainbowKitProvider, darkTheme } from '@rainbowme/rainbowkit'
-import '@rainbow-me/rainbowkit/styles.css'
+import { RainbowKitProvider, darkTheme } from '@rainbowkit'
+import '@rainbowkit/styles.css'
 import { config } from '@/config/wagmi'
 
 const queryClient = new QueryClient()
@@ -18,7 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             accentColorForeground: '#00285a',
             borderRadius: 'small',
             fontStack: 'modal',
-          })}}
+          })}
           modalSize="compact"
         >
           {children}
