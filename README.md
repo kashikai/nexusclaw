@@ -12,17 +12,17 @@ NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketp
 ## Live Links 🚀
 
 ### 🎯 Live Demo
-**Frontend**: [https://nexusclaw.vercel.app](https://nexusclaw.vercel.app) — **LIVE NOW!**
-- Wallet connect (Base Sepolia)
+**Frontend**: [https://nexusclaw.tech](https://nexusclaw.tech) — **LIVE NOW!**
+- Wallet connect (Base Mainnet)
 - Stake UI + contract info
-- Built with Next.js + Wagmi
-- Deployed: Vercel (auto-updated)
+- Built with Next.js + Wagmi + RainbowKit
+- Deployed: nexusclaw.tech (auto-updated)
 
-### Frontend (Vercel Live)
-- **URL**: [https://nexusclaw.vercel.app](https://nexusclaw.vercel.app)
-- **Stack**: Next.js + Wagmi + Base Sepolia
-- **Features**: Wallet connect, staking UI, contract info
-- **Status**: ✅ Live (Vercel)
+### Frontend (nexusclaw.tech Live)
+- **URL**: [https://nexusclaw.tech](https://nexusclaw.tech)
+- **Stack**: Next.js + Wagmi + RainbowKit + Stitch Obsidian theme
+- **Features**: Wallet connect, staking UI, analytics, contract info
+- **Status**: ✅ Live (nexusclaw.tech)
 
 ### Deployments (LIVE ✅)
 
@@ -53,7 +53,9 @@ NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketp
 - **Fees**: 1% swap → 80% agent, 15% burn, 5% treasury
 - **Burn**: 1% on transfers (toggle ON/OFF)
 
-## Getting Started (Foundry)
+## Getting Started
+
+### Solidity (Foundry)
 ```bash
 git clone https://github.com/kashikai/nexusclaw.git
 cd nexusclaw
@@ -62,14 +64,30 @@ forge build
 forge test -vvv  # 20+ GREEN
 ```
 
+### NexusClaw Agent v1 (AutoCompounder)
+```bash
+cd nexusclaw/nexusclaw-agent
+npm install
+node agent-core.js
+```
+
+**Features**:
+- ✅ Automatic claim of staking rewards
+- ✅ Automatic restaking (compound)
+- ✅ Gas optimization checks
+- ✅ Reward threshold validation
+- ✅ Comprehensive logging
+- ✅ Error handling & recovery
+
 ## Structure
 ```
 nexusclaw/
+├── nexusclaw-agent/  # AutoCompounder Agent v1
 ├── src/              # Solidity (NexusClaw.sol 100B, StakingRewards.sol)
 ├── test/             # Foundry tests (20+ GREEN)
 ├── script/           # Deploy scripts (Base/Solana ready)
 ├── sdk/              # @nexusclaw/clawtomaton (npm published)
-├── frontend/         # Next.js + Wagmi (Vercel ready)
+├── frontend/         # Next.js + Wagmi + RainbowKit (nexusclaw.tech)
 ├── solana/           # Anchor program (Devnet live)
 └── foundry.toml
 ```
