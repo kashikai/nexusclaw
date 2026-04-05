@@ -13,6 +13,7 @@ export default function StakingContent() {
   const queryClient = useQueryClient()
   const [stakeAmount, setStakeAmount] = useState('')
   const [unstakeAmount, setUnstakeAmount] = useState('')
+  const [approvedAmount, setApprovedAmount] = useState<bigint>(0n)
 
   // === READ ===
   const { data: tokenBalance, refetch: refetchBalance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined })
@@ -45,7 +46,11 @@ export default function StakingContent() {
   const { isLoading: isUnstakeConfirming, isSuccess: isUnstakeSuccess } = useWaitForTransactionReceipt({ hash: unstakeHash, query: { enabled: !!unstakeHash } })
 
   // Refetch allowance after approve confirms
-  useEffect(() => { if (isApproveSuccess) { queryClient.invalidateQueries() } }, [isApproveSuccess, queryClient])
+  useEffect(() => { if (isApproveSuccess) {
+    const amount = parseEther(stakeAmount || '0')
+    setApprovedAmount(prev => prev + amount)
+    queryClient.invalidateQueries()
+  } }, [isApproveSuccess])
 
   // Refetch all data after stake/claim/unstake confirms
   useEffect(() => {
@@ -56,8 +61,8 @@ export default function StakingContent() {
     }
   }, [isStakeSuccess, isClaimSuccess, isUnstakeSuccess, queryClient])
 
-  const needsApproval = allowance && stakeAmount
-    ? (BigInt(allowance) < parseEther(stakeAmount || '0') && !isApproveSuccess)
+  const needsApproval = stakeAmount
+    ? approvedAmount < parseEther(stakeAmount || '0')
     : true
   const userStakedAmount = userStaked ? (userStaked as any)[0] as bigint : 0n
   const userPending = pendingReward as bigint || 0n

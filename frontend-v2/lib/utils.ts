@@ -12,9 +12,8 @@ export function formatTokenShort(wei: bigint): string {
   const number = Number(wei) / 1e18
   if (number >= 1_000_000_000) return `${(number / 1_000_000_000).toFixed(2)}B`
   if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(2)}M`
-  if (number >= 10_000) return `${(number / 1_000).toFixed(1)}K`
-  if (number >= 1_000) return `${(number / 1_000).toFixed(2)}K`
-  return number.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  if (number >= 1_000) return number.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  return number.toLocaleString('en-US', { maximumFractionDigits: 4 })
 }
 
 export function formatBalance(wei: bigint): string {
