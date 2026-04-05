@@ -17,9 +17,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             accentColor: '#abc7ff',
             accentColorForeground: '#00285a',
             borderRadius: 'small',
-            fontStack: 'rounded',
           })}
-          modalSize="compact"
+          showRecentTransactions={false}
+          appInfo={{
+            appName: 'NexusClaw',
+            description: 'Stake $NEXUSCLAW on Base',
+            url: 'https://nexusclaw.vercel.app',
+          }}
         >
           {children}
         </RainbowKitProvider>
