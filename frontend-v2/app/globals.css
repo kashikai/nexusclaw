@@ -22,3 +22,9 @@ body {
 ::-webkit-scrollbar-track { background: #070707; }
 ::-webkit-scrollbar-thumb { background: #414754; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #abc7ff; }
+
+/* RainbowKit modal fix - ensure it's on top */
+[data-rk] {
+  z-index: 99999 !important;
+}
+
