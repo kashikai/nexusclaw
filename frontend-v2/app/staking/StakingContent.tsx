@@ -33,12 +33,17 @@ export default function StakingContent() {
 
   // === WRITE ===
   const { writeContract: writeApprove, data: approveHash, isPending: isApprovePending } = useWriteContract()
-  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash, query: { enabled: !!approveHash } })
-
-  // Refetch data after approve confirms
-  useEffect(() => { if (isApproveSuccess) refetchAllowance() }, [isApproveSuccess, refetchAllowance])
   const { writeContract: writeStake, data: stakeHash, isPending: isStakePending } = useWriteContract()
+  const { writeContract: writeClaim, data: claimHash, isPending: isClaimPending } = useWriteContract()
+  const { writeContract: writeUnstake, data: unstakeHash, isPending: isUnstakePending } = useWriteContract()
+
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash, query: { enabled: !!approveHash } })
   const { isLoading: isStakeConfirming, isSuccess: isStakeSuccess } = useWaitForTransactionReceipt({ hash: stakeHash, query: { enabled: !!stakeHash } })
+  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimHash, query: { enabled: !!claimHash } })
+  const { isLoading: isUnstakeConfirming, isSuccess: isUnstakeSuccess } = useWaitForTransactionReceipt({ hash: unstakeHash, query: { enabled: !!unstakeHash } })
+
+  // Refetch allowance after approve confirms
+  useEffect(() => { if (isApproveSuccess) refetchAllowance() }, [isApproveSuccess, refetchAllowance])
 
   // Refetch all data after stake/claim/unstake confirms
   useEffect(() => {
@@ -53,11 +58,6 @@ export default function StakingContent() {
       setUnstakeAmount('')
     }
   }, [isStakeSuccess, isClaimSuccess, isUnstakeSuccess])
-  const { isLoading: isStakeConfirming, isSuccess: isStakeSuccess } = useWaitForTransactionReceipt({ hash: stakeHash })
-  const { writeContract: writeClaim, data: claimHash, isPending: isClaimPending } = useWriteContract()
-  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimHash })
-  const { writeContract: writeUnstake, data: unstakeHash, isPending: isUnstakePending } = useWriteContract()
-  const { isLoading: isUnstakeConfirming, isSuccess: isUnstakeSuccess } = useWaitForTransactionReceipt({ hash: unstakeHash })
 
   const needsApproval = allowance && stakeAmount
     ? (BigInt(allowance) < parseEther(stakeAmount || '0') && !isApproveSuccess)
