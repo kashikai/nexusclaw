@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useQueryClient } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { TopNav } from '@/components/layout/TopNav'
 import { TOKEN_ADDRESS, STAKING_ADDRESS, TOKEN_ABI, STAKING_ABI, APY_PERCENT, BASESCAN_URL } from '@/config/contracts'
@@ -9,6 +9,7 @@ import { formatToken, formatTokenShort, shortenAddress } from '@/lib/utils'
 
 export default function StakingContent() {
   const { address, isConnected } = useAccount()
+  const queryClient = useQueryClient()
   const [stakeAmount, setStakeAmount] = useState('')
   const [unstakeAmount, setUnstakeAmount] = useState('')
 
@@ -43,21 +44,16 @@ export default function StakingContent() {
   const { isLoading: isUnstakeConfirming, isSuccess: isUnstakeSuccess } = useWaitForTransactionReceipt({ hash: unstakeHash, query: { enabled: !!unstakeHash } })
 
   // Refetch allowance after approve confirms
-  useEffect(() => { if (isApproveSuccess) refetchAllowance() }, [isApproveSuccess, refetchAllowance])
+  useEffect(() => { if (isApproveSuccess) { queryClient.invalidateQueries() } }, [isApproveSuccess, queryClient])
 
   // Refetch all data after stake/claim/unstake confirms
   useEffect(() => {
     if (isStakeSuccess || isClaimSuccess || isUnstakeSuccess) {
-      refetchStakes()
-      refetchPending()
-      refetchBalance()
-      refetchTotalStaked()
-      refetchTotalStakers()
-      refetchRewardPool()
+      queryClient.invalidateQueries()
       setStakeAmount('')
       setUnstakeAmount('')
     }
-  }, [isStakeSuccess, isClaimSuccess, isUnstakeSuccess])
+  }, [isStakeSuccess, isClaimSuccess, isUnstakeSuccess, queryClient])
 
   const needsApproval = allowance && stakeAmount
     ? (BigInt(allowance) < parseEther(stakeAmount || '0') && !isApproveSuccess)

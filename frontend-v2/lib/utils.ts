@@ -3,7 +3,6 @@ export function formatToken(wei: bigint, decimals: number = 18): string {
   const whole = Number(wei / divisor)
   const frac = wei % divisor
   const fracStr = frac.toString().padStart(decimals, '0').slice(0, 2)
-  // Remove trailing zeros from fractional part
   const cleanFrac = fracStr.replace(/0+$/, '')
   if (cleanFrac === '' || cleanFrac === '0') return whole.toLocaleString('en-US')
   return `${whole.toLocaleString('en-US')}.${cleanFrac}`
@@ -13,9 +12,9 @@ export function formatTokenShort(wei: bigint): string {
   const number = Number(wei) / 1e18
   if (number >= 1_000_000_000) return `${(number / 1_000_000_000).toFixed(2)}B`
   if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(2)}M`
-  if (number >= 1_000) return `${number.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-  if (number >= 1) return number.toLocaleString('en-US', { maximumFractionDigits: 4 })
-  return number.toFixed(6)
+  if (number >= 10_000) return `${(number / 1_000).toFixed(1)}K`
+  if (number >= 1_000) return `${(number / 1_000).toFixed(2)}K`
+  return number.toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
 export function formatBalance(wei: bigint): string {
