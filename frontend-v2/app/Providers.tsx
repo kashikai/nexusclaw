@@ -17,7 +17,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             accentColor: '#abc7ff',
             accentColorForeground: '#00285a',
             borderRadius: 'small',
-            fontStack: 'modal',
+            fontStack: 'rounded',
           })}
           modalSize="compact"
         >
