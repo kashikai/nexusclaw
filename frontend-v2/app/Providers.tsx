@@ -21,7 +21,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           showRecentTransactions={false}
           appInfo={{
             appName: 'NexusClaw',
-            description: 'Stake $NEXUSCLAW on Base',
             url: 'https://nexusclaw.vercel.app',
           }}
         >
