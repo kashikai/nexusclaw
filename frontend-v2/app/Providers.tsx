@@ -19,10 +19,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             borderRadius: 'small',
           })}
           showRecentTransactions={false}
-          appInfo={{
-            appName: 'NexusClaw',
-            url: 'https://nexusclaw.vercel.app',
-          }}
         >
           {children}
         </RainbowKitProvider>
