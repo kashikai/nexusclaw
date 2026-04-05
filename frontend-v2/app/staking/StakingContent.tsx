@@ -7,6 +7,7 @@ import { parseEther, formatEther } from 'viem'
 import { TopNav } from '@/components/layout/TopNav'
 import { TOKEN_ADDRESS, STAKING_ADDRESS, TOKEN_ABI, STAKING_ABI, APY_PERCENT, BASESCAN_URL } from '@/config/contracts'
 import { formatToken, formatTokenShort, shortenAddress } from '@/lib/utils'
+import { MobileBanner } from '@/components/MobileBanner'
 
 export default function StakingContent() {
   const { address, isConnected } = useAccount()
@@ -79,6 +80,7 @@ export default function StakingContent() {
 
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+      <MobileBanner />
       <TopNav active="/staking" />
 
       <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">

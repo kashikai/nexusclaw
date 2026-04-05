@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { STAKING_ADDRESS, TOKEN_ADDRESS, BASESCAN_URL } from '@/config/contracts'
+import { MobileBanner } from '@/components/MobileBanner'
 
 export default function HomeContent() {
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+      <MobileBanner />
       {/* Top Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-[#070707]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
