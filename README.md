@@ -162,4 +162,4 @@ Built with ❤️ by Tiago & Hanna 🦞
 | Hanna | Level 5 | Dev — git, builds, deploys testnet, features |
 | Nex | Level 4 | Marketing — drafts multilíngues, Telegram review, Moltbook |
 
-Last updated: March 2026
+Last updated: April 2026
