@@ -1,0 +1,22 @@
+# Environment files - NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Memory files with sensitive data
+memory/
+
+# Agent keys and credentials
+nexusclaw-agent/logs/
+*.log
+
+# OS files
+.DS_Store
+*.swp
+*~
+
+# Build artifacts
+node_modules/
+.next/
+out/
+cache/
