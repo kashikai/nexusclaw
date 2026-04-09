@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { QRCodeSVG } from 'qrcode.react'
 import { STAKING_ADDRESS, TOKEN_ADDRESS, BASESCAN_URL } from '@/config/contracts'
 import { MobileBanner } from '@/components/MobileBanner'
 
@@ -172,8 +173,16 @@ export default function HomeContent() {
                     Initialize Connection
                   </Link>
                 </div>
-                <div className="bg-[#0e0e0e]/50 rounded-lg p-6 border border-[#414754]/10 aspect-square flex flex-col items-center justify-center text-center">
-                  <span className="material-symbols-outlined text-[#abc7ff] text-8xl mb-6 opacity-60">qr_code_2</span>
+                <div className="bg-[#0e0e0e]/50 rounded-lg p-6 border border-[#414754]/10 aspect-square flex flex-col items-center justify-center text-center gap-6">
+                  <div className="p-3 bg-white rounded-lg">
+                    <QRCodeSVG
+                      value="https://nexusclaw.tech"
+                      size={160}
+                      bgColor="#ffffff"
+                      fgColor="#131313"
+                      level="M"
+                    />
+                  </div>
                   <span className="font-['JetBrains_Mono'] text-[10px] tracking-widest text-[#8b919f] uppercase">Scan to connect mobile</span>
                 </div>
               </div>
