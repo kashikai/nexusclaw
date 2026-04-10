@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useConnectModal } from '@rainbow-me/rainbowkit'
 
-function isMobile(): boolean {
+export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false
   return /android|iphone|ipad|ipod|webos/i.test(navigator.userAgent)
 }
@@ -37,23 +37,35 @@ const WALLETS = [
   },
 ]
 
-export function MobileBanner() {
+interface MobileBannerProps {
+  forceOpen?: boolean
+  onForceClose?: () => void
+}
+
+export function MobileBanner({ forceOpen, onForceClose }: MobileBannerProps) {
   const [show, setShow] = useState(false)
   const { openConnectModal } = useConnectModal()
 
   useEffect(() => {
+    if (forceOpen) {
+      setShow(true)
+      return
+    }
     const dismissed = sessionStorage.getItem('wallet-modal-dismissed')
     if (dismissed) return
-    if (isMobile() && !hasInjectedWallet() && !isBot()) {
+    if (isMobileDevice() && !hasInjectedWallet() && !isBot()) {
       setShow(true)
     }
-  }, [])
+  }, [forceOpen])
 
   if (!show) return null
 
   function dismiss() {
-    sessionStorage.setItem('wallet-modal-dismissed', '1')
+    if (!forceOpen) {
+      sessionStorage.setItem('wallet-modal-dismissed', '1')
+    }
     setShow(false)
+    onForceClose?.()
   }
 
   return (

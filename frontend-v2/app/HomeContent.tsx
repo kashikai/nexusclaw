@@ -1,15 +1,18 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { QRCodeSVG } from 'qrcode.react'
 import { STAKING_ADDRESS, TOKEN_ADDRESS, BASESCAN_URL } from '@/config/contracts'
-import { MobileBanner } from '@/components/MobileBanner'
+import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
 
 export default function HomeContent() {
+  const [mobileModalOpen, setMobileModalOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
-      <MobileBanner />
+      <MobileBanner forceOpen={mobileModalOpen} onForceClose={() => setMobileModalOpen(false)} />
       {/* Top Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-[#070707]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
@@ -44,7 +47,16 @@ export default function HomeContent() {
                         {account.displayName}
                       </button>
                     ) : (
-                      <button onClick={openConnectModal} className="bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all">
+                      <button
+                        onClick={() => {
+                          if (isMobileDevice()) {
+                            setMobileModalOpen(true)
+                          } else {
+                            openConnectModal()
+                          }
+                        }}
+                        className="bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all"
+                      >
                         Connect Wallet
                       </button>
                     )}
