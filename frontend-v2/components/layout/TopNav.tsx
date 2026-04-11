@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/analytics', label: 'Stats' },
   { href: '/governance', label: 'Governance' },
   { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/start-agent', label: 'Start Agent' },
 ]
 
 export function TopNav({ active }: { active?: string }) {
