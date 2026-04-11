@@ -309,7 +309,7 @@ export default function LeaderboardContent() {
                 {loading ? (
                   <span className="text-[#414754]">—</span>
                 ) : stats ? (
-                  `${stats.runwayDays.toString()} DAYS`
+                  `${stats.runwayDays > 9999n ? '999+' : stats.runwayDays.toString()} DAYS`
                 ) : (
                   '—'
                 )}
