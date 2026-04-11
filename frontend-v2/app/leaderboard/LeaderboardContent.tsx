@@ -106,13 +106,21 @@ export default function LeaderboardContent() {
           runwayDays: runwayRaw as bigint,
         })
 
-        // Get staker addresses from StakerAdded events
-        const logs = await publicClient.getLogs({
-          address: STAKING_ADDRESS,
-          event: parseAbiItem('event StakerAdded(address indexed staker)'),
-          fromBlock: DEPLOY_BLOCK,
-          toBlock: 'latest',
-        })
+        // Get staker addresses from StakerAdded events (chunked — RPC limit 10k blocks)
+        const CHUNK = 9_999n
+        const latestBlock = await publicClient.getBlockNumber()
+        const stakerEvent = parseAbiItem('event StakerAdded(address indexed staker)')
+        const logs: Array<{ args?: { staker?: `0x${string}` } }> = []
+        for (let from = DEPLOY_BLOCK; from <= latestBlock; from += CHUNK + 1n) {
+          const to = from + CHUNK > latestBlock ? latestBlock : from + CHUNK
+          const chunk = await publicClient.getLogs({
+            address: STAKING_ADDRESS,
+            event: stakerEvent,
+            fromBlock: from,
+            toBlock: to,
+          })
+          logs.push(...chunk)
+        }
 
         const uniqueAddrs = [
           ...new Set(
