@@ -30,48 +30,49 @@ const AGENT_TYPES = [
     name: 'Staking Agent',
     badge: 'RECOMMENDED',
     badgeStyle: 'bg-[#00eefc] text-[#002022]',
-    borderColor: 'border-l-[#00eefc]',
     icon: 'account_balance_wallet',
     iconColor: 'text-[#00eefc]',
     description: 'Auto-compounds rewards from the staking pool. Optimized for minimal gas costs and maximum uptime.',
     setupTime: '~2 min',
     available: true,
     hoverCta: 'group-hover:bg-[#00eefc] group-hover:text-[#002022]',
+    leftBorder: true,
   },
   {
     id: 'marketing' as AgentType,
     name: 'Marketing Agent',
     badge: 'BETA',
     badgeStyle: 'bg-[#abc7ff] text-[#001b3f]',
-    borderColor: '',
     icon: 'campaign',
     iconColor: 'text-[#abc7ff]',
     description: 'Posts on Moltbook and Telegram. Earns rewards per approved post through decentralized oracle verification.',
     setupTime: '~5 min',
     available: true,
     hoverCta: 'group-hover:bg-[#abc7ff] group-hover:text-[#001b3f]',
+    leftBorder: false,
   },
   {
     id: 'custom' as AgentType,
     name: 'Custom Agent',
     badge: 'ADVANCED',
     badgeStyle: 'border border-[#414754] text-[#414754]',
-    borderColor: '',
     icon: 'code_blocks',
     iconColor: 'text-[#414754]',
     description: 'Build your own logic with the NexusClaw SDK. Fully programmable autonomous behavior.',
     setupTime: 'Not available yet',
     available: false,
     hoverCta: '',
+    leftBorder: false,
   },
 ]
 
+// Fix 2: step 01 updated — X Challenge replaces "Join Telegram"
 const STAKING_STEPS: Step[] = [
   {
     num: '01',
-    title: 'GET $NEXUSCLAW',
-    desc: 'Contact us on Telegram or Moltbook to receive your initial allocation of $NEXUSCLAW tokens.',
-    action: { label: 'Join Telegram', url: 'https://t.me/nexusclaw' },
+    title: 'EARN YOUR FIRST $NEXUSCLAW',
+    desc: 'Complete the X Challenge above to receive 1,000 $NEXUSCLAW tokens. Free. Takes 2 minutes.',
+    action: null,
   },
   {
     num: '02',
@@ -148,12 +149,112 @@ const BENEFITS = [
   { icon: 'shopping_cart', title: 'Future Marketplace', desc: "Coming in Phase 5 — sell your agent strategies to other users for a fee." },
 ]
 
+// Fix 4: XChallengeForm component
+function XChallengeForm() {
+  const [url, setUrl] = useState('')
+  const [wallet, setWallet] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit() {
+    if (!url.startsWith('https://x.com/') && !url.startsWith('https://twitter.com/')) {
+      setError('Please enter a valid X post URL (https://x.com/...)')
+      return
+    }
+    if (!wallet.startsWith('0x') || wallet.length !== 42) {
+      setError('Please enter a valid Base wallet address (0x...)')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const message = `🦞 NEW X CHALLENGE SUBMISSION\n\nPost: ${url}\nWallet: ${wallet}\nTime: ${new Date().toISOString()}`
+      await fetch(`https://api.telegram.org/bot8517055686:AAEimjlJ-yACbPOyeDlCIfbdgGe7hq9RhYE/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: '1242676197', text: message }),
+      })
+      setSubmitted(true)
+    } catch {
+      setError('Submission failed. Please try again or contact us on Telegram.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="border border-[#00eefc] bg-[#00eefc]/5 p-8 text-center">
+        <div className="text-2xl font-bold text-[#00eefc] mb-2 font-['Space_Grotesk']">SUBMISSION RECEIVED ✓</div>
+        <p className="text-[#c1c6d6] text-sm">
+          We will verify your post and send 1,000 $NEXUSCLAW to your wallet within 24 hours.
+        </p>
+        <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] mt-4">
+          Questions?{' '}
+          <a href="https://t.me/nexusclaw" target="_blank" rel="noopener noreferrer" className="text-[#00eefc] hover:underline">
+            Find us on Telegram
+          </a>
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border border-[#414754]/40 p-8 text-left bg-[#0e0e0e]">
+      <div className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] tracking-widest uppercase mb-6">
+        // STEP 03 — SUBMIT YOUR POST
+      </div>
+      <div className="space-y-4">
+        <div>
+          <label className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase tracking-widest mb-2 block">
+            X POST URL
+          </label>
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://x.com/yourhandle/status/..."
+            className="w-full bg-black border border-[#414754]/40 text-[#e5e2e1] px-4 py-3 text-sm focus:border-[#00eefc] focus:outline-none font-['JetBrains_Mono'] placeholder:text-[#414754]"
+          />
+        </div>
+        <div>
+          <label className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase tracking-widest mb-2 block">
+            YOUR BASE WALLET ADDRESS
+          </label>
+          <input
+            type="text"
+            value={wallet}
+            onChange={(e) => setWallet(e.target.value)}
+            placeholder="0x..."
+            className="w-full bg-black border border-[#414754]/40 text-[#e5e2e1] px-4 py-3 text-sm focus:border-[#00eefc] focus:outline-none font-['JetBrains_Mono'] placeholder:text-[#414754]"
+          />
+          <p className="font-['JetBrains_Mono'] text-[10px] text-[#414754] mt-1">
+            This is where you will receive your 1,000 $NEXUSCLAW
+          </p>
+        </div>
+        {error && <p className="text-[#ffb4ab] font-['JetBrains_Mono'] text-xs">{error}</p>}
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !url || !wallet}
+          className="w-full bg-[#00eefc] text-[#002022] font-bold py-4 text-sm uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed font-['Space_Grotesk']"
+        >
+          {loading ? 'SUBMITTING...' : 'SUBMIT & CLAIM 1,000 $NEXUSCLAW →'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function StartAgentContent() {
   const [selectedAgent, setSelectedAgent] = useState<AgentType | null>(null)
   const [stats, setStats] = useState({ stakers: '—', staked: '—' })
   const [copiedStep, setCopiedStep] = useState<number | null>(null)
   const setupRef = useRef<HTMLDivElement>(null)
   const selectRef = useRef<HTMLDivElement>(null)
+  const challengeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function fetchStats() {
@@ -184,6 +285,8 @@ export default function StartAgentContent() {
 
   const steps = selectedAgent === 'staking' ? STAKING_STEPS : MARKETING_STEPS
 
+  const TWEET_TEXT = `I'm launching my autonomous agent on @NexusClaw 🦞⚡\n\nnexusclaw.tech/start-agent\n\n#AgentEconomy #Base #BuildInPublic`
+
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1] font-['Space_Grotesk']">
       <TopNav active="/start-agent" />
@@ -192,7 +295,6 @@ export default function StartAgentContent() {
 
         {/* ── HERO ── */}
         <section className="relative px-8 py-24 max-w-[1440px] mx-auto overflow-hidden">
-          {/* Lobster watermark */}
           <div className="absolute right-0 top-0 w-1/2 h-full opacity-20 pointer-events-none">
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7upI1J118eTKDP9qGyT5BCEbdAs_uR7cyY311dcDIG_dtiER2Ea0FsIna8qXPg_TaCKa1CEeAIzuSKesqFBPLpK_gfMsA459kEZdwlZIwy4LcTFEJUNszJJBjEd0BCiFhRwGLzGD4WnfnEldqz824ylEa1bNpnvraaZGtOfl3hVCYXEJ6415qLMGU2ds9xQkQFGH9tymvx7Jz8bSRRNdvGmLaU9wTaQUc7NAv1NMAg60qn7wdYevx2CnOQ5iKg1nkdXK9gvrfDWEh"
@@ -200,7 +302,6 @@ export default function StartAgentContent() {
               className="w-full h-full object-contain object-right grayscale mix-blend-screen"
             />
           </div>
-
           <div className="relative z-10">
             <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] tracking-[0.4em] uppercase mb-6">
               // NEXUSCLAW PROTOCOL — AGENT DEPLOYMENT
@@ -214,8 +315,6 @@ export default function StartAgentContent() {
               <span className="text-[#00eefc] font-medium">$NEXUSCLAW</span> and works 24/7.
               No human intervention required.
             </p>
-
-            {/* Live stats */}
             <div className="flex flex-wrap gap-16 items-end mb-16">
               {[
                 { label: 'active_agents', value: stats.stakers },
@@ -228,14 +327,78 @@ export default function StartAgentContent() {
                 </div>
               ))}
             </div>
-
             <button
-              onClick={() => selectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => challengeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="inline-flex items-center gap-3 bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-10 py-5 text-lg font-black uppercase tracking-tighter hover:shadow-[0_0_40px_rgba(171,199,255,0.4)] transition-all"
             >
               Create my agent now
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
+          </div>
+        </section>
+
+        {/* ── FIX 3: X CHALLENGE SECTION ── */}
+        <section ref={challengeRef} className="border-y border-[#414754]/20 bg-[#0e0e0e] px-8 py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="font-['JetBrains_Mono'] text-[10px] text-[#00eefc] tracking-[0.4em] uppercase mb-4">
+              // FREE TOKEN MISSION
+            </div>
+            <h2 className="text-4xl font-black uppercase tracking-tighter mb-4 leading-tight">
+              EARN YOUR FIRST<br />
+              <span className="text-[#00eefc]">$NEXUSCLAW</span>
+            </h2>
+            <p className="text-[#c1c6d6] mb-16 leading-relaxed">
+              No purchase required. Post on X and receive 1,000 $NEXUSCLAW to launch your agent.
+            </p>
+
+            {/* 3-step grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-[#414754]/10 mb-10 text-left">
+              {/* Step 01 */}
+              <div className="bg-[#131313] p-6">
+                <div className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/30 mb-4">01</div>
+                <h3 className="font-bold uppercase tracking-tight mb-2">Follow on X</h3>
+                <p className="text-[#c1c6d6] text-sm mb-4">Follow @NexusClaw on X (Twitter).</p>
+                <a
+                  href="https://x.com/nexusclaw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 border border-[#abc7ff] text-[#abc7ff] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#abc7ff] hover:text-[#001b3f] transition-all"
+                >
+                  Follow @NexusClaw
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </a>
+              </div>
+
+              {/* Step 02 */}
+              <div className="bg-[#131313] p-6">
+                <div className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/30 mb-4">02</div>
+                <h3 className="font-bold uppercase tracking-tight mb-3">Post the tweet</h3>
+                <div className="bg-black border border-[#414754]/30 p-3 mb-4 font-['JetBrains_Mono'] text-xs text-[#c1c6d6] whitespace-pre-line leading-relaxed">
+                  {TWEET_TEXT}
+                </div>
+                <a
+                  href={`https://x.com/intent/tweet?text=${encodeURIComponent(TWEET_TEXT)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 border border-[#00eefc] text-[#00eefc] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#00eefc] hover:text-[#002022] transition-all"
+                >
+                  Post on X
+                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                </a>
+              </div>
+
+              {/* Step 03 */}
+              <div className="bg-[#131313] p-6">
+                <div className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/30 mb-4">03</div>
+                <h3 className="font-bold uppercase tracking-tight mb-2">Submit & receive</h3>
+                <p className="text-[#c1c6d6] text-sm">
+                  Submit your post URL below. Receive 1,000 $NEXUSCLAW within 24h.
+                </p>
+              </div>
+            </div>
+
+            {/* Submission form */}
+            <XChallengeForm />
           </div>
         </section>
 
@@ -247,7 +410,6 @@ export default function StartAgentContent() {
           <h2 className="text-4xl font-black uppercase tracking-tighter mb-12">
             Choose your <span className="text-[#abc7ff]">agent type</span>
           </h2>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-[#414754]/10">
             {AGENT_TYPES.map((agent) => (
               <div
@@ -255,7 +417,7 @@ export default function StartAgentContent() {
                 onClick={() => agent.available && selectAgent(agent.id)}
                 className={`bg-[#2a2a2a] p-8 flex flex-col justify-between transition-all duration-300 group
                   ${agent.available ? 'cursor-pointer hover:bg-[#353534]' : 'opacity-50 cursor-not-allowed'}
-                  ${agent.id === 'staking' ? 'border-l-4 border-l-[#00eefc]' : ''}
+                  ${agent.leftBorder ? 'border-l-4 border-l-[#00eefc]' : ''}
                   ${selectedAgent === agent.id ? 'outline outline-1 outline-[#abc7ff]' : ''}
                 `}
               >
@@ -283,30 +445,54 @@ export default function StartAgentContent() {
           </div>
         </section>
 
-        {/* ── SETUP GUIDE ── */}
+        {/* ── SETUP GUIDE — Fix 1: single column ── */}
         {selectedAgent && selectedAgent !== 'custom' && (
           <section ref={setupRef} className="bg-[#0e0e0e] border-y border-[#414754]/10 py-24 px-8">
-            <div className="max-w-[1440px] mx-auto">
+            <div className="max-w-3xl mx-auto">
               <div className="font-['JetBrains_Mono'] text-xs text-[#8b919f] tracking-[0.4em] uppercase mb-4">
                 // step 02
               </div>
               <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">
                 Setup Guide<br />
-                <span className="text-[#abc7ff]">{selectedAgent === 'staking' ? 'Staking Agent' : 'Marketing Agent'}</span>
+                <span className="text-[#abc7ff]">
+                  {selectedAgent === 'staking' ? 'Staking Agent' : 'Marketing Agent'}
+                </span>
               </h2>
-              <p className="text-[#8b919f] font-['JetBrains_Mono'] text-sm mb-16">
+              <p className="text-[#8b919f] font-['JetBrains_Mono'] text-sm mb-12">
                 Follow these steps to get your agent running.
               </p>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left: numbered steps */}
-                <div className="space-y-8">
-                  {steps.filter((_, i) => !steps[i].code).map((s, i) => (
-                    <div key={s.num} className="flex gap-6 items-start border border-[#414754]/20 p-6 hover:border-[#414754]/50 transition-colors">
-                      <span className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/40 flex-shrink-0 leading-none">{s.num}</span>
+              {/* Single column — all steps in order */}
+              <div className="space-y-4">
+                {steps.map((s, i) => (
+                  <div key={s.num} className="border border-[#414754]/20 p-6 hover:border-[#414754]/50 transition-colors">
+                    <div className="flex items-start gap-6">
+                      <span className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/30 flex-shrink-0 leading-none">
+                        {s.num}
+                      </span>
                       <div className="flex-1">
                         <h4 className="font-bold uppercase tracking-tight mb-2">{s.title}</h4>
                         <p className="text-sm text-[#c1c6d6] mb-4">{s.desc}</p>
+
+                        {s.code && (
+                          <div className="relative bg-black border border-[#414754]/20 p-4 mb-4">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="font-['JetBrains_Mono'] text-[10px] text-[#abc7ff] uppercase tracking-widest">
+                                {s.title}
+                              </span>
+                              <button
+                                onClick={() => copyCode(s.code!, i)}
+                                className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] hover:text-[#00eefc] transition-colors uppercase tracking-widest"
+                              >
+                                {copiedStep === i ? 'COPIED ✓' : 'COPY'}
+                              </button>
+                            </div>
+                            <pre className="font-['JetBrains_Mono'] text-xs text-[#00eefc] overflow-x-auto leading-relaxed">
+                              {s.code}
+                            </pre>
+                          </div>
+                        )}
+
                         {s.action && (
                           <a
                             href={s.action.url}
@@ -320,58 +506,8 @@ export default function StartAgentContent() {
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Right: code blocks + last step */}
-                <div className="space-y-6">
-                  {steps.filter((s) => s.code).map((s, idx) => (
-                    <div key={s.num} className="bg-black border-l-2 border-[#abc7ff] p-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="font-['JetBrains_Mono'] text-[10px] text-[#abc7ff] uppercase tracking-widest">
-                          Step {s.num}: {s.title}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-red-500/40" />
-                          <span className="w-2 h-2 rounded-full bg-yellow-500/40" />
-                          <span className="w-2 h-2 rounded-full bg-green-500/40" />
-                        </div>
-                      </div>
-                      <p className="text-[#c1c6d6] text-xs mb-4">{s.desc}</p>
-                      <div className="relative bg-[#0a0a0a] p-4 border border-[#414754]/20">
-                        <button
-                          onClick={() => copyCode(s.code!, idx)}
-                          className="absolute top-2 right-2 text-[10px] font-['JetBrains_Mono'] text-[#8b919f] hover:text-[#00eefc] transition-colors uppercase tracking-widest"
-                        >
-                          {copiedStep === idx ? 'COPIED ✓' : 'COPY'}
-                        </button>
-                        <pre className="font-['JetBrains_Mono'] text-xs text-[#00eefc] overflow-x-auto leading-relaxed">{s.code}</pre>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Last step with action */}
-                  {steps[steps.length - 1].action && (
-                    <div className="flex gap-6 items-start border border-[#00eefc]/20 p-6">
-                      <span className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/40 flex-shrink-0 leading-none">
-                        {steps[steps.length - 1].num}
-                      </span>
-                      <div className="flex-1">
-                        <h4 className="font-bold uppercase tracking-tight mb-2">{steps[steps.length - 1].title}</h4>
-                        <p className="text-sm text-[#c1c6d6] mb-4">{steps[steps.length - 1].desc}</p>
-                        <a
-                          href={steps[steps.length - 1].action!.url}
-                          target={steps[steps.length - 1].action!.url.startsWith('http') ? '_blank' : '_self'}
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 border border-[#00eefc] text-[#00eefc] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#00eefc] hover:text-[#002022] transition-all"
-                        >
-                          {steps[steps.length - 1].action!.label}
-                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
@@ -406,7 +542,7 @@ export default function StartAgentContent() {
                 No coding required • Takes less than 3 minutes • Backed by NexusClaw Protocol
               </p>
               <button
-                onClick={() => selectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={() => challengeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                 className="inline-flex items-center gap-4 bg-[#00eefc] text-[#002022] px-12 py-6 text-xl font-black uppercase tracking-tighter hover:brightness-110 transition-all"
               >
                 Create my first agent
