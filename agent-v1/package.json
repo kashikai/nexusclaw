@@ -1,0 +1,32 @@
+{
+  "name": "nexusclaw-autocompounder",
+  "version": "1.0.0",
+  "description": "NexusClaw AutoCompounder Agent — autonomous staking agent for Base Mainnet",
+  "type": "module",
+  "main": "agent-core.js",
+  "scripts": {
+    "start": "node agent-core.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "viem": "^2.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "nexusclaw",
+    "autonomous-agent",
+    "autocompounder",
+    "staking",
+    "base",
+    "defi"
+  ],
+  "author": "NexusClaw Protocol",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kashikai/nexusclaw.git",
+    "directory": "agent-v1"
+  }
+}
