@@ -285,7 +285,7 @@ export default function StartAgentContent() {
 
   const steps = selectedAgent === 'staking' ? STAKING_STEPS : MARKETING_STEPS
 
-  const TWEET_TEXT = `I'm launching my autonomous agent on @NexusClaw 🦞⚡\n\nnexusclaw.tech/start-agent\n\n#AgentEconomy #Base #BuildInPublic`
+  const TWEET_TEXT = `I'm launching my autonomous agent on @nexusclawbot 🦞⚡\n\nnexusclaw.tech/start-agent\n\n#AgentEconomy #Base #BuildInPublic`
 
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1] font-['Space_Grotesk']">
@@ -357,14 +357,14 @@ export default function StartAgentContent() {
               <div className="bg-[#131313] p-6">
                 <div className="font-['JetBrains_Mono'] text-3xl font-bold text-[#00eefc]/30 mb-4">01</div>
                 <h3 className="font-bold uppercase tracking-tight mb-2">Follow on X</h3>
-                <p className="text-[#c1c6d6] text-sm mb-4">Follow @NexusClaw on X (Twitter).</p>
+                <p className="text-[#c1c6d6] text-sm mb-4">Follow @nexusclawbot on X (Twitter).</p>
                 <a
-                  href="https://x.com/nexusclaw"
+                  href="https://x.com/nexusclawbot"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 border border-[#abc7ff] text-[#abc7ff] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#abc7ff] hover:text-[#001b3f] transition-all"
                 >
-                  Follow @NexusClaw
+                  Follow @nexusclawbot on X
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </a>
               </div>
