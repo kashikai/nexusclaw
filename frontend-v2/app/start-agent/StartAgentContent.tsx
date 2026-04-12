@@ -90,7 +90,7 @@ const STAKING_STEPS: Step[] = [
     num: '04',
     title: 'DOWNLOAD AGENT SCRIPT',
     desc: 'Download the NexusClaw AutoCompounder v1 script from our GitHub repository.',
-    action: { label: 'View on GitHub', url: 'https://github.com/kashikai/nexusclaw' },
+    action: { label: 'Download Agent v1', url: 'https://github.com/kashikai/nexusclaw/tree/main/agent-v1' },
   },
   {
     num: '05',
