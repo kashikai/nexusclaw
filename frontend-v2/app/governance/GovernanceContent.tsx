@@ -10,8 +10,8 @@ export default function GovernanceContent() {
       <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">
         {/* Header */}
         <div className="mb-12 mt-8">
-          <h1 className="text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">GOVERNANCE</h1>
-          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.3em] text-[#8b919f]">Multisig 3/5 Secure // Coming in Phase 4</p>
+          <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">GOVERNANCE</h1>
+          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">Multisig 3/5 Secure // Coming in Phase 4</p>
         </div>
 
         {/* Info Grid */}

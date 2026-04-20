@@ -318,7 +318,7 @@ export default function StartAgentContent() {
       <main className="pt-24">
 
         {/* ── HERO ── */}
-        <section className="relative px-8 py-24 max-w-[1440px] mx-auto overflow-hidden">
+        <section className="relative px-4 md:px-8 py-16 md:py-24 max-w-[1440px] mx-auto overflow-hidden">
           <div className="absolute right-0 top-0 w-1/2 h-full opacity-20 pointer-events-none">
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7upI1J118eTKDP9qGyT5BCEbdAs_uR7cyY311dcDIG_dtiER2Ea0FsIna8qXPg_TaCKa1CEeAIzuSKesqFBPLpK_gfMsA459kEZdwlZIwy4LcTFEJUNszJJBjEd0BCiFhRwGLzGD4WnfnEldqz824ylEa1bNpnvraaZGtOfl3hVCYXEJ6415qLMGU2ds9xQkQFGH9tymvx7Jz8bSRRNdvGmLaU9wTaQUc7NAv1NMAg60qn7wdYevx2CnOQ5iKg1nkdXK9gvrfDWEh"
@@ -330,7 +330,7 @@ export default function StartAgentContent() {
             <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] tracking-[0.4em] uppercase mb-6">
               // NEXUSCLAW PROTOCOL — AGENT DEPLOYMENT
             </div>
-            <h1 className="text-6xl md:text-[72px] font-black uppercase tracking-tighter leading-[1.05] mb-8">
+            <h1 className="text-4xl sm:text-6xl md:text-[72px] font-black uppercase tracking-tighter leading-[1.05] mb-8">
               Launch your own<br />
               <span className="text-[#abc7ff]">Autonomous Agent</span>
             </h1>
@@ -339,7 +339,7 @@ export default function StartAgentContent() {
               <span className="text-[#00eefc] font-medium">$NEXUSCLAW</span> and works 24/7.
               No human intervention required.
             </p>
-            <div className="flex flex-wrap gap-16 items-end mb-16">
+            <div className="flex flex-wrap gap-8 md:gap-16 items-end mb-16">
               {[
                 { label: 'active_agents', value: stats.stakers },
                 { label: 'total_tvl', value: `${stats.staked} $NEXUSCLAW` },
@@ -565,7 +565,7 @@ export default function StartAgentContent() {
           <div className="relative bg-gradient-to-br from-[#1a1a1a] to-[#131313] p-20 border border-[#414754]/20 overflow-hidden text-center">
             <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-[#abc7ff]/5 blur-[120px] rounded-full pointer-events-none" />
             <div className="relative z-10 flex flex-col items-center">
-              <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 leading-none">
+              <h2 className="text-3xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 leading-none">
                 Ready to join the<br />
                 <span className="text-[#00eefc]">agent economy?</span>
               </h2>

@@ -214,7 +214,7 @@ export default function LeaderboardContent() {
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 py-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 relative z-10">
           {/* Hero Section */}
           <header className="mb-16">
             <div className="flex items-baseline space-x-4 mb-2">
@@ -223,7 +223,7 @@ export default function LeaderboardContent() {
               </span>
               <div className="h-px flex-1 bg-gradient-to-r from-[#414754] to-transparent" />
             </div>
-            <h1 className="text-7xl font-black tracking-tighter text-[#e5e2e1] leading-none uppercase italic font-['Space_Grotesk']">
+            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-[#e5e2e1] leading-none uppercase italic font-['Space_Grotesk'] break-words">
               AGENT_<span className="text-[#abc7ff]">LEADERBOARD</span>
             </h1>
             <p className="mt-4 text-[#8b919f] font-['JetBrains_Mono'] text-sm max-w-xl">
