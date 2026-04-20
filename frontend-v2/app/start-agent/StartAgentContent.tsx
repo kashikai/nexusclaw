@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base } from 'viem/chains'
 import { TopNav } from '@/components/layout/TopNav'
+import ConfigModal from '@/components/start-agent/ConfigModal'
+import SuccessScreen from '@/components/start-agent/SuccessScreen'
 
 const STAKING_ADDRESS = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe' as const
 
@@ -248,10 +250,21 @@ function XChallengeForm() {
   )
 }
 
+interface AgentConfig {
+  agentName: string
+  stakeAmount: string
+  rewardThreshold: string
+  pollInterval: string
+  rpcUrl: string
+}
+
 export default function StartAgentContent() {
   const [selectedAgent, setSelectedAgent] = useState<AgentType | null>(null)
   const [stats, setStats] = useState({ stakers: '—', staked: '—' })
   const [copiedStep, setCopiedStep] = useState<number | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalAgentType, setModalAgentType] = useState<'staking' | 'marketing'>('staking')
+  const [successConfig, setSuccessConfig] = useState<AgentConfig | null>(null)
   const setupRef = useRef<HTMLDivElement>(null)
   const selectRef = useRef<HTMLDivElement>(null)
   const challengeRef = useRef<HTMLDivElement>(null)
@@ -274,6 +287,17 @@ export default function StartAgentContent() {
 
   function selectAgent(id: AgentType) {
     setSelectedAgent(id)
+    if (id === 'staking' || id === 'marketing') {
+      setModalAgentType(id)
+      setModalOpen(true)
+    } else {
+      setTimeout(() => setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    }
+  }
+
+  function handleModalSuccess(config: AgentConfig) {
+    setSuccessConfig(config)
+    setModalOpen(false)
     setTimeout(() => setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
   }
 
@@ -445,8 +469,15 @@ export default function StartAgentContent() {
           </div>
         </section>
 
+        {/* ── SUCCESS SCREEN after download ── */}
+        {successConfig && (
+          <section ref={setupRef} className="bg-[#0e0e0e] border-y border-[#414754]/10 py-24 px-8">
+            <SuccessScreen config={successConfig} onReset={() => { setSuccessConfig(null); setSelectedAgent(null); }} />
+          </section>
+        )}
+
         {/* ── SETUP GUIDE — Fix 1: single column ── */}
-        {selectedAgent && selectedAgent !== 'custom' && (
+        {selectedAgent && selectedAgent !== 'custom' && !successConfig && (
           <section ref={setupRef} className="bg-[#0e0e0e] border-y border-[#414754]/10 py-24 px-8">
             <div className="max-w-3xl mx-auto">
               <div className="font-['JetBrains_Mono'] text-xs text-[#8b919f] tracking-[0.4em] uppercase mb-4">
@@ -576,6 +607,15 @@ export default function StartAgentContent() {
           <a href="/governance" className="text-[#414754] hover:text-[#00eefc] transition-colors">GOVERNANCE</a>
         </div>
       </footer>
+
+      {/* Config Modal */}
+      {modalOpen && (
+        <ConfigModal
+          agentType={modalAgentType}
+          onClose={() => setModalOpen(false)}
+          onSuccess={handleModalSuccess}
+        />
+      )}
     </div>
   )
 }
