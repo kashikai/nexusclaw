@@ -7,7 +7,7 @@ export default function GovernanceContent() {
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
       <TopNav active="/governance" />
 
-      <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">
+      <main className="pt-24 pb-16 px-4 md:px-8 max-w-[1440px] mx-auto">
         {/* Header */}
         <div className="mb-12 mt-8">
           <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">GOVERNANCE</h1>
@@ -33,7 +33,7 @@ export default function GovernanceContent() {
             <div className="bg-[#131313] p-4 rounded border-l-2 border-[#abc7ff]">
               <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] block mb-1 uppercase">Address</span>
               <a href="https://basescan.org/address/0x02320eCCB3B67e802C29f9e9F8703D5756535515" target="_blank" rel="noopener noreferrer"
-                className="font-['JetBrains_Mono'] text-sm text-[#abc7ff] hover:text-[#3A8BFF] transition-colors">
+                className="font-['JetBrains_Mono'] text-xs md:text-sm text-[#abc7ff] hover:text-[#3A8BFF] transition-colors break-all">
                 0x02320eCCB3B67e802C29f9e9F8703D5756535515
               </a>
             </div>
