@@ -8,7 +8,6 @@ import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
 const NAV_ITEMS = [
   { href: '/staking', label: 'Staking' },
   { href: '/analytics', label: 'Tokenomics' },
-  { href: '/analytics', label: 'Stats' },
   { href: '/governance', label: 'Governance' },
   { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/start-agent', label: 'Start Agent' },
