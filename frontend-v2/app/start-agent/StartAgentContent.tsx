@@ -319,27 +319,34 @@ export default function StartAgentContent() {
 
         {/* ── HERO ── */}
         <section className="relative px-4 md:px-8 py-16 md:py-24 max-w-[1440px] mx-auto overflow-hidden">
-          <div className="absolute right-0 top-0 w-1/2 h-full opacity-20 pointer-events-none">
+          {/* Lobster with glow */}
+          <div className="absolute right-0 top-0 w-1/2 h-full pointer-events-none">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,238,252,0.12)_0%,transparent_70%)]" />
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7upI1J118eTKDP9qGyT5BCEbdAs_uR7cyY311dcDIG_dtiER2Ea0FsIna8qXPg_TaCKa1CEeAIzuSKesqFBPLpK_gfMsA459kEZdwlZIwy4LcTFEJUNszJJBjEd0BCiFhRwGLzGD4WnfnEldqz824ylEa1bNpnvraaZGtOfl3hVCYXEJ6415qLMGU2ds9xQkQFGH9tymvx7Jz8bSRRNdvGmLaU9wTaQUc7NAv1NMAg60qn7wdYevx2CnOQ5iKg1nkdXK9gvrfDWEh"
               alt="Mechanical Lobster"
-              className="w-full h-full object-contain object-right grayscale mix-blend-screen"
+              className="w-full h-full object-contain object-right opacity-30 mix-blend-screen"
+              style={{ filter: 'drop-shadow(0 0 40px rgba(0,238,252,0.25)) grayscale(0.3)' }}
             />
           </div>
+
           <div className="relative z-10">
-            <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] tracking-[0.4em] uppercase mb-6">
+            <div className="text-[10px] font-['JetBrains_Mono'] text-[#00eefc] tracking-[0.4em] uppercase mb-6">
               // NEXUSCLAW PROTOCOL — AGENT DEPLOYMENT
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-[72px] font-black uppercase tracking-tighter leading-[1.05] mb-8">
-              Launch your own<br />
-              <span className="text-[#abc7ff]">Autonomous Agent</span>
+            <h1 className="text-4xl sm:text-6xl md:text-[72px] font-black uppercase tracking-tighter leading-[1.05] mb-6">
+              Seu dinheiro trabalhando<br />
+              <span className="text-[#abc7ff]">enquanto você dorme.</span>
             </h1>
-            <p className="text-xl text-[#c1c6d6] max-w-2xl font-light leading-relaxed mb-16">
-              Create an agent that stakes, compounds, earns{' '}
-              <span className="text-[#00eefc] font-medium">$NEXUSCLAW</span> and works 24/7.
-              No human intervention required.
+            <p className="text-lg md:text-xl text-[#c1c6d6] max-w-xl font-light leading-relaxed mb-4">
+              Crie um agente autônomo que faz stake, reinveste recompensas e acumula{' '}
+              <span className="text-[#00eefc] font-medium">$NEXUSCLAW</span> 24/7 — sem intervenção humana.
             </p>
-            <div className="flex flex-wrap gap-8 md:gap-16 items-end mb-16">
+            <p className="text-sm font-['JetBrains_Mono'] text-[#f5c542] mb-12">
+              🎁 Primeiros 100 agentes ganham 500 $NEXUSCLAW de bônus após o 1º compound.
+            </p>
+
+            <div className="flex flex-wrap gap-8 md:gap-16 items-end mb-12">
               {[
                 { label: 'active_agents', value: stats.stakers },
                 { label: 'total_tvl', value: `${stats.staked} $NEXUSCLAW` },
@@ -347,17 +354,23 @@ export default function StartAgentContent() {
               ].map((s) => (
                 <div key={s.label}>
                   <div className="font-['JetBrains_Mono'] text-[#00eefc] text-xs tracking-widest uppercase mb-1">{s.label}</div>
-                  <div className="text-5xl font-bold tracking-tighter">{s.value}</div>
+                  <div className="text-4xl md:text-5xl font-bold tracking-tighter">{s.value}</div>
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => challengeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-3 bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-10 py-5 text-lg font-black uppercase tracking-tighter hover:shadow-[0_0_40px_rgba(171,199,255,0.4)] transition-all"
-            >
-              Create my agent now
-              <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
+
+            <div className="flex flex-wrap gap-4 items-center">
+              <button
+                onClick={() => challengeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="inline-flex items-center gap-3 bg-[#00eefc] text-[#001a1a] px-10 py-5 text-base font-black uppercase tracking-tighter hover:bg-[#00d4e0] hover:shadow-[0_0_40px_rgba(0,238,252,0.4)] transition-all"
+              >
+                Criar meu agente agora
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+              <span className="font-['JetBrains_Mono'] text-[10px] text-[#414754]">
+                Gratuito • Leva 3 minutos • Roda localmente
+              </span>
+            </div>
           </div>
         </section>
 
