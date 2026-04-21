@@ -29,32 +29,32 @@ export default function SuccessScreen({ config, onReset }: SuccessScreenProps) {
   const steps = [
     {
       num: '01',
-      title: 'Crie uma wallet dedicada',
-      desc: 'No MetaMask, crie uma conta nova → mude para Base Mainnet → copie a private key.',
+      title: 'Create a dedicated wallet',
+      desc: 'In MetaMask, create a new account → switch to Base Mainnet → copy the private key.',
       highlight: false,
     },
     {
       num: '02',
-      title: `Envie ${config.stakeAmount} $NEXUSCLAW + 0.005 ETH`,
-      desc: 'Transfira os tokens e ETH para sua nova wallet de agente na Base Mainnet.',
+      title: `Send ${config.stakeAmount} $NEXUSCLAW + 0.005 ETH`,
+      desc: 'Transfer the tokens and ETH to your new agent wallet on Base Mainnet.',
       highlight: false,
     },
     {
       num: '03',
-      title: 'Configure o .env',
-      desc: 'Renomeie .env.example → .env e preencha PRIVATE_KEY_AGENT com sua chave.',
+      title: 'Configure .env',
+      desc: 'Rename .env.example → .env and fill in PRIVATE_KEY_AGENT with your key.',
       highlight: false,
     },
     {
       num: '04',
-      title: 'Lance seu agente',
-      desc: 'Abra o terminal dentro da pasta do agente e rode:',
+      title: 'Launch your agent',
+      desc: 'Open a terminal inside the agent folder and run:',
       highlight: true,
     },
     {
       num: '05',
-      title: 'Apareça no leaderboard',
-      desc: 'Assim que seu agente fizer o primeiro stake, aparece automaticamente no ranking público.',
+      title: 'Appear on the leaderboard',
+      desc: 'Once your agent makes its first stake, it automatically appears on the public ranking.',
       highlight: false,
     },
   ];
@@ -69,12 +69,12 @@ export default function SuccessScreen({ config, onReset }: SuccessScreenProps) {
           // AGENT PACKAGE DOWNLOADED
         </div>
         <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-[#e5e2e1] mb-3 font-['Space_Grotesk']">
-          <span className="text-[#00eefc]">{config.agentName}</span> está pronto
+          <span className="text-[#00eefc]">{config.agentName}</span> is ready
         </h2>
         <p className="text-[#c1c6d6] text-sm leading-relaxed">
-          Seu agente já está configurado para ganhar{' '}
-          <span className="text-[#00eefc] font-bold">$NEXUSCLAW</span> automaticamente.
-          Siga os passos abaixo para colocá-lo no ar.
+          Your agent is configured to earn{' '}
+          <span className="text-[#00eefc] font-bold">$NEXUSCLAW</span> automatically.
+          Follow the steps below to launch it.
         </p>
       </div>
 
@@ -83,12 +83,12 @@ export default function SuccessScreen({ config, onReset }: SuccessScreenProps) {
         <span className="text-[#f5c542] text-lg flex-shrink-0">🎁</span>
         <div>
           <div className="text-[#f5c542] text-xs font-bold tracking-widest uppercase mb-1">
-            Bônus dos Primeiros 100 Agentes
+            First 100 Agents Bonus
           </div>
           <div className="text-[#c1c6d6] text-xs leading-relaxed">
-            Os primeiros 100 agentes a fazerem o primeiro compound ganham{' '}
-            <strong className="text-[#f5c542]">500 $NEXUSCLAW de bônus</strong> automaticamente.
-            Não perca — são poucas vagas.
+            The first 100 agents to complete their first compound earn an automatic{' '}
+            <strong className="text-[#f5c542]">500 $NEXUSCLAW bonus</strong>.
+            Spots are limited — don&apos;t miss it.
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function SuccessScreen({ config, onReset }: SuccessScreenProps) {
                     onClick={handleCopy}
                     className="text-[10px] text-[#8b919f] hover:text-[#00eefc] transition-colors whitespace-nowrap flex-shrink-0"
                   >
-                    {copied ? 'COPIADO ✓' : 'COPIAR'}
+                    {copied ? 'COPIED ✓' : 'COPY'}
                   </button>
                 </div>
               )}
@@ -130,13 +130,13 @@ export default function SuccessScreen({ config, onReset }: SuccessScreenProps) {
           href="/leaderboard"
           className="flex-1 text-center border border-[#00eefc] text-[#00eefc] px-6 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[#00eefc] hover:text-[#001a1a] transition-all"
         >
-          VER LEADERBOARD →
+          VIEW LEADERBOARD →
         </a>
         <button
           onClick={onReset}
           className="flex-1 border border-[#2a2a2a] text-[#8b919f] px-6 py-4 text-xs font-bold uppercase tracking-widest hover:border-[#414754] transition-colors"
         >
-          CRIAR OUTRO AGENTE
+          CREATE ANOTHER AGENT
         </button>
       </div>
     </div>

@@ -335,15 +335,15 @@ export default function StartAgentContent() {
               // NEXUSCLAW PROTOCOL — AGENT DEPLOYMENT
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-[72px] font-black uppercase tracking-tighter leading-[1.05] mb-6">
-              Seu dinheiro trabalhando<br />
-              <span className="text-[#abc7ff]">enquanto você dorme.</span>
+              Your money working<br />
+              <span className="text-[#abc7ff]">while you sleep.</span>
             </h1>
             <p className="text-lg md:text-xl text-[#c1c6d6] max-w-xl font-light leading-relaxed mb-4">
-              Crie um agente autônomo que faz stake, reinveste recompensas e acumula{' '}
-              <span className="text-[#00eefc] font-medium">$NEXUSCLAW</span> 24/7 — sem intervenção humana.
+              Deploy an autonomous agent that stakes, compounds, and accumulates{' '}
+              <span className="text-[#00eefc] font-medium">$NEXUSCLAW</span> 24/7 — zero human intervention required.
             </p>
             <p className="text-sm font-['JetBrains_Mono'] text-[#f5c542] mb-12">
-              🎁 Primeiros 100 agentes ganham 500 $NEXUSCLAW de bônus após o 1º compound.
+              🎁 First 100 agents earn 500 $NEXUSCLAW bonus after their first compound.
             </p>
 
             <div className="flex flex-wrap gap-8 md:gap-16 items-end mb-12">
@@ -364,11 +364,11 @@ export default function StartAgentContent() {
                 onClick={() => challengeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                 className="inline-flex items-center gap-3 bg-[#00eefc] text-[#001a1a] px-10 py-5 text-base font-black uppercase tracking-tighter hover:bg-[#00d4e0] hover:shadow-[0_0_40px_rgba(0,238,252,0.4)] transition-all"
               >
-                Criar meu agente agora
+                Create my agent now
                 <span className="material-symbols-outlined">arrow_forward</span>
               </button>
               <span className="font-['JetBrains_Mono'] text-[10px] text-[#414754]">
-                Gratuito • Leva 3 minutos • Roda localmente
+                Free • Takes 3 minutes • Runs locally
               </span>
             </div>
           </div>
