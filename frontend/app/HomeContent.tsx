@@ -7,7 +7,7 @@ import { formatUnits } from 'viem'
 import { STAKING_ADDRESS, STAKING_ABI, TOKEN_ADDRESS, TOKEN_ABI, BASESCAN_URL } from '@/config/contracts'
 import { TopNav } from '@/components/layout/TopNav'
 
-const AGENT_ADDRESS = '0x6e4F3BF046Ba4d32A881E94F285B1f41D9F2F4a9' as const
+const AGENT_ADDRESS = '0xF350367d4E3e0e45dc0f9E425741A86b8cf7e66f' as const
 
 function fmt(val: bigint | undefined, decimals = 2): string {
   if (!val) return '0'
@@ -96,7 +96,7 @@ export default function HomeContent() {
             <div className="flex flex-wrap gap-12">
               {[
                 { label: 'AGENTS_RUNNING', value: totalStakers?.toString() ?? '...' },
-                { label: 'TOTAL_TVL', value: totalStaked ? `${fmt(totalStaked)} $NCLAW` : '...' },
+                { label: 'TOTAL_TVL', value: totalStaked ? `${fmt(totalStaked)} $NEXUSCLAW` : '...' },
                 { label: 'BASE_APY', value: '20%' },
                 { label: 'HUMANS_REQUIRED', value: '0' },
               ].map((stat) => (
@@ -132,8 +132,8 @@ export default function HomeContent() {
 
                 <div className="space-y-4">
                   {[
-                    { label: 'STAKED', value: `${agentStaked} $NCLAW` },
-                    { label: 'PENDING_REWARDS', value: `+${agentPending} $NCLAW` },
+                    { label: 'STAKED', value: `${agentStaked} $NEXUSCLAW` },
+                    { label: 'PENDING_REWARDS', value: `+${agentPending} $NEXUSCLAW` },
                     { label: 'COMPOUND_INTERVAL', value: 'every 5 min' },
                     { label: 'GAS_SPENT', value: '< $0.01 total' },
                     { label: 'CYCLES_COMPLETED', value: cyclesCompleted },
