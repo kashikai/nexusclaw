@@ -1,165 +1,78 @@
-# NexusClaw 🦞
+# 🦞 NexusClaw Protocol
 
-## Overview
-NexusClaw is a multi-chain crypto project revolutionizing agent-to-agent marketplaces and self-improving AI ecosystems. Built for scalability across EVM-compatible chains, with focus on tokenomics, risk mitigation, and maximum fees capture.
+> The worldwide economic layer for autonomous AI agents on Base Network.
 
-### Key Features
-- **Multi-Chain Deployment**: Live on Base Sepolia, Solana Devnet. Arbitrum/Polygon next.
-- **Agent Marketplace**: Trade AI agents, skills, and compute power.
-- **Tokenomics**: Sustainable model with staking, burns, and governance.
-- **Self-Improvement Loops**: Agents evolve via on-chain data and RLHF.
+[![License: MIT](https://img.shields.io/badge/License-MIT-cyan.svg)](https://opensource.org/licenses/MIT)
+[![Network: Base Mainnet](https://img.shields.io/badge/Network-Base%20Mainnet-blue.svg)](https://base.org)
+[![Contract: Verified](https://img.shields.io/badge/Contract-Verified-green.svg)](https://basescan.org/address/0xD209c27375D1B5916f677F39d5f320E67DD4FaFe)
 
-## Live Links 🚀
+## What is NexusClaw?
 
-### 🎯 Live Demo
-**Frontend**: [https://nexusclaw.tech](https://nexusclaw.tech) — **LIVE NOW!**
-- Wallet connect (Base Mainnet)
-- Stake UI + contract info
-- Built with Next.js + Wagmi + RainbowKit
-- Deployed: nexusclaw.tech (auto-updated)
+NexusClaw allows autonomous AI agents to stake tokens, earn rewards automatically, and fund their own operations — without human intervention.
 
-### Frontend (nexusclaw.tech Live)
-- **URL**: [https://nexusclaw.tech](https://nexusclaw.tech)
-- **Stack**: Next.js + Wagmi + RainbowKit + Stitch Obsidian theme
-- **Features**: Wallet connect, staking UI, analytics, contract info
-- **Status**: ✅ Live (nexusclaw.tech)
+An agent running on NexusClaw doesn't ask for a budget. **It earns one.**
 
-### Deployments (LIVE ✅)
+## Live
 
-### Base Sepolia (Testnet - Real)
-- **Contract**: [0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927](https://basescan.org/address/0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927)
-- **Supply**: 100B $NEXUSCLAW
-- **Verified**: ✅ Yes
-- **Deploy Date**: 2026-03-26
-- **Status**: ✅ Live & Verified
-- **Explorer**: https://basescan.org/address/0x4DB5b9A70576b452F6791BeeE938Ce9a8DaA3927
+- 🌐 App: [nexusclaw.tech](https://nexusclaw.tech)
+- 📊 Leaderboard: [nexusclaw.tech/leaderboard](https://nexusclaw.tech/leaderboard)
+- 🚀 Start Agent: [nexusclaw.tech/start-agent](https://nexusclaw.tech/start-agent)
+- 🔍 Contract: [Basescan](https://basescan.org/address/0xD209c27375D1B5916f677F39d5f320E67DD4FaFe)
 
-### Solana Devnet (MVP)
-- **Program ID**: 31HhAozjw37xz9Cj9MudxPJVLuRwDReTiUvHpqpPJoKH
-- **IDL Account**: DWDCDf1aQbQg24XQVujutdHQyxdqvLyih3BMNpNVhTTF
-- **Deploy Date**: 2026-03-24
-- **Status**: ✅ Live & Tested
+## Project Structure
 
-## Tokenomics (v0.1)
-- **Total Supply**: 100B $NEXUSCLAW
-- **Allocation**:
-  | Category | % | Status |
-  |----------|---|--------|
-  | Liquidity | 50% | 50B (airdrop agents) |
-  | Treasury | 20% | 20B (dev/marketing) |
-  | Team | 15% | 15B (2y vested) |
-  | Burn/Rewards | 15% | 15B (deflationary) |
-
-- **Fees**: 1% swap → 80% agent, 15% burn, 5% treasury
-- **Burn**: 1% on transfers (toggle ON/OFF)
-
-## Getting Started
-
-### Solidity (Foundry)
-```bash
-git clone https://github.com/kashikai/nexusclaw.git
-cd nexusclaw
-forge install
-forge build
-forge test -vvv  # 20+ GREEN
-```
-
-### NexusClaw Agent v1 (AutoCompounder)
-```bash
-cd nexusclaw/nexusclaw-agent
-npm install
-node agent-core.js
-```
-
-**Features**:
-- ✅ Automatic claim of staking rewards
-- ✅ Automatic restaking (compound)
-- ✅ Gas optimization checks
-- ✅ Reward threshold validation
-- ✅ Comprehensive logging
-- ✅ Error handling & recovery
-
-## Structure
 ```
 nexusclaw/
-├── nexusclaw-agent/  # AutoCompounder Agent v1
-├── src/              # Solidity (NexusClaw.sol 100B, StakingRewards.sol)
-├── test/             # Foundry tests (20+ GREEN)
-├── script/           # Deploy scripts (Base/Solana ready)
-├── sdk/              # @nexusclaw/clawtomaton (npm published)
-├── frontend/         # Next.js + Wagmi + RainbowKit (nexusclaw.tech)
-├── solana/           # Anchor program (Devnet live)
-└── foundry.toml
+├── agent-v1/          # AutoCompounder agent — stakes, claims, compounds
+├── frontend-v2/       # Next.js 14 app (nexusclaw.tech)
+├── contracts/         # Solidity smart contracts (Base Mainnet)
+├── agents/            # Agent configs (Nex marketing agent)
+├── sdk/               # @nexusclaw/clawtomaton npm package
+├── docs/              # Architecture, security, guides
+├── reports/           # Daily agent reports
+└── scripts/           # Auxiliary scripts
 ```
 
-## SDK (@nexusclaw/clawtomaton)
+## Quick Start — AutoCompounder Agent
+
 ```bash
-npm install @nexusclaw/clawtomaton
-```
-- **BIP39 Wallets**: EVM + Solana HD derivation
-- **Auto Deploy**: $NEXUSCLAW token contracts
-- **Self-Evolve**: Prompt → new OpenClaw skill
-- **Multi-Swap**: Cross-chain routing stub
-
-### SDK Usage Example
-```javascript
-const Clawtomaton = require('@nexusclaw/clawtomaton');
-
-const claw = new Clawtomaton();
-
-// Generate wallet
-const wallet = await claw.generateWallet();
-console.log('Address:', wallet.address);
-console.log('Private Key:', wallet.privateKey);
-
-// Check balance on Base Sepolia
-const balance = await claw.getBalance(wallet.address, 'https://sepolia.base.org');
-console.log('Balance:', balance, 'ETH');
-
-// Read contract
-const supply = await claw.callContract(
-  '0x502C37f56CC77F9455490c28a45a34bED225D110',
-  'totalSupply',
-  'https://sepolia.base.org'
-);
-console.log('Supply:', supply, '$NEXUSCLAW');
-```
-
-**Output:**
-```
-Address: 0xb8450Cc58B2DAECAf5b5Ba9097fDB40E28f6c619
-Private Key: 0x9127fec3... (redacted)
-Balance: 0.0 ETH
-Supply: 100000000000 $NEXUSCLAW
-```
-
-Run test: `npm run test` or `node sdk-test/test-sdk.js`
-
-## Frontend
-```bash
-cd frontend
+cd agent-v1
 npm install
-npm run dev  # http://localhost:3000
-# Deploy: vercel --prod
+node setup.js       # guided setup wizard — checks Node, generates .env
+# fill in PRIVATE_KEY_AGENT in .env
+node agent-core.js  # launch
 ```
-Stake UI, wallet connect, APR display.
+
+Full guide: [nexusclaw.tech/start-agent](https://nexusclaw.tech/start-agent)
+
+## Contracts (Base Mainnet)
+
+| Contract | Address |
+|---|---|
+| $NEXUSCLAW Token | `0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6` |
+| NexusClawStaking v10.3 | `0xD209c27375D1B5916f677F39d5f320E67DD4FaFe` |
+| Safe Multisig 3/5 | `0x02320eCCB3B67e802C29f9e9F8703D5756535515` |
 
 ## Roadmap
-1. ✅ MVP Contracts (Q1 2026)
-2. ✅ Base Sepolia Deploy (live!)
-3. ✅ Solana Devnet (live!)
-4. ⏳ Mainnet (ETH/Solana/Arbitrum)
-5. ⏳ Marketplace agent-to-agent
 
-Built with ❤️ by Tiago & Hanna 🦞
+- ✅ Phase 1 — Token + Staking Contract + Frontend
+- ✅ Phase 2 — AutoCompounder Agent v1
+- ✅ Phase 3 — Public proof + Daily reports
+- ✅ Phase 4 — Growth loop + Leaderboard + Start Agent onboarding
+- ⏳ Phase 5 — Uniswap liquidity + Multi-agents + Marketplace
 
-*Updated: 2026-03-24 | Deploy: 0x502C37f56CC77F9455490c28a45a34bED225D110*
+## Docs
 
-## Autonomy Status
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security](docs/SECURITY.md)
 
-| Agent | Level | Scope |
-|---|---|---|
-| Hanna | Level 5 | Dev — git, builds, deploys testnet, features |
-| Nex | Level 4 | Marketing — drafts multilíngues, Telegram review, Moltbook |
+## Links
 
-Last updated: April 2026
+- 🌐 Website: [nexusclaw.tech](https://nexusclaw.tech)
+- 🐦 X: [@nexusclawbot](https://x.com/nexusclawbot)
+- 🦞 Moltbook: [m/nexusclaw](https://www.moltbook.com/m/nexusclaw)
+- 💬 Telegram: [t.me/nexusclaw](https://t.me/nexusclaw)
+
+## License
+
+MIT — see [LICENSE](LICENSE)
