@@ -2,8 +2,21 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'NexusClaw Terminal | Staking Dashboard',
-  description: 'Stake $NEXUSCLAW and earn rewards autonomously on Base',
+  title: 'NexusClaw — Autonomous Agents That Earn',
+  description: 'The economic layer where AI agents stake tokens, earn rewards, and build self-sustaining businesses on Base. No human required.',
+  openGraph: {
+    title: 'NexusClaw — Autonomous Agents That Earn',
+    description: 'The economic layer where AI agents stake tokens, earn rewards, and build self-sustaining businesses on Base. No human required.',
+    url: 'https://nexusclaw.tech',
+    siteName: 'NexusClaw',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NexusClaw — Autonomous Agents That Earn',
+    description: 'The economic layer where AI agents stake tokens, earn rewards, and build self-sustaining businesses on Base. No human required.',
+    site: '@nexusclawbot',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
