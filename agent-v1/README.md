@@ -8,71 +8,69 @@ Every 5 minutes it:
 3. Re-stakes the claimed tokens (auto-compound)
 4. Logs every action with timestamp
 
-Your agent appears on the [public leaderboard](https://nexusclaw.tech/leaderboard) automatically — no registration needed.
+Your agent appears on the [public leaderboard](https://nexusclaw.tech/leaderboard) automatically.
 
 ---
 
 ## Requirements
 
-- **Node.js 18+** — [download](https://nodejs.org)
-- **$NEXUSCLAW tokens** — [earn free tokens via X Challenge](https://nexusclaw.tech/start-agent)
-- **0.005+ ETH on Base** — for gas fees (~$0.001 per transaction)
-- **A dedicated agent wallet** — never use your main wallet
+| | |
+|---|---|
+| **Node.js 18+** | [nodejs.org](https://nodejs.org) |
+| **MetaMask** | [metamask.io](https://metamask.io) |
+| **$NEXUSCLAW tokens** | [Earn free via X Challenge](https://nexusclaw.tech/start-agent) |
+| **0.005+ ETH on Base** | For gas (~$0.001 per transaction) |
 
 ---
 
 ## Quick Start
 
-### 1. Clone the repo
-
 ```bash
-git clone https://github.com/kashikai/nexusclaw.git
-cd nexusclaw/agent-v1
-```
-
-### 2. Install dependencies
-
-```bash
+# 1. Install dependencies
 npm install
-```
 
-### 3. Configure your .env
+# 2. Run the setup wizard
+#    Checks your environment, generates .env, and guides you through launch
+node setup.js
 
-```bash
-cp .env.example .env
-```
+# 3. Open .env in a text editor and fill in your private key
+#    (The wizard tells you exactly how to export it from MetaMask)
 
-Edit `.env` and fill in:
-
-| Variable | Description |
-|---|---|
-| `PRIVATE_KEY_AGENT` | Your agent wallet private key (export from MetaMask) |
-| `RPC_URL` | Base Mainnet RPC — default works, private RPC recommended |
-| `STAKING_ADDRESS` | NexusClaw Staking contract — pre-filled |
-| `TOKEN_ADDRESS` | $NEXUSCLAW token contract — pre-filled |
-| `MIN_REWARD_CLAW` | Minimum rewards before claiming (default: 1) |
-| `POLL_INTERVAL_MINUTES` | How often to check (default: 5) |
-
-### 4. Launch your agent
-
-```bash
+# 4. Launch your agent
 node agent-core.js
-```
-
-You should see:
-
-```
-[2024-01-01T00:00:00.000Z] 🦞 NexusClaw AutoCompounder Agent v1.0.0
-[2024-01-01T00:00:00.000Z]    Agent wallet : 0xYourAgentAddress
-[2024-01-01T00:00:00.000Z]    Staking      : 0xD209c27375D1B5916f677F39d5f320E67DD4FaFe
-[2024-01-01T00:00:00.000Z]    Poll interval: every 5 minute(s)
 ```
 
 ---
 
-## Run in background (optional)
+## What the setup wizard does
 
-Using `pm2` (recommended for 24/7 operation):
+`node setup.js` will automatically:
+
+- ✓ Verify Node.js 18+ is installed
+- ✓ Install all dependencies (`npm install`)
+- ✓ Test your connection to Base Mainnet
+- ✓ Generate your `.env` file from the template
+- ✓ Show clear instructions for adding your private key
+
+**Your private key is never requested by the wizard.**
+You add it manually to `.env` in your own text editor — it never touches the script.
+
+---
+
+## Security
+
+| Rule | Why |
+|---|---|
+| **Dedicated wallet only** | Isolate agent funds from your main wallet |
+| **Never commit `.env`** | Already in `.gitignore` — double-check before any push |
+| **Never share your private key** | Anyone with it controls the agent wallet |
+| **Minimum ETH needed** | ~0.005 ETH covers weeks of gas at $0.001/tx |
+
+Your private key stays on your machine. The agent calls the NexusClaw contracts directly — no intermediary server.
+
+---
+
+## Run 24/7 with pm2 (optional)
 
 ```bash
 npm install -g pm2
@@ -80,15 +78,6 @@ pm2 start agent-core.js --name nexusclaw-agent
 pm2 save
 pm2 startup
 ```
-
----
-
-## Security
-
-- **Your private key never leaves your machine** — the agent runs locally
-- **Never commit your `.env` file** — it is in `.gitignore`
-- Use a **dedicated wallet** with only the tokens needed for staking
-- Minimum ETH needed for gas: ~0.005 ETH (~$0.015)
 
 ---
 
@@ -113,7 +102,6 @@ Complete the **X Challenge** at [nexusclaw.tech/start-agent](https://nexusclaw.t
 - Leaderboard: [nexusclaw.tech/leaderboard](https://nexusclaw.tech/leaderboard)
 - X: [@nexusclawbot](https://x.com/nexusclawbot)
 - Telegram: [t.me/nexusclaw](https://t.me/nexusclaw)
-- Moltbook: [moltbook.com/m/nexusclaw](https://www.moltbook.com/m/nexusclaw)
 
 ---
 
