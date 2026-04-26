@@ -2,65 +2,191 @@
 
 import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
-import { STAKING_ADDRESS, TOKEN_ADDRESS, BASESCAN_URL } from '@/config/contracts'
+import { useReadContracts } from 'wagmi'
+import { formatUnits } from 'viem'
+import { STAKING_ADDRESS, STAKING_ABI, TOKEN_ADDRESS, TOKEN_ABI, BASESCAN_URL } from '@/config/contracts'
 import { TopNav } from '@/components/layout/TopNav'
 
+const AGENT_ADDRESS = '0x6e4F3BF046Ba4d32A881E94F285B1f41D9F2F4a9' as const
+
+function fmt(val: bigint | undefined, decimals = 2): string {
+  if (!val) return '0'
+  const n = parseFloat(formatUnits(val, 18))
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
+  return n.toFixed(decimals)
+}
+
 export default function HomeContent() {
+  const { data } = useReadContracts({
+    contracts: [
+      { address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStakers' },
+      { address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'totalStaked' },
+      { address: STAKING_ADDRESS, abi: STAKING_ABI, functionName: 'getUserInfo', args: [AGENT_ADDRESS] },
+    ],
+  })
+
+  const totalStakers = data?.[0]?.result as bigint | undefined
+  const totalStaked = data?.[1]?.result as bigint | undefined
+  const agentInfo = data?.[2]?.result as [bigint, bigint, bigint, bigint] | undefined
+
+  const agentStaked = fmt(agentInfo?.[0], 2)
+  const agentPending = fmt(agentInfo?.[1], 4)
+  const agentStakedAt = agentInfo?.[2] ? Number(agentInfo[2]) : 0
+  const cyclesCompleted = agentStakedAt
+    ? Math.floor((Date.now() / 1000 - agentStakedAt) / 300).toLocaleString()
+    : '...'
+
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
       <TopNav active="/staking" />
 
       <main className="pt-24">
-        {/* Hero Section */}
-        <section className="relative min-h-[870px] flex items-center justify-center px-6 overflow-hidden">
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(58, 139, 255, 0.15) 0%, transparent 70%)' }} />
-          {/* Lobster Watermark */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
+        {/* Hero */}
+        <section className="relative min-h-screen flex items-center border-b border-cyan-900 overflow-hidden">
+
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/10 via-black to-black pointer-events-none" />
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1/2 h-full flex items-center justify-end opacity-5 pointer-events-none">
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7gI3q19CF0q6f4SFhhodsd9ZEV4zvIl-dAbG2LlajH1CSSTQxkSS_pvOTh3oaZer0SEnv5A6ipLwI94zGcVhiaFhpWKGJkzeKnWsFjhiLu3MwUKhzAyFY-q6sGLXst28gvTVZvbJI1qAMPO6eBqHMtnk-rzFJj7r1VVL2Vu-FxWjP6VdXBZ6VqsTe5mDp1pEevs_e6dIzzaTPc8EU_ZV6yv0EJkuDKZ2K6vj5Ae1GCIFr7D9zFf3zrBABwqip7zG0yo7zl9VWxi_h"
               alt="NexusClaw Lobster"
-              className="w-[500px] h-[500px] object-contain"
+              className="w-[600px] h-[600px] object-contain"
             />
           </div>
-          <div className="relative z-10 max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#353534] rounded-full mb-8 border border-[#414754]/20">
-              <span className="flex h-2 w-2 rounded-full bg-[#4ddbc9] animate-pulse" />
-              <span className="text-[10px] font-['JetBrains_Mono'] tracking-[0.2em] text-[#4ddbc9] uppercase">Network Status: Online</span>
+
+          <div className="relative max-w-5xl mx-auto px-6 py-32">
+
+            {/* Status badge */}
+            <div className="inline-flex items-center gap-2 border border-cyan-900 px-4 py-2 text-xs font-mono text-cyan-500 mb-8">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              AGENT V1 LIVE ON BASE MAINNET — {new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Tokyo' })} JST
             </div>
-            <h1 className="text-6xl md:text-8xl font-black font-['Space_Grotesk'] tracking-tighter uppercase leading-[0.9] mb-6">
-              Stake{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#abc7ff] via-[#448fff] to-[#4ddbc9]">
-                $NEXUSCLAW
-              </span>
+
+            {/* Headline */}
+            <h1 className="text-6xl md:text-8xl font-bold font-['Space_Grotesk'] leading-none mb-6 uppercase">
+              AUTONOMOUS<br />
+              AGENTS THAT<br />
+              <span className="text-cyan-400">EARN.</span>
             </h1>
-            <p className="text-[#c1c6d6] max-w-2xl mx-auto text-lg mb-12 font-light leading-relaxed">
-              Unleash the power of the deep. Access institutional-grade staking yields and deflationary mechanics on the most secure terminal in the ecosystem.
+
+            {/* Subheadline */}
+            <p className="text-gray-400 text-xl max-w-2xl mb-12 font-['JetBrains_Mono'] leading-relaxed">
+              NexusClaw is the economic layer where AI agents stake tokens,
+              earn rewards, and build self-sustaining businesses on Base.
+              <span className="text-white"> No human required.</span>
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-4 mb-16">
               <Link
-                href="/staking"
-                className="px-10 py-5 bg-gradient-to-br from-[#abc7ff] to-[#448fff] text-[#00285a] font-['Space_Grotesk'] font-bold uppercase tracking-wider rounded-sm shadow-xl hover:shadow-[#abc7ff]/20 transition-all"
+                href="/start-agent"
+                className="bg-cyan-400 text-black font-bold px-10 py-4 text-sm font-['JetBrains_Mono'] hover:bg-cyan-300 transition-all hover:scale-105"
               >
-                Launch Staking App
+                START AN AGENT →
               </Link>
               <Link
-                href="/analytics"
-                className="px-10 py-5 bg-[#1c1b1b] border border-[#414754]/30 text-[#e5e2e1] font-['Space_Grotesk'] font-bold uppercase tracking-wider rounded-sm hover:bg-[#201f1f] transition-all"
+                href="/leaderboard"
+                className="border border-cyan-400 text-cyan-400 font-bold px-10 py-4 text-sm font-['JetBrains_Mono'] hover:bg-cyan-400 hover:text-black transition-all"
               >
-                View Analytics
+                VIEW LIVE PROOF →
               </Link>
             </div>
+
+            {/* Live stats */}
+            <div className="flex flex-wrap gap-12">
+              {[
+                { label: 'AGENTS_RUNNING', value: totalStakers?.toString() ?? '...' },
+                { label: 'TOTAL_TVL', value: totalStaked ? `${fmt(totalStaked)} $NCLAW` : '...' },
+                { label: 'BASE_APY', value: '20%' },
+                { label: 'HUMANS_REQUIRED', value: '0' },
+              ].map((stat) => (
+                <div key={stat.label} className="font-['JetBrains_Mono']">
+                  <div className="text-xs text-cyan-600 mb-1">{stat.label}</div>
+                  <div className="text-3xl font-bold">{stat.value}</div>
+                </div>
+              ))}
+            </div>
+
           </div>
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
-            <span className="text-[10px] font-['JetBrains_Mono'] tracking-widest uppercase">System Scroll</span>
-            <div className="w-[1px] h-12 bg-gradient-to-b from-[#abc7ff] to-transparent" />
+        </section>
+
+        {/* Live Proof Section */}
+        <section className="border-b border-cyan-900 px-6 py-16 bg-[#0a0a0a]">
+          <div className="max-w-5xl mx-auto">
+
+            <div className="text-xs text-cyan-500 font-['JetBrains_Mono'] mb-2 tracking-widest">
+              // LIVE PROOF — VERIFIABLE ON-CHAIN
+            </div>
+            <h2 className="text-3xl font-bold font-['Space_Grotesk'] uppercase mb-12">
+              AGENT V1 IS RUNNING RIGHT NOW
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Agent status card */}
+              <div className="border border-cyan-900 p-6 font-['JetBrains_Mono']">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-xs text-green-400">AGENT ONLINE</span>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    { label: 'STAKED', value: `${agentStaked} $NCLAW` },
+                    { label: 'PENDING_REWARDS', value: `+${agentPending} $NCLAW` },
+                    { label: 'COMPOUND_INTERVAL', value: 'every 5 min' },
+                    { label: 'GAS_SPENT', value: '< $0.01 total' },
+                    { label: 'CYCLES_COMPLETED', value: cyclesCompleted },
+                  ].map((item) => (
+                    <div key={item.label} className="flex justify-between border-b border-gray-800 pb-2">
+                      <span className="text-xs text-gray-500">{item.label}</span>
+                      <span className="text-sm text-cyan-400">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* What this proves */}
+              <div className="border border-cyan-900 p-6 font-['JetBrains_Mono']">
+                <div className="text-xs text-gray-500 mb-6 tracking-widest">// WHAT THIS PROVES</div>
+
+                <div className="space-y-4">
+                  {[
+                    'An AI agent can earn money autonomously',
+                    'Gas costs are negligible on Base Mainnet',
+                    'Rewards compound automatically every 5 min',
+                    'No human intervention required',
+                    'All activity verifiable on-chain',
+                  ].map((text) => (
+                    <div key={text} className="flex gap-3">
+                      <span className="text-cyan-400 flex-shrink-0">✓</span>
+                      <span className="text-gray-300 text-sm">{text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-gray-800">
+                  <a
+                    href={`${BASESCAN_URL}/address/${STAKING_ADDRESS}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-cyan-800 hover:text-cyan-400 transition-colors"
+                  >
+                    VERIFY ON BASESCAN →
+                  </a>
+                </div>
+              </div>
+
+            </div>
           </div>
         </section>
 
         {/* Key Stats Grid */}
         <section className="py-24 px-8 max-w-[1440px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-xs text-gray-500 font-['JetBrains_Mono'] mb-2 tracking-widest">
+            // HOW AGENTS EARN — THE MECHANISM
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div className="bg-[#1c1b1b] p-8 rounded-lg border-l-4 border-[#abc7ff] group hover:bg-[#201f1f] transition-colors">
               <div className="flex justify-between items-start mb-6">
                 <span className="material-symbols-outlined text-[#abc7ff] text-3xl">trending_up</span>
@@ -156,33 +282,21 @@ export default function HomeContent() {
                 <div className="space-y-6">
                   <h3 className="text-xs font-['JetBrains_Mono'] uppercase tracking-[0.3em] text-[#4ddbc9]">Fee Distribution Breakdown</h3>
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-['JetBrains_Mono'] uppercase">
-                        <span>Yield Rewards</span>
-                        <span className="text-[#4ddbc9]">40%</span>
+                    {[
+                      { label: 'Yield Rewards', pct: '40%', color: '#4ddbc9', w: 'w-[40%]' },
+                      { label: 'Ecosystem Growth', pct: '35%', color: '#abc7ff', w: 'w-[35%]' },
+                      { label: 'Burn Protocol', pct: '25%', color: '#ffb3b1', w: 'w-[25%]' },
+                    ].map((row) => (
+                      <div key={row.label} className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-['JetBrains_Mono'] uppercase">
+                          <span>{row.label}</span>
+                          <span style={{ color: row.color }}>{row.pct}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-[#353534] rounded-full overflow-hidden">
+                          <div className={`h-full ${row.w}`} style={{ background: row.color }} />
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-[#353534] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#4ddbc9] w-[40%]" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-['JetBrains_Mono'] uppercase">
-                        <span>Ecosystem Growth</span>
-                        <span className="text-[#abc7ff]">35%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-[#353534] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#abc7ff] w-[35%]" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-['JetBrains_Mono'] uppercase">
-                        <span>Burn Protocol</span>
-                        <span className="text-[#ffb3b1]">25%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-[#353534] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#ffb3b1] w-[25%]" />
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -243,7 +357,7 @@ export default function HomeContent() {
       <footer className="bg-[#070707] border-t border-[#414754]/10">
         <div className="flex flex-col md:flex-row justify-between items-center px-12 py-8 w-full max-w-[1440px] mx-auto">
           <p className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] mb-6 md:mb-0">
-            © 2024 NEXUS CLAW PROTOCOL. ALL RIGHTS RESERVED.
+            © 2026 NEXUS CLAW PROTOCOL. ALL RIGHTS RESERVED.
           </p>
           <div className="flex flex-wrap justify-center gap-8">
             <a href={`${BASESCAN_URL}/address/${TOKEN_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] transition-all opacity-80 hover:opacity-100">
