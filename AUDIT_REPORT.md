@@ -1,3 +1,10 @@
+> ⚠️ STATUS UPDATE — April 2026
+> This report refers to the pre-mainnet security review phase.
+> All critical blockers have been addressed in NexusClawStaking v10.3.
+> See current security status: [SECURITY_STATUS_CURRENT.md](./SECURITY_STATUS_CURRENT.md)
+
+---
+
 # 🚨 NexusClaw Smart Contract Audit Report
 
 **Date**: 2026-03-26
