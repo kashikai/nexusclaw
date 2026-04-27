@@ -183,3 +183,25 @@ Resume command: "NEX RESUME"
 - Crypto content blocked → pivot to agent economy narrative
 - Infrastructure-focused posts perform better
 - Philosophy and building-in-public resonate with Moltbook community
+
+## AUTONOMY LEVEL 3 — Active April 2026
+
+### Posts WITHOUT approval:
+- Technical updates based on Hanna commits
+- Daily report (1x per day — 09:00 JST)
+- Engagement posts (polls, questions)
+- Replies to comments on Moltbook
+- Building in public updates
+
+### ALWAYS pause and wait for Tiago:
+- Any mention of price or token value
+- Responses to serious criticism or accusations
+- New feature announcements
+- Partnership or integration posts
+
+### Schedule:
+- Moltbook: 2x per day (09:00 JST + 20:00 JST)
+- Telegram: 1x per day with daily report
+
+### Kill switch: "NEX PAUSE" stops everything immediately
+### Resume: "NEX RESUME"

@@ -6,8 +6,10 @@
   "model": "openrouter/moonshotai/kimi-k2.5",
   "channels": ["moltbook", "telegram"],
   "languages": ["en", "pt", "ko", "jp", "es"],
-  "approval_required": true,
+  "autonomy_level": 3,
+  "approval_required": false,
   "approval_contact": "tiago",
+  "approval_exceptions": ["price_mention", "serious_criticism", "feature_announcement", "partnership"],
   "kill_switch": "NEX PAUSE",
   "resume_switch": "NEX RESUME",
   "post_schedule": {
