@@ -61,14 +61,6 @@ export default function HomeContent() {
           <div className="absolute inset-0 bg-black/60 pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-          {/* Lobster — right side */}
-          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[55%] h-full flex items-center justify-end pointer-events-none select-none">
-            <img
-              src="/lobster.png"
-              alt="NexusClaw Lobster"
-              className="w-full h-full object-contain object-right opacity-90"
-            />
-          </div>
 
           <div className="relative max-w-5xl mx-auto px-6 py-32">
 
