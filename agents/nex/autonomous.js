@@ -108,6 +108,29 @@ async function notifyTiago(message) {
   });
 }
 
+async function postToGroup(message) {
+  const GROUP_ID = process.env.NEXUSCLAW_GROUP_ID;
+  if (!GROUP_ID) {
+    console.log('⚠️ NEXUSCLAW_GROUP_ID not set — skipping group post');
+    return;
+  }
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: GROUP_ID,
+        text: message,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: false,
+      })
+    });
+    console.log('✅ Posted to Telegram group');
+  } catch (e) {
+    console.error('❌ Group post failed:', e.message);
+  }
+}
+
 async function runNex() {
   const state = loadState();
 
@@ -138,6 +161,7 @@ async function runNex() {
         state.totalPosts = (state.totalPosts || 0) + 1;
         saveState(state);
         await notifyTiago(`🦞⚡ *NEX DAILY REPORT POSTED*\n\nPost ID: \`${result.postId}\`\nhttps://www.moltbook.com/m/nexusclaw\n\n${draft}`);
+        await postToGroup(`🦞⚡ *NexusClaw Daily Report*\n\n${draft}\n\n📊 [View on Moltbook](https://www.moltbook.com/m/nexusclaw)`);
         console.log('✅ Daily report posted:', result.postId);
       } else {
         console.error('❌ Daily report failed:', result.error);
@@ -170,6 +194,7 @@ async function runNex() {
           state.totalPosts = (state.totalPosts || 0) + 1;
           saveState(state);
           await notifyTiago(`🦞⚡ *NEX AUTO-POST — COMMIT*\n\n\`${latestCommit.hash}\` ${latestCommit.message}\nPost ID: \`${result.postId}\`\n\n${draft}`);
+          await postToGroup(`🔧 *NexusClaw Update*\n\n${draft}`);
           console.log('✅ Commit post:', result.postId);
         } else {
           state.lastCommitHash = latestCommit.hash;
@@ -201,6 +226,7 @@ async function runNex() {
         state.totalPosts = (state.totalPosts || 0) + 1;
         saveState(state);
         await notifyTiago(`🦞⚡ *NEX EVENING POST*\n\nPost ID: \`${result.postId}\`\nhttps://www.moltbook.com/m/nexusclaw\n\n${draft}`);
+        await postToGroup(`🦞⚡ ${draft}`);
         console.log('✅ Evening post:', result.postId);
       } else {
         console.error('❌ Evening post failed:', result.error);
@@ -236,8 +262,16 @@ if (BOT_TOKEN && TIAGO) {
 
     } else if (msg.text === 'NEX STATUS') {
       const state = loadState();
+      const groupId = process.env.NEXUSCLAW_GROUP_ID || 'NOT SET';
       await bot.sendMessage(TIAGO,
-        `🦞 *NEX STATUS — Level 3*\n\nPaused: ${state.paused ? 'YES 🛑' : 'NO ✅'}\nTotal posts: ${state.totalPosts || 0}\nPosts today: ${state.postsToday || 0}\nLast commit: \`${state.lastCommitHash || 'none'}\`\nLast daily: ${state.lastDailyReport || 'none'}`,
+        `🦞 *NEX STATUS — LEVEL 3*\n\n` +
+        `Paused: ${state.paused ? 'YES 🛑' : 'NO ✅'}\n` +
+        `Total posts: ${state.totalPosts || 0}\n` +
+        `Posts today: ${state.postsToday || 0}\n` +
+        `Last commit: \`${state.lastCommitHash || 'none'}\`\n` +
+        `Last daily: ${state.lastDailyReport || 'none'}\n` +
+        `Group ID: \`${groupId}\`\n` +
+        `Moltbook: https://www.moltbook.com/m/nexusclaw`,
         { parse_mode: 'Markdown' }
       );
     }
