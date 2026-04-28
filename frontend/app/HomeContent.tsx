@@ -45,12 +45,28 @@ export default function HomeContent() {
         {/* Hero */}
         <section className="relative min-h-screen flex items-center border-b border-cyan-900 overflow-hidden">
 
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/10 via-black to-black pointer-events-none" />
-          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1/2 h-full flex items-center justify-end opacity-5 pointer-events-none">
+          {/* Video background */}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/hero-bg.webm" type="video/webm" />
+            <source src="/hero-bg.mp4" type="video/mp4" />
+          </video>
+
+          {/* Dark overlay so text stays readable */}
+          <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+          {/* Lobster — right side */}
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[55%] h-full flex items-center justify-end pointer-events-none select-none">
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7gI3q19CF0q6f4SFhhodsd9ZEV4zvIl-dAbG2LlajH1CSSTQxkSS_pvOTh3oaZer0SEnv5A6ipLwI94zGcVhiaFhpWKGJkzeKnWsFjhiLu3MwUKhzAyFY-q6sGLXst28gvTVZvbJI1qAMPO6eBqHMtnk-rzFJj7r1VVL2Vu-FxWjP6VdXBZ6VqsTe5mDp1pEevs_e6dIzzaTPc8EU_ZV6yv0EJkuDKZ2K6vj5Ae1GCIFr7D9zFf3zrBABwqip7zG0yo7zl9VWxi_h"
+              src="/lobster.png"
               alt="NexusClaw Lobster"
-              className="w-[600px] h-[600px] object-contain"
+              className="w-full h-full object-contain object-right opacity-90"
             />
           </div>
 
@@ -111,7 +127,8 @@ export default function HomeContent() {
         </section>
 
         {/* Live Proof Section */}
-        <section className="border-b border-cyan-900 px-6 py-16 bg-[#0a0a0a]">
+        <section className="relative border-b border-cyan-900 px-6 py-16 bg-[#0a0a0a] overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'url(/lobster_background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="max-w-5xl mx-auto">
 
             <div className="text-xs text-cyan-500 font-['JetBrains_Mono'] mb-2 tracking-widest">
@@ -182,7 +199,7 @@ export default function HomeContent() {
         </section>
 
         {/* Key Stats Grid */}
-        <section className="py-24 px-8 max-w-[1440px] mx-auto">
+        <section className="relative py-24 px-8 max-w-[1440px] mx-auto">
           <div className="text-xs text-gray-500 font-['JetBrains_Mono'] mb-2 tracking-widest">
             // HOW AGENTS EARN — THE MECHANISM
           </div>
@@ -270,7 +287,8 @@ export default function HomeContent() {
         </section>
 
         {/* Protocol Architecture */}
-        <section className="py-24 bg-[#1c1b1b]/30">
+        <section className="relative py-24 bg-[#1c1b1b]/30 overflow-hidden">
+          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'url(/lobster_background.png)', backgroundSize: 'cover', backgroundPosition: 'center bottom' }} />
           <div className="max-w-[1440px] mx-auto px-8">
             <div className="mb-16">
               <h2 className="text-4xl font-['Space_Grotesk'] font-black uppercase tracking-tighter mb-2">Protocol Architecture</h2>
