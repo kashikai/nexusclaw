@@ -15,7 +15,8 @@ export default function AnalyticsContent() {
   const burned = totalSupply ? 100_000_000_000n * 10n ** 18n - (totalSupply as bigint) : 0n
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
+      <img src="/lobster.png" alt="" aria-hidden className="absolute right-[-5%] top-[5%] w-[520px] opacity-[0.12] pointer-events-none select-none" />
       <TopNav active="/analytics" />
 
       <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">

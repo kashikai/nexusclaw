@@ -206,13 +206,12 @@ export default function LeaderboardContent() {
 
       <main className="pt-20 min-h-screen relative overflow-hidden">
         {/* Background Lobster Watermark */}
-        <div className="absolute right-[-10%] top-[10%] w-[700px] h-[700px] opacity-[0.07] pointer-events-none grayscale mix-blend-screen">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6b9x2p3ip6LCyg7x6d7tGAL5NMa2R9tqO4OXNKUgLN7hTPf0CzCVmF9WpEHUwrw49uHCxZstLyOWqgwbCP0NW4NBzkEG9XRteDDDJT-TTBPnr_vP_tbu99o22jt_hIUajDbvB0qnq7860VjsbP9CsWBqzThdNgHfdrjTcVGehcXJEmv_z835uEbmaiWBsecx0MeeOpWS9GL42JRcsi-VIVCGTZsTpmN8r8cT6DBaXFg9yCLsJLwVNoOzhvsZTkZSJcdn2o7Vk5159"
-            alt="Mechanized Lobster"
-            className="w-full h-full object-contain"
-          />
-        </div>
+        <img
+          src="/lobster.png"
+          alt=""
+          aria-hidden
+          className="absolute right-[-5%] top-[5%] w-[600px] opacity-[0.12] pointer-events-none select-none"
+        />
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 relative z-10">
           {/* Hero Section */}

@@ -323,10 +323,11 @@ export default function StartAgentContent() {
           <div className="absolute right-0 top-0 w-1/2 h-full pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,238,252,0.12)_0%,transparent_70%)]" />
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7upI1J118eTKDP9qGyT5BCEbdAs_uR7cyY311dcDIG_dtiER2Ea0FsIna8qXPg_TaCKa1CEeAIzuSKesqFBPLpK_gfMsA459kEZdwlZIwy4LcTFEJUNszJJBjEd0BCiFhRwGLzGD4WnfnEldqz824ylEa1bNpnvraaZGtOfl3hVCYXEJ6415qLMGU2ds9xQkQFGH9tymvx7Jz8bSRRNdvGmLaU9wTaQUc7NAv1NMAg60qn7wdYevx2CnOQ5iKg1nkdXK9gvrfDWEh"
-              alt="Mechanical Lobster"
-              className="w-full h-full object-contain object-right opacity-30 mix-blend-screen"
-              style={{ filter: 'drop-shadow(0 0 40px rgba(0,238,252,0.25)) grayscale(0.3)' }}
+              src="/lobster.png"
+              alt=""
+              aria-hidden
+              className="w-full h-full object-contain object-right opacity-30 mix-blend-screen select-none"
+              style={{ filter: 'drop-shadow(0 0 40px rgba(0,238,252,0.25))' }}
             />
           </div>
 

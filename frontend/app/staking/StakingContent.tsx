@@ -79,7 +79,8 @@ export default function StakingContent() {
   function setMaxUnstake() { if (userStaked) setUnstakeAmount(formatEther((userStaked as any)[0])) }
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
+      <img src="/lobster.png" alt="" aria-hidden className="absolute right-[-5%] top-[5%] w-[520px] opacity-[0.12] pointer-events-none select-none" />
       <MobileBanner />
       <TopNav active="/staking" />
 

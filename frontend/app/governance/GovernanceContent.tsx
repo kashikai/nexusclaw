@@ -4,7 +4,8 @@ import { TopNav } from '@/components/layout/TopNav'
 
 export default function GovernanceContent() {
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
+      <img src="/lobster.png" alt="" aria-hidden className="absolute right-[-5%] top-[5%] w-[520px] opacity-[0.12] pointer-events-none select-none" />
       <TopNav active="/governance" />
 
       <main className="pt-24 pb-16 px-4 md:px-8 max-w-[1440px] mx-auto">
