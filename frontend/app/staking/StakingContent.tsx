@@ -81,7 +81,7 @@ export default function StakingContent() {
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
       <img src="/lobster.png" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.18] pointer-events-none select-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 pointer-events-none" />
       <MobileBanner />
       <TopNav active="/staking" />
 
