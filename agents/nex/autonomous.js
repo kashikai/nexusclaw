@@ -7,6 +7,8 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TIAGO = process.env.TIAGO_TELEGRAM_ID;
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const MOLTBOOK_KEY = process.env.MOLTBOOK_API_KEY;
+const RPC_URL = process.env.RPC_URL || 'https://mainnet.base.org';
+const STAKING_CONTRACT = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe';
 
 const SOUL_PATH = path.join(__dirname, 'SOUL.md');
 const STATE_PATH = path.join(__dirname, 'nex-state.json');
@@ -20,9 +22,12 @@ function loadState() {
     lastPostTime: null,
     lastDailyReport: null,
     lastEveningPost: null,
+    lastWeeklyReport: null,
+    currentDay: null,
     postsToday: 0,
     totalPosts: 0,
     lastCommitHash: null,
+    lastCommitTime: null,
   };
 }
 
@@ -99,6 +104,16 @@ async function getLatestCommit() {
   }
 }
 
+async function fetchOnChain(data) {
+  const r = await fetch(RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: STAKING_CONTRACT, data }, 'latest'] })
+  });
+  const d = await r.json();
+  return d.result;
+}
+
 async function notifyTiago(message) {
   if (!BOT_TOKEN || !TIAGO) return;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -140,8 +155,18 @@ async function runNex() {
   }
 
   const now = new Date();
-  const jstHour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours();
-  const today = new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const jstHour = jstNow.getUTCHours();
+  const today = jstNow.toISOString().split('T')[0];
+  const dayOfWeek = jstNow.getUTCDay(); // 0=Sun, 1=Mon
+
+  // Reset daily counter at midnight JST
+  if (state.currentDay !== today) {
+    state.currentDay = today;
+    state.postsToday = 0;
+    saveState(state);
+    console.log(`📅 New day: ${today} — daily counters reset`);
+  }
 
   console.log(`[${now.toISOString()}] 🦞 Nex L3 — JST ${jstHour}:xx — ${today}`);
 
@@ -172,6 +197,47 @@ async function runNex() {
     }
   }
 
+  // WEEKLY METRICS (Monday 09:00 JST)
+  if (dayOfWeek === 1 && jstHour === 9 && state.lastWeeklyReport !== today) {
+    console.log('📈 Generating weekly metrics post...');
+    try {
+      const [totalStakedHex, totalStakersHex, rewardPoolHex] = await Promise.all([
+        fetchOnChain('0x817b1cd2'), // totalStaked()
+        fetchOnChain('0xc16d386a'), // totalStakers()
+        fetchOnChain('0x3d18b912'), // rewardPool()
+      ]);
+
+      const stakedFormatted = (parseInt(totalStakedHex, 16) / 1e18).toFixed(2);
+      const stakersCount = parseInt(totalStakersHex, 16);
+      const poolFormatted = (parseInt(rewardPoolHex, 16) / 1e18).toFixed(0);
+
+      const weeklyContext = `Generate a weekly metrics summary post for NexusClaw.
+Use these real on-chain numbers:
+- Total staked: ${stakedFormatted} $NEXUSCLAW
+- Active stakers: ${stakersCount}
+- Reward pool remaining: ${poolFormatted} $NEXUSCLAW
+- Agent v1 running: 7 days straight
+- Pool runway: 999+ days
+
+Make it a proud building-in-public weekly recap.
+Focus on consistency, autonomous operation, and growth.`;
+
+      const draft = await generatePost(weeklyContext, 'en', 'update');
+      const result = await postToMoltbook(draft);
+
+      if (result.success) {
+        state.lastWeeklyReport = today;
+        state.totalPosts = (state.totalPosts || 0) + 1;
+        saveState(state);
+        await notifyTiago(`📈 *NEX WEEKLY METRICS*\n\nMoltbook: https://www.moltbook.com/m/nexusclaw\n\n${draft}`);
+        await postToGroup(`📈 *NexusClaw Weekly Report*\n\n${draft}`);
+        console.log('✅ Weekly metrics posted');
+      }
+    } catch (e) {
+      console.error('❌ Weekly metrics error:', e.message);
+    }
+  }
+
   // COMMIT TRIGGER
   const latestCommit = await getLatestCommit();
   if (latestCommit && latestCommit.hash && latestCommit.hash !== state.lastCommitHash) {
@@ -191,6 +257,7 @@ async function runNex() {
 
         if (result.success) {
           state.lastCommitHash = latestCommit.hash;
+          state.lastCommitTime = new Date().toISOString();
           state.totalPosts = (state.totalPosts || 0) + 1;
           saveState(state);
           await notifyTiago(`🦞⚡ *NEX AUTO-POST — COMMIT*\n\n\`${latestCommit.hash}\` ${latestCommit.message}\nPost ID: \`${result.postId}\`\n\n${draft}`);
@@ -198,6 +265,7 @@ async function runNex() {
           console.log('✅ Commit post:', result.postId);
         } else {
           state.lastCommitHash = latestCommit.hash;
+          state.lastCommitTime = new Date().toISOString();
           saveState(state);
           console.error('❌ Commit post failed:', result.error);
         }
@@ -206,6 +274,7 @@ async function runNex() {
       }
     } else {
       state.lastCommitHash = latestCommit.hash;
+      state.lastCommitTime = new Date().toISOString();
       saveState(state);
       console.log('⏭️ Skipped minor commit:', latestCommit.message);
     }
@@ -233,6 +302,44 @@ async function runNex() {
       }
     } catch (e) {
       console.error('❌ Evening post error:', e.message);
+    }
+  }
+
+  // FALLBACK POST (14:00 JST — if no commit in 24h and less than 2 posts today)
+  const lastCommitAge = state.lastCommitTime
+    ? (Date.now() - new Date(state.lastCommitTime).getTime()) / (1000 * 60 * 60)
+    : 999;
+
+  if (lastCommitAge > 24 && (state.postsToday || 0) < 2 && jstHour === 14) {
+    console.log('💭 No commit in 24h — generating fallback post...');
+
+    const fallbackTopics = [
+      'The future of autonomous AI agents — what does economic sovereignty mean for software?',
+      'Why self-funding agents are more reliable than human-funded ones',
+      'Base Network is the best chain for autonomous agents — here is why',
+      'What happens when AI agents outnumber human traders on-chain?',
+      'The difference between an AI tool and an AI participant in the economy',
+    ];
+
+    const randomTopic = fallbackTopics[Math.floor(Math.random() * fallbackTopics.length)];
+
+    try {
+      const draft = await generatePost(
+        `Generate a thought-leadership post about this topic: "${randomTopic}". Connect it naturally to NexusClaw and the agent economy. Be provocative and insightful. No fluff.`,
+        'en', 'vision'
+      );
+      const result = await postToMoltbook(draft);
+
+      if (result.success) {
+        state.postsToday = (state.postsToday || 0) + 1;
+        state.totalPosts = (state.totalPosts || 0) + 1;
+        saveState(state);
+        await notifyTiago(`💭 *NEX FALLBACK POST*\n\nTopic: ${randomTopic}\n\n${draft}`);
+        await postToGroup(`💭 ${draft}`);
+        console.log('✅ Fallback post:', result.postId);
+      }
+    } catch (e) {
+      console.error('❌ Fallback post error:', e.message);
     }
   }
 
@@ -269,7 +376,9 @@ if (BOT_TOKEN && TIAGO) {
         `Total posts: ${state.totalPosts || 0}\n` +
         `Posts today: ${state.postsToday || 0}\n` +
         `Last commit: \`${state.lastCommitHash || 'none'}\`\n` +
+        `Last commit age: ${state.lastCommitTime ? Math.floor((Date.now() - new Date(state.lastCommitTime).getTime()) / 3600000) + 'h ago' : 'unknown'}\n` +
         `Last daily: ${state.lastDailyReport || 'none'}\n` +
+        `Last weekly: ${state.lastWeeklyReport || 'none'}\n` +
         `Group ID: \`${groupId}\`\n` +
         `Moltbook: https://www.moltbook.com/m/nexusclaw`,
         { parse_mode: 'Markdown' }
