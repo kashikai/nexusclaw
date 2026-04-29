@@ -205,13 +205,9 @@ export default function LeaderboardContent() {
       <TopNav active="/leaderboard" />
 
       <main className="pt-20 min-h-screen relative overflow-hidden">
-        {/* Background Lobster Watermark */}
-        <img
-          src="/lobster.png"
-          alt=""
-          aria-hidden
-          className="absolute right-[-5%] top-[5%] w-[600px] opacity-[0.12] pointer-events-none select-none"
-        />
+        {/* Background Lobster */}
+        <img src="/lobster.png" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.07] pointer-events-none select-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#131313]/80 via-[#131313]/60 to-[#131313]/90 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 relative z-10">
           {/* Hero Section */}
