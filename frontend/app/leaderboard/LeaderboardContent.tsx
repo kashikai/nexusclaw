@@ -107,8 +107,8 @@ export default function LeaderboardContent() {
         // Get staker addresses from StakerAdded events (chunked — RPC limit 10k blocks)
         const CHUNK = 9_999n
         const latestBlock = await publicClient.getBlockNumber()
-        const stakerEvent = parseAbiItem('event StakerAdded(address indexed staker)')
-        const logs: Array<{ args?: { staker?: `0x${string}` } }> = []
+        const stakerEvent = parseAbiItem('event Staked(address indexed user, uint256 amount, uint256 autoClaimed)')
+        const logs: Array<{ args?: { user?: `0x${string}` } }> = []
         for (let from = DEPLOY_BLOCK; from <= latestBlock; from += CHUNK + 1n) {
           const to = from + CHUNK > latestBlock ? latestBlock : from + CHUNK
           const chunk = await publicClient.getLogs({
@@ -123,7 +123,7 @@ export default function LeaderboardContent() {
         const uniqueAddrs = [
           ...new Set(
             logs
-              .map((l) => l.args?.staker as `0x${string}` | undefined)
+              .map((l) => l.args?.user as `0x${string}` | undefined)
               .filter((a): a is `0x${string}` => !!a)
           ),
         ]
@@ -206,8 +206,8 @@ export default function LeaderboardContent() {
 
       <main className="pt-20 min-h-screen relative overflow-hidden">
         {/* Background Lobster */}
-        <img src="/lobster.png" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.07] pointer-events-none select-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#131313]/80 via-[#131313]/60 to-[#131313]/90 pointer-events-none" />
+        <img src="/lobster.png" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.18] pointer-events-none select-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/60 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 relative z-10">
           {/* Hero Section */}
