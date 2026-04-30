@@ -15,23 +15,14 @@ export default function AnalyticsContent() {
   const burned = totalSupply ? 100_000_000_000n * 10n ** 18n - (totalSupply as bigint) : 0n
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
-      <img src="/lobster.png" alt="" aria-hidden className="absolute right-0 top-0 h-full w-1/2 object-contain object-right opacity-[0.15] pointer-events-none select-none" />
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
       <TopNav active="/analytics" />
 
       <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">
-        {/* Hero Title */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-l-4 border-[#00eefc] pl-8 py-4 mb-12 mt-8">
-          <div>
-            <h2 className="text-5xl md:text-6xl font-black font-['Space_Grotesk'] tracking-tighter uppercase leading-none">
-              NEXUS <span className="text-[#00eefc]" style={{ textShadow: '0 0 15px rgba(0, 238, 252, 0.6)' }}>TOKENOMICS</span>
-            </h2>
-            <p className="font-['JetBrains_Mono'] text-xs text-[#abc7ff] mt-4 tracking-[0.2em] uppercase">V3.0 Smart Emission Protocol // Allocation Readout</p>
-          </div>
-          <div className="text-right mt-4 md:mt-0">
-            <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase">Current Supply</p>
-            <p className="text-2xl font-black font-['Space_Grotesk'] tracking-widest">{totalSupply ? formatTokenShort(totalSupply as bigint) : '0'} / 100B</p>
-          </div>
+        {/* Header */}
+        <div className="border-l-4 border-[#00eefc] pl-6 py-2 mb-12 mt-8">
+          <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">NEXUS TOKENOMICS</h1>
+          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">V3.0 Smart Emission Protocol // Allocation Readout</p>
         </div>
 
         {/* Quick Stats */}

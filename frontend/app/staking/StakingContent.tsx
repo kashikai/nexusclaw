@@ -79,17 +79,15 @@ export default function StakingContent() {
   function setMaxUnstake() { if (userStaked) setUnstakeAmount(formatEther((userStaked as any)[0])) }
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
-      <img src="/lobster.png" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.18] pointer-events-none select-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 pointer-events-none" />
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
       <MobileBanner />
       <TopNav active="/staking" />
 
       <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">
         {/* Header */}
-        <div className="mb-10 mt-8">
-          <h1 className="text-5xl font-['Space_Grotesk'] font-black tracking-tighter text-[#e5e2e1] leading-none mb-2">STAKING TERMINAL</h1>
-          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.3em] text-[#8b919f]">Secure Node Environment // Base Mainnet</p>
+        <div className="border-l-4 border-[#abc7ff] pl-6 py-2 mb-10 mt-8">
+          <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">STAKING TERMINAL</h1>
+          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">Secure Node Environment // Base Mainnet</p>
         </div>
 
         {/* Metrics */}

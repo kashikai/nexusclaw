@@ -204,28 +204,13 @@ export default function LeaderboardContent() {
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
       <TopNav active="/leaderboard" />
 
-      <main className="pt-20 min-h-screen relative overflow-hidden">
-        {/* Background Lobster */}
-        <img src="/lobster.png" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.18] pointer-events-none select-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/60 pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 relative z-10">
-          {/* Hero Section */}
-          <header className="mb-16">
-            <div className="flex items-baseline space-x-4 mb-2">
-              <span className="text-[#abc7ff] text-sm font-['JetBrains_Mono'] tracking-tighter">
-                /sys/nodes/ranking
-              </span>
-              <div className="h-px flex-1 bg-gradient-to-r from-[#414754] to-transparent" />
-            </div>
-            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-[#e5e2e1] leading-none uppercase italic font-['Space_Grotesk'] break-words">
-              AGENT_<span className="text-[#abc7ff]">LEADERBOARD</span>
-            </h1>
-            <p className="mt-4 text-[#8b919f] font-['JetBrains_Mono'] text-sm max-w-xl">
-              Real-time synchronization of decentralized agent nodes across the NEXUS_CLAW protocol.
-              Priority ranking based on staking density and uptime stability.
-            </p>
-          </header>
+      <main className="pt-24 pb-16 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          {/* Header */}
+          <div className="border-l-4 border-[#abc7ff] pl-6 py-2 mb-12 mt-8">
+            <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">AGENT LEADERBOARD</h1>
+            <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">Real-time on-chain staker rankings // Base Mainnet</p>
+          </div>
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">

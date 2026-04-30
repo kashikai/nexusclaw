@@ -4,13 +4,12 @@ import { TopNav } from '@/components/layout/TopNav'
 
 export default function GovernanceContent() {
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] relative overflow-hidden">
-      <img src="/lobster.png" alt="" aria-hidden className="absolute right-0 top-0 h-full w-1/2 object-contain object-right opacity-[0.15] pointer-events-none select-none" />
+    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
       <TopNav active="/governance" />
 
       <main className="pt-24 pb-16 px-4 md:px-8 max-w-[1440px] mx-auto">
         {/* Header */}
-        <div className="mb-12 mt-8">
+        <div className="border-l-4 border-[#abc7ff] pl-6 py-2 mb-12 mt-8">
           <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">GOVERNANCE</h1>
           <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">Multisig 3/5 Secure // Coming in Phase 4</p>
         </div>
