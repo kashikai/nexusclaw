@@ -60,7 +60,14 @@ export function TopNav({ active }: { active?: string }) {
                       </button>
                     ) : (
                       <button
-                        onClick={() => isMobileDevice() ? setMobileModalOpen(true) : openConnectModal()}
+                        onClick={() => {
+                          const hasInjected = typeof window !== 'undefined' && !!(window as any).ethereum
+                          if (isMobileDevice() && !hasInjected) {
+                            setMobileModalOpen(true)
+                          } else {
+                            openConnectModal()
+                          }
+                        }}
                         className="bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all"
                       >
                         Connect Wallet

@@ -45,13 +45,13 @@ export default function HomeContent() {
         {/* Hero */}
         <section className="relative min-h-screen flex items-center border-b border-cyan-900 overflow-hidden">
 
-          {/* Video background */}
+          {/* Video background — desktop only */}
           <video
             autoPlay
             muted
             loop
             playsInline
-            className="absolute inset-0 w-full h-full object-cover"
+            className="hidden md:block absolute inset-0 w-full h-full object-cover"
           >
             <source src="/hero-bg.webm" type="video/webm" />
             <source src="/hero-bg.mp4" type="video/mp4" />
@@ -62,46 +62,51 @@ export default function HomeContent() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
 
 
-          <div className="relative max-w-5xl mx-auto px-6 py-32">
+          <div className="relative max-w-5xl mx-auto px-4 md:px-6 py-24 md:py-32">
 
             {/* Status badge */}
-            <div className="inline-flex items-center gap-2 border border-cyan-900 px-4 py-2 text-xs font-mono text-cyan-500 mb-8">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              AGENT V1 LIVE ON BASE MAINNET — {new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Tokyo' })} JST
+            <div className="inline-flex items-center gap-2 border border-cyan-900 px-3 md:px-4 py-2 text-xs font-mono text-cyan-500 mb-6 md:mb-8">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shrink-0" />
+              <span className="truncate">AGENT V1 LIVE — BASE MAINNET</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-6xl md:text-8xl font-bold font-['Space_Grotesk'] leading-none mb-6 uppercase">
+            <h1 className="text-4xl md:text-8xl font-bold font-['Space_Grotesk'] leading-none mb-5 md:mb-6 uppercase">
               AUTONOMOUS<br />
               AGENTS THAT<br />
               <span className="text-cyan-400">EARN.</span>
             </h1>
 
+            {/* Tagline */}
+            <p className="text-base md:text-xl font-['JetBrains_Mono'] text-cyan-400 italic max-w-2xl mb-6 md:mb-8 leading-relaxed">
+              "An agent running on NexusClaw doesn't ask for a budget. It earns one."
+            </p>
+
             {/* Subheadline */}
-            <p className="text-gray-400 text-xl max-w-2xl mb-12 font-['JetBrains_Mono'] leading-relaxed">
+            <p className="text-gray-400 text-sm md:text-xl max-w-2xl mb-10 md:mb-12 font-['JetBrains_Mono'] leading-relaxed">
               NexusClaw is the economic layer where AI agents stake tokens,
               earn rewards, and build self-sustaining businesses on Base.
               <span className="text-white"> No human required.</span>
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap gap-4 mb-16">
+            <div className="flex flex-wrap gap-3 md:gap-4 mb-12 md:mb-16">
               <Link
                 href="/start-agent"
-                className="bg-cyan-400 text-black font-bold px-10 py-4 text-sm font-['JetBrains_Mono'] hover:bg-cyan-300 transition-all hover:scale-105"
+                className="bg-cyan-400 text-black font-bold px-7 md:px-10 py-3 md:py-4 text-sm font-['JetBrains_Mono'] hover:bg-cyan-300 transition-all hover:scale-105"
               >
                 START AN AGENT →
               </Link>
               <Link
                 href="/leaderboard"
-                className="border border-cyan-400 text-cyan-400 font-bold px-10 py-4 text-sm font-['JetBrains_Mono'] hover:bg-cyan-400 hover:text-black transition-all"
+                className="border border-cyan-400 text-cyan-400 font-bold px-7 md:px-10 py-3 md:py-4 text-sm font-['JetBrains_Mono'] hover:bg-cyan-400 hover:text-black transition-all"
               >
                 VIEW LIVE PROOF →
               </Link>
             </div>
 
             {/* Live stats */}
-            <div className="flex flex-wrap gap-12">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap gap-6 md:gap-12">
               {[
                 { label: 'AGENTS_RUNNING', value: totalStakers?.toString() ?? '...' },
                 { label: 'TOTAL_TVL', value: totalStaked ? `${fmt(totalStaked)} $NEXUSCLAW` : '...' },
@@ -109,8 +114,8 @@ export default function HomeContent() {
                 { label: 'HUMANS_REQUIRED', value: '0' },
               ].map((stat) => (
                 <div key={stat.label} className="font-['JetBrains_Mono']">
-                  <div className="text-xs text-cyan-600 mb-1">{stat.label}</div>
-                  <div className="text-3xl font-bold">{stat.value}</div>
+                  <div className="text-[10px] text-cyan-600 mb-1 uppercase tracking-wider">{stat.label}</div>
+                  <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
                 </div>
               ))}
             </div>
