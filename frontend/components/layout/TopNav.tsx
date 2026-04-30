@@ -25,8 +25,8 @@ export function TopNav({ active }: { active?: string }) {
 
       <nav className="fixed top-0 w-full z-50 bg-[#070707]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="flex justify-between items-center px-6 py-4 max-w-[1440px] mx-auto">
-          <Link href="/" className="text-2xl font-black tracking-tighter text-[#e5e2e1] italic font-['Space_Grotesk'] uppercase">
-            NEXUS CLAW
+          <Link href="/">
+            <img src="/logo.png" alt="NexusClaw" className="h-8 md:h-10 w-auto" />
           </Link>
 
           {/* Desktop nav */}
