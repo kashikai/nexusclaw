@@ -6,11 +6,13 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
 
 const NAV_ITEMS = [
-  { href: '/staking', label: 'Staking' },
-  { href: '/analytics', label: 'Tokenomics' },
-  { href: '/governance', label: 'Governance' },
-  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/proof', label: 'Proof' },
+  { href: '/agents', label: 'Agents' },
   { href: '/start-agent', label: 'Start Agent' },
+  { href: '/staking', label: 'Staking' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/security', label: 'Security' },
+  { href: '/docs', label: 'Docs' },
 ]
 
 export function TopNav({ active }: { active?: string }) {
@@ -43,14 +45,6 @@ export function TopNav({ active }: { active?: string }) {
                 </Link>
               )
             })}
-            <a
-              href="https://basescan.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#8b919f] hover:text-[#e5e2e1] transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold"
-            >
-              Docs
-            </a>
           </div>
 
           {/* Right side: wallet + hamburger */}
@@ -115,16 +109,6 @@ export function TopNav({ active }: { active?: string }) {
                 </Link>
               )
             })}
-            <a
-              href="https://basescan.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center justify-between py-4 font-['Space_Grotesk'] uppercase text-sm font-bold tracking-widest text-[#8b919f] hover:text-[#e5e2e1] transition-colors"
-            >
-              Docs
-              <span className="font-['JetBrains_Mono'] text-[10px] text-[#414754]">↗</span>
-            </a>
           </div>
         </div>
       </nav>
