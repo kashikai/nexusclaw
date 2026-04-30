@@ -70,17 +70,19 @@ export default function PricingPage() {
       <main className="pt-24 pb-24 px-4 md:px-8 max-w-[1440px] mx-auto">
 
         {/* ── HERO ── */}
-        <section className="mt-12 mb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#353534] rounded-full mb-8">
+        <section className="mt-12 mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#353534] rounded-full mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-[#ffb4ab] animate-pulse" />
             <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#ffb4ab]">Beta — prices may change</span>
           </div>
-          <h1 className="font-['Space_Grotesk'] text-4xl md:text-6xl font-black tracking-tighter uppercase leading-none mb-4">
-            Simple Pricing
-          </h1>
-          <p className="font-['JetBrains_Mono'] text-sm text-[#8b919f] uppercase tracking-[0.2em]">
-            Start free. Scale when ready.
-          </p>
+          <div className="border-l-4 border-[#4ddbc9] pl-6 py-2">
+            <h1 className="font-['Space_Grotesk'] text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none mb-2">
+              Simple Pricing
+            </h1>
+            <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">
+              Start free. Scale when ready.
+            </p>
+          </div>
         </section>
 
         {/* ── PRICING CARDS ── */}
