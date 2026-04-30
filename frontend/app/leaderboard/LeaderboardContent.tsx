@@ -181,7 +181,7 @@ export default function LeaderboardContent() {
   }, [])
 
   function exportCSV() {
-    const rows = ['Rank,Address,Staked ($NEXUS),Pending Rewards,Staking Since,Effective APY%'].concat(
+    const rows = ['Rank,Address,Staked ($NEXUSCLAW),Pending Rewards,Staking Since,Effective APY%'].concat(
       stakers.map((s, i) =>
         [
           i + 1,
@@ -266,7 +266,7 @@ export default function LeaderboardContent() {
                 )}
               </div>
               <div className="mt-2 text-[#00eefc] text-[10px] font-['JetBrains_Mono']">
-                $NEXUS <span className="text-[#8b919f]">LOCKED</span>
+                $NEXUSCLAW <span className="text-[#8b919f]">LOCKED</span>
               </div>
             </div>
 
@@ -362,7 +362,7 @@ export default function LeaderboardContent() {
                     <tr className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-widest text-[#8b919f] border-b border-[#414754]/20">
                       <th className="px-8 py-4 font-medium">Rank</th>
                       <th className="px-8 py-4 font-medium">Address</th>
-                      <th className="px-8 py-4 font-medium">Staked ($NEXUS)</th>
+                      <th className="px-8 py-4 font-medium">Staked ($NEXUSCLAW)</th>
                       <th className="px-8 py-4 font-medium">Pending Rewards</th>
                       <th className="px-8 py-4 font-medium">Staking Since</th>
                       <th className="px-8 py-4 font-medium text-right">Effective APY</th>
