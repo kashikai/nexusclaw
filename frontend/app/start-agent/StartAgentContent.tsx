@@ -648,7 +648,7 @@ export default function StartAgentContent() {
               </div>
 
               <a
-                href="https://buy.stripe.com/PLACEHOLDER"
+                href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex w-full items-center justify-between gap-4 bg-[#f5c542] text-[#1a1200] px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
