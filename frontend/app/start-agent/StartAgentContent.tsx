@@ -8,13 +8,59 @@ import ConfigModal from '@/components/start-agent/ConfigModal'
 import SuccessScreen from '@/components/start-agent/SuccessScreen'
 
 const STAKING_ADDRESS = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe' as const
+const TOKEN_ADDRESS = '0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6' as const
 
 const stakingAbi = [
   { inputs: [], name: 'totalStakers', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
   { inputs: [], name: 'totalStaked', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
 ] as const
 
+const tokenAbi = [
+  {
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const
+
+const stakingUserAbi = [
+  {
+    inputs: [{ name: 'user', type: 'address' }],
+    name: 'getUserInfo',
+    outputs: [
+      { name: 'staked', type: 'uint256' },
+      { name: 'pending', type: 'uint256' },
+      { name: 'stakedAt', type: 'uint256' },
+      { name: 'effectiveAPY', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const
+
 const client = createPublicClient({ chain: base, transport: http('https://mainnet.base.org') })
+
+const MIN_HOLDER_BALANCE = 1000n * 10n ** 18n
+
+async function checkHolderStatus(wallet: string) {
+  const addr = wallet as `0x${string}`
+  const [balance, userInfo] = await Promise.all([
+    client.readContract({ address: TOKEN_ADDRESS, abi: tokenAbi, functionName: 'balanceOf', args: [addr] }),
+    client.readContract({ address: STAKING_ADDRESS, abi: stakingUserAbi, functionName: 'getUserInfo', args: [addr] }).catch(() => [0n, 0n, 0n, 0n] as const),
+  ])
+  const bal = balance as bigint
+  const staked = (userInfo as readonly bigint[])[0]
+  const isHolder = bal >= MIN_HOLDER_BALANCE || staked > 0n
+  return {
+    balance: formatUnits(bal, 18),
+    staked: formatUnits(staked, 18),
+    isHolder,
+    hasEnoughBalance: bal >= MIN_HOLDER_BALANCE,
+    isStaker: staked > 0n,
+  }
+}
 
 type AgentType = 'staking' | 'marketing' | 'custom' | 'signal'
 
@@ -278,6 +324,10 @@ export default function StartAgentContent() {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalAgentType, setModalAgentType] = useState<'staking' | 'marketing'>('staking')
   const [successConfig, setSuccessConfig] = useState<AgentConfig | null>(null)
+  const [holderWallet, setHolderWallet] = useState('')
+  const [holderStatus, setHolderStatus] = useState<null | { balance: string; staked: string; isHolder: boolean; hasEnoughBalance: boolean; isStaker: boolean }>(null)
+  const [holderChecking, setHolderChecking] = useState(false)
+  const [holderError, setHolderError] = useState('')
   const setupRef = useRef<HTMLDivElement>(null)
   const selectRef = useRef<HTMLDivElement>(null)
   const challengeRef = useRef<HTMLDivElement>(null)
@@ -321,6 +371,24 @@ export default function StartAgentContent() {
     navigator.clipboard.writeText(text)
     setCopiedStep(idx)
     setTimeout(() => setCopiedStep(null), 2000)
+  }
+
+  async function handleHolderCheck() {
+    setHolderError('')
+    setHolderStatus(null)
+    if (!/^0x[0-9a-fA-F]{40}$/.test(holderWallet)) {
+      setHolderError('Invalid wallet address — must be 0x followed by 40 hex characters.')
+      return
+    }
+    setHolderChecking(true)
+    try {
+      const result = await checkHolderStatus(holderWallet)
+      setHolderStatus(result)
+    } catch {
+      setHolderError('Failed to read on-chain balance. Check your connection and try again.')
+    } finally {
+      setHolderChecking(false)
+    }
   }
 
   const steps = selectedAgent === 'staking' ? STAKING_STEPS : selectedAgent === 'marketing' ? MARKETING_STEPS : []
@@ -647,18 +715,158 @@ export default function StartAgentContent() {
                 </ul>
               </div>
 
-              <a
-                href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-between gap-4 bg-[#f5c542] text-[#1a1200] px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
-              >
-                <span>BUY SIGNAL AGENT — $49.90</span>
-                <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">lock</span>
-                  Secure checkout via Stripe
-                </span>
-              </a>
+              {/* ── HOLDER DISCOUNT CHECK ── */}
+              <div className="border border-[#414754]/40 bg-[#0a0a0a] p-8 mb-8">
+                <div className="font-['JetBrains_Mono'] text-[10px] text-[#f5c542] tracking-[0.4em] uppercase mb-3">
+                  // NEXUSCLAW HOLDER DISCOUNT
+                </div>
+                <p className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6] mb-6">
+                  Hold 1,000 $NEXUSCLAW and get 20% off —{' '}
+                  <span className="text-[#e5e2e1]">permanently locked at $39.90.</span>{' '}
+                  Verification is on-chain. No signup required.
+                </p>
+
+                {/* Default: both prices shown */}
+                {!holderStatus && (
+                  <div className="flex gap-6 items-center mb-6">
+                    <div>
+                      <div className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase tracking-widest mb-1">Regular</div>
+                      <div className="text-2xl font-black text-[#e5e2e1]">$49.90</div>
+                    </div>
+                    <div className="text-[#414754]">vs</div>
+                    <div>
+                      <div className="font-['JetBrains_Mono'] text-[10px] text-[#f5c542] uppercase tracking-widest mb-1">Holder price</div>
+                      <div className="text-2xl font-black text-[#f5c542] flex items-center gap-2">
+                        $39.90
+                        <span className="material-symbols-outlined text-base">lock</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Wallet input + check button */}
+                {!holderStatus && (
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={holderWallet}
+                      onChange={(e) => { setHolderWallet(e.target.value); setHolderError('') }}
+                      placeholder="0x... your Base wallet"
+                      className="flex-1 bg-black border border-[#414754]/40 text-[#e5e2e1] px-4 py-3 text-sm focus:border-[#f5c542] focus:outline-none font-['JetBrains_Mono'] placeholder:text-[#414754]"
+                    />
+                    <button
+                      onClick={handleHolderCheck}
+                      disabled={holderChecking || !holderWallet}
+                      className="px-6 py-3 border border-[#f5c542] text-[#f5c542] font-['JetBrains_Mono'] text-xs font-bold uppercase tracking-widest hover:bg-[#f5c542] hover:text-[#1a1200] transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {holderChecking ? (
+                        <span className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                          Checking...
+                        </span>
+                      ) : 'CHECK BALANCE'}
+                    </button>
+                  </div>
+                )}
+                {holderError && (
+                  <p className="font-['JetBrains_Mono'] text-xs text-[#ffb4ab] mt-3">{holderError}</p>
+                )}
+
+                {/* State A — Holder confirmed */}
+                {holderStatus?.isHolder && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="bg-green-900/40 border border-green-600/40 text-green-400 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest px-3 py-1">
+                        ✓ NEXUSCLAW HOLDER VERIFIED
+                      </span>
+                    </div>
+                    <p className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6] mb-1">
+                      Wallet balance: <span className="text-[#e5e2e1]">{parseFloat(holderStatus.balance).toLocaleString('en-US', { maximumFractionDigits: 0 })} $NEXUSCLAW</span>
+                      {holderStatus.isStaker && <span className="text-green-400 ml-2">+ staking active</span>}
+                    </p>
+                    <p className="font-['JetBrains_Mono'] text-[10px] text-green-500 mb-6">Holder price locked permanently — $39.90</p>
+                    <button
+                      onClick={() => { setHolderStatus(null); setHolderWallet('') }}
+                      className="font-['JetBrains_Mono'] text-[10px] text-[#414754] hover:text-[#8b919f] transition-colors underline"
+                    >
+                      Check a different wallet
+                    </button>
+                  </div>
+                )}
+
+                {/* State B — Balance too low */}
+                {holderStatus && !holderStatus.isHolder && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="bg-yellow-900/30 border border-yellow-600/40 text-yellow-400 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest px-3 py-1">
+                        ⚠ INSUFFICIENT BALANCE
+                      </span>
+                    </div>
+                    <p className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6] mb-3">
+                      Your balance: <span className="text-[#e5e2e1]">{parseFloat(holderStatus.balance).toLocaleString('en-US', { maximumFractionDigits: 0 })} $NEXUSCLAW</span>
+                      <span className="text-[#414754]"> / need 1,000</span>
+                    </p>
+                    {/* Progress bar */}
+                    <div className="w-full bg-[#1a1a1a] h-1.5 mb-4">
+                      <div
+                        className="bg-[#f5c542] h-1.5 transition-all"
+                        style={{ width: `${Math.min(100, (parseFloat(holderStatus.balance) / 1000) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6] mb-4">
+                      Get 1,000 $NEXUSCLAW free via the X Challenge above.
+                    </p>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => challengeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        className="inline-flex items-center gap-2 border border-[#00eefc] text-[#00eefc] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#00eefc] hover:text-[#002022] transition-all font-['JetBrains_Mono']"
+                      >
+                        COMPLETE X CHALLENGE →
+                      </button>
+                      <button
+                        onClick={() => { setHolderStatus(null); setHolderWallet('') }}
+                        className="font-['JetBrains_Mono'] text-[10px] text-[#414754] hover:text-[#8b919f] transition-colors underline"
+                      >
+                        Try different wallet
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── BUY BUTTON — adapts to holder status ── */}
+              {holderStatus?.isHolder ? (
+                <>
+                  <a
+                    href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02" // TODO: replace with discounted Stripe link ($39.90)
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-between gap-4 bg-green-400 text-black px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
+                  >
+                    <span>BUY SIGNAL AGENT — $39.90 (HOLDER PRICE)</span>
+                    <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">lock</span>
+                      Secure checkout via Stripe
+                    </span>
+                  </a>
+                  <p className="font-['JetBrains_Mono'] text-[10px] text-green-600 mt-2 text-center">
+                    20% holder discount applied · saves $10.00
+                  </p>
+                </>
+              ) : (
+                <a
+                  href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-between gap-4 bg-[#f5c542] text-[#1a1200] px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
+                >
+                  <span>BUY SIGNAL AGENT — $49.90</span>
+                  <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base">lock</span>
+                    Secure checkout via Stripe
+                  </span>
+                </a>
+              )}
               <p className="font-['JetBrains_Mono'] text-[10px] text-[#414754] mt-3 text-center">
                 Download link delivered instantly by email after payment · See our{' '}
                 <a href="/refund" className="hover:text-[#f5c542] transition-colors">Refund Policy</a>
