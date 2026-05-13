@@ -384,6 +384,15 @@ export default function HomeContent() {
             <a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] transition-all opacity-80 hover:opacity-100">
               Explorer
             </a>
+            <a href="/terms" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] transition-all opacity-80 hover:opacity-100">
+              Terms
+            </a>
+            <a href="/privacy" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] transition-all opacity-80 hover:opacity-100">
+              Privacy
+            </a>
+            <a href="/refund" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] hover:text-[#3A8BFF] transition-all opacity-80 hover:opacity-100">
+              Refund
+            </a>
           </div>
         </div>
       </footer>

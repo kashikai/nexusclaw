@@ -16,7 +16,7 @@ const stakingAbi = [
 
 const client = createPublicClient({ chain: base, transport: http('https://mainnet.base.org') })
 
-type AgentType = 'staking' | 'marketing' | 'custom'
+type AgentType = 'staking' | 'marketing' | 'custom' | 'signal'
 
 interface Step {
   num: string
@@ -64,6 +64,19 @@ const AGENT_TYPES = [
     setupTime: 'Not available yet',
     available: false,
     hoverCta: '',
+    leftBorder: false,
+  },
+  {
+    id: 'signal' as AgentType,
+    name: 'Signal Agent',
+    badge: '$29.90',
+    badgeStyle: 'bg-[#f5c542] text-[#1a1200]',
+    icon: 'candlestick_chart',
+    iconColor: 'text-[#f5c542]',
+    description: 'Copies Telegram signals directly to MetaTrader 5. Parses entry, SL, and up to 4 TPs. Slippage protection included.',
+    setupTime: '~10 min',
+    available: true,
+    hoverCta: 'group-hover:bg-[#f5c542] group-hover:text-[#1a1200]',
     leftBorder: false,
   },
 ]
@@ -268,6 +281,7 @@ export default function StartAgentContent() {
   const setupRef = useRef<HTMLDivElement>(null)
   const selectRef = useRef<HTMLDivElement>(null)
   const challengeRef = useRef<HTMLDivElement>(null)
+  const signalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function fetchStats() {
@@ -290,6 +304,8 @@ export default function StartAgentContent() {
     if (id === 'staking' || id === 'marketing') {
       setModalAgentType(id)
       setModalOpen(true)
+    } else if (id === 'signal') {
+      setTimeout(() => signalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } else {
       setTimeout(() => setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     }
@@ -307,7 +323,7 @@ export default function StartAgentContent() {
     setTimeout(() => setCopiedStep(null), 2000)
   }
 
-  const steps = selectedAgent === 'staking' ? STAKING_STEPS : MARKETING_STEPS
+  const steps = selectedAgent === 'staking' ? STAKING_STEPS : selectedAgent === 'marketing' ? MARKETING_STEPS : []
 
   const TWEET_TEXT = `I'm launching my autonomous agent on @nexusclawbot 🦞⚡\n\nnexusclaw.tech/start-agent\n\n#AgentEconomy #Base #BuildInPublic`
 
@@ -448,7 +464,7 @@ export default function StartAgentContent() {
           <h2 className="text-4xl font-black uppercase tracking-tighter mb-12">
             Choose your <span className="text-[#abc7ff]">agent type</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-[#414754]/10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[1px] bg-[#414754]/10">
             {AGENT_TYPES.map((agent) => (
               <div
                 key={agent.id}
@@ -491,7 +507,7 @@ export default function StartAgentContent() {
         )}
 
         {/* ── SETUP GUIDE — Fix 1: single column ── */}
-        {selectedAgent && selectedAgent !== 'custom' && !successConfig && (
+        {selectedAgent && selectedAgent !== 'custom' && selectedAgent !== 'signal' && !successConfig && (
           <section ref={setupRef} className="bg-[#0e0e0e] border-y border-[#414754]/10 py-24 px-8">
             <div className="max-w-3xl mx-auto">
               <div className="font-['JetBrains_Mono'] text-xs text-[#8b919f] tracking-[0.4em] uppercase mb-4">
@@ -558,6 +574,89 @@ export default function StartAgentContent() {
           </section>
         )}
 
+        {/* ── SIGNAL AGENT PURCHASE SECTION ── */}
+        {selectedAgent === 'signal' && (
+          <section ref={signalRef} className="bg-[#0e0e0e] border-y border-[#414754]/10 py-24 px-8">
+            <div className="max-w-3xl mx-auto">
+              <div className="font-['JetBrains_Mono'] text-[10px] text-[#f5c542] tracking-[0.4em] uppercase mb-4">
+                // SIGNAL AGENT — ONE-TIME PURCHASE
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">
+                Signal Agent<br />
+                <span className="text-[#f5c542]">$29.90</span>
+              </h2>
+              <p className="text-[#8b919f] font-['JetBrains_Mono'] text-sm mb-12">
+                One-time payment. Instant delivery. No subscription.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] bg-[#414754]/10 mb-12">
+                {[
+                  { icon: 'telegram', title: 'Telegram → MT5', desc: 'Reads signals from any Telegram channel and executes them on MetaTrader 5 automatically.' },
+                  { icon: 'candlestick_chart', title: 'Multi-TP Support', desc: 'Opens up to 4 separate positions for signals with multiple take-profit targets.' },
+                  { icon: 'shield', title: 'Slippage Protection', desc: 'Converts to pending order if price moved adversely more than 10 pips since signal.' },
+                  { icon: 'schedule', title: 'Runs 24/7', desc: 'Keeps running on VPS or local machine. Connects to MT5 terminal with no cloud dependency.' },
+                ].map((f) => (
+                  <div key={f.title} className="bg-[#131313] p-6 flex gap-4">
+                    <span className="material-symbols-outlined text-[#f5c542] text-2xl flex-shrink-0">{f.icon}</span>
+                    <div>
+                      <h4 className="font-bold uppercase tracking-tight text-sm mb-1">{f.title}</h4>
+                      <p className="text-[#c1c6d6] text-xs leading-relaxed">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border border-[#414754]/40 p-8 bg-[#0a0a0a] mb-8">
+                <div className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase tracking-widest mb-6">
+                  // WHAT&apos;S INCLUDED IN THE PACKAGE
+                </div>
+                <ul className="space-y-3 font-['JetBrains_Mono'] text-sm text-[#c1c6d6]">
+                  {[
+                    'signal_copier.py — the main bot script',
+                    '.env.template — configuration file',
+                    'requirements.txt — Python dependencies',
+                    'signal_agent_guide.pdf — illustrated setup guide (9 steps)',
+                  ].map((item) => (
+                    <li key={item} className="flex gap-3">
+                      <span className="text-[#f5c542] flex-shrink-0">—</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="border border-[#f5c542]/30 p-6 bg-[#f5c542]/5 mb-8">
+                <div className="font-['JetBrains_Mono'] text-[10px] text-[#f5c542] uppercase tracking-widest mb-2">
+                  // REQUIREMENTS
+                </div>
+                <ul className="space-y-1 font-['JetBrains_Mono'] text-xs text-[#c1c6d6]">
+                  <li>Windows VPS or local PC (MetaTrader5 Python package is Windows-only)</li>
+                  <li>MetaTrader 5 terminal installed and logged into your broker account</li>
+                  <li>Python 3.11+ installed</li>
+                  <li>A Telegram account to connect to signal channels</li>
+                </ul>
+              </div>
+
+              <a
+                href="https://buy.stripe.com/PLACEHOLDER"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-between gap-4 bg-[#f5c542] text-[#1a1200] px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
+              >
+                <span>BUY SIGNAL AGENT — $29.90</span>
+                <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">lock</span>
+                  Secure checkout via Stripe
+                </span>
+              </a>
+              <p className="font-['JetBrains_Mono'] text-[10px] text-[#414754] mt-3 text-center">
+                Download link delivered instantly by email after payment · See our{' '}
+                <a href="/refund" className="hover:text-[#f5c542] transition-colors">Refund Policy</a>
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* ── BENEFITS GRID ── */}
         <section className="px-8 py-24 max-w-[1440px] mx-auto">
           <div className="font-['JetBrains_Mono'] text-xs text-[#abc7ff] tracking-[0.4em] uppercase mb-16">
@@ -619,6 +718,9 @@ export default function StartAgentContent() {
           <a href="https://basescan.org/address/0xD209c27375D1B5916f677F39d5f320E67DD4FaFe" target="_blank" rel="noopener noreferrer" className="text-[#414754] hover:text-[#00eefc] transition-colors">CONTRACT</a>
           <a href="/leaderboard" className="text-[#414754] hover:text-[#00eefc] transition-colors">LEADERBOARD</a>
           <a href="/governance" className="text-[#414754] hover:text-[#00eefc] transition-colors">GOVERNANCE</a>
+          <a href="/terms" className="text-[#414754] hover:text-[#00eefc] transition-colors">TERMS</a>
+          <a href="/privacy" className="text-[#414754] hover:text-[#00eefc] transition-colors">PRIVACY</a>
+          <a href="/refund" className="text-[#414754] hover:text-[#00eefc] transition-colors">REFUND</a>
         </div>
       </footer>
 

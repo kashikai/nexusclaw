@@ -437,20 +437,29 @@ export default function LeaderboardContent() {
                 decentralized ledger architecture.
               </p>
             </div>
-            <div className="mt-8 md:mt-0 flex space-x-12">
-              <div>
-                <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mb-2">
-                  SYSTEM_CLOCK
+            <div className="mt-8 md:mt-0 flex flex-col items-end gap-6">
+              <div className="flex space-x-12">
+                <div>
+                  <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mb-2">
+                    SYSTEM_CLOCK
+                  </div>
+                  <div className="text-sm font-['JetBrains_Mono'] text-[#e5e2e1]">
+                    {clock || '—'}
+                  </div>
                 </div>
-                <div className="text-sm font-['JetBrains_Mono'] text-[#e5e2e1]">
-                  {clock || '—'}
+                <div>
+                  <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mb-2">
+                    NETWORK
+                  </div>
+                  <div className="text-sm font-['JetBrains_Mono'] text-[#00eefc]">BASE</div>
                 </div>
               </div>
-              <div>
-                <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mb-2">
-                  NETWORK
-                </div>
-                <div className="text-sm font-['JetBrains_Mono'] text-[#00eefc]">BASE</div>
+              <div className="flex flex-wrap gap-6 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest">
+                <a href="https://github.com/kashikai/nexusclaw" target="_blank" rel="noopener noreferrer" className="text-[#414754] hover:text-[#00eefc] transition-colors">GitHub</a>
+                <a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="text-[#414754] hover:text-[#00eefc] transition-colors">Explorer</a>
+                <a href="/terms" className="text-[#414754] hover:text-[#00eefc] transition-colors">Terms</a>
+                <a href="/privacy" className="text-[#414754] hover:text-[#00eefc] transition-colors">Privacy</a>
+                <a href="/refund" className="text-[#414754] hover:text-[#00eefc] transition-colors">Refund</a>
               </div>
             </div>
           </footer>
