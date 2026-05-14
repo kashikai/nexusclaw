@@ -784,7 +784,22 @@ export default function StartAgentContent() {
                       Wallet balance: <span className="text-[#e5e2e1]">{parseFloat(holderStatus.balance).toLocaleString('en-US', { maximumFractionDigits: 0 })} $NEXUSCLAW</span>
                       {holderStatus.isStaker && <span className="text-green-400 ml-2">+ staking active</span>}
                     </p>
-                    <p className="font-['JetBrains_Mono'] text-[10px] text-green-500 mb-6">Holder price locked permanently — $39.90</p>
+                    <p className="font-['JetBrains_Mono'] text-[10px] text-green-500 mb-6">Your exclusive discount code — apply at checkout:</p>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="flex-1 bg-black border border-green-600/40 px-6 py-4 font-['JetBrains_Mono'] text-2xl font-bold text-green-400 tracking-[0.3em]">
+                        HOLDER20
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText('HOLDER20')}
+                        className="px-4 py-4 border border-green-600/40 text-green-400 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest hover:bg-green-900/30 transition-all flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-sm">content_copy</span>
+                        COPY
+                      </button>
+                    </div>
+                    <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] mb-6">
+                      Saves $10 · Final price $39.90 · Enter code at Stripe checkout
+                    </p>
                     <button
                       onClick={() => { setHolderStatus(null); setHolderWallet('') }}
                       className="font-['JetBrains_Mono'] text-[10px] text-[#414754] hover:text-[#8b919f] transition-colors underline"
@@ -838,19 +853,19 @@ export default function StartAgentContent() {
               {holderStatus?.isHolder ? (
                 <>
                   <a
-                    href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02" // TODO: replace with discounted Stripe link ($39.90)
+                    href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex w-full items-center justify-between gap-4 bg-green-400 text-black px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
                   >
-                    <span>BUY SIGNAL AGENT — $39.90 (HOLDER PRICE)</span>
+                    <span>BUY SIGNAL AGENT — APPLY CODE HOLDER20</span>
                     <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
                       <span className="material-symbols-outlined text-base">lock</span>
                       Secure checkout via Stripe
                     </span>
                   </a>
                   <p className="font-['JetBrains_Mono'] text-[10px] text-green-600 mt-2 text-center">
-                    20% holder discount applied · saves $10.00
+                    Copy code HOLDER20 · apply at checkout · final price $39.90
                   </p>
                 </>
               ) : (
