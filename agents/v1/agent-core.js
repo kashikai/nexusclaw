@@ -13,7 +13,7 @@
  * Setup: copy .env.example → .env, fill in your values, then: node agent-core.js
  */
 
-import { createPublicClient, createWalletClient, http, formatUnits, parseUnits } from 'viem';
+import { createPublicClient, createWalletClient, http, formatUnits, isAddress, parseUnits } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import * as dotenv from 'dotenv';
@@ -31,12 +31,41 @@ const {
   POLL_INTERVAL_MINUTES = '5',
 } = process.env;
 
-if (!PRIVATE_KEY_AGENT) throw new Error('PRIVATE_KEY_AGENT is required in .env');
-if (!STAKING_ADDRESS)   throw new Error('STAKING_ADDRESS is required in .env');
-if (!TOKEN_ADDRESS)     throw new Error('TOKEN_ADDRESS is required in .env');
+function requireAddress(name, value) {
+  if (!value) throw new Error(`${name} is required in .env`);
+  if (!isAddress(value)) throw new Error(`${name} must be a valid EVM address`);
+}
 
-const POLL_MS  = parseInt(POLL_INTERVAL_MINUTES) * 60 * 1000;
-const MIN_WEI  = parseUnits(MIN_REWARD_CLAW, 18);
+function requirePrivateKey(value) {
+  if (!value) throw new Error('PRIVATE_KEY_AGENT is required in .env');
+  if (!/^0x[0-9a-fA-F]{64}$/.test(value)) {
+    throw new Error('PRIVATE_KEY_AGENT must be a 0x-prefixed 32-byte hex private key');
+  }
+}
+
+function parsePositiveInteger(name, value) {
+  if (!/^[1-9]\d*$/.test(value)) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return Number(value);
+}
+
+function parseRewardThreshold(value) {
+  try {
+    const threshold = parseUnits(value, 18);
+    if (threshold <= 0n) throw new Error('threshold must be greater than zero');
+    return threshold;
+  } catch (err) {
+    throw new Error(`MIN_REWARD_CLAW must be a positive token amount: ${err.message}`);
+  }
+}
+
+requirePrivateKey(PRIVATE_KEY_AGENT);
+requireAddress('STAKING_ADDRESS', STAKING_ADDRESS);
+requireAddress('TOKEN_ADDRESS', TOKEN_ADDRESS);
+
+const POLL_MS  = parsePositiveInteger('POLL_INTERVAL_MINUTES', POLL_INTERVAL_MINUTES) * 60 * 1000;
+const MIN_WEI  = parseRewardThreshold(MIN_REWARD_CLAW);
 const account  = privateKeyToAccount(PRIVATE_KEY_AGENT);
 
 // ─── ABIs ─────────────────────────────────────────────────────────────────────

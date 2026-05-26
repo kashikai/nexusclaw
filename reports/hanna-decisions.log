@@ -1,0 +1,1 @@
+2026-05-26T14:30:00+09:00 | Level 6 autonomous decision | agent-v1 safety preflight | Chose to harden agents/v1/agent-core.js config validation because the Base mainnet auto-compounder should fail before any loop or transaction when private key, addresses, reward threshold, or poll interval are malformed. Scope excludes contracts, deployment, tokens, and payment files.
