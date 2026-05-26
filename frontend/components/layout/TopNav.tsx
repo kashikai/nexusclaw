@@ -5,10 +5,11 @@ import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; label: string; gold?: boolean }[] = [
   { href: '/proof', label: 'Proof' },
   { href: '/agents', label: 'Agents' },
   { href: '/start-agent', label: 'Start Agent' },
+  { href: '/signal-agent', label: 'Signal Agent', gold: true },
   { href: '/staking', label: 'Staking' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/security', label: 'Security' },
@@ -38,7 +39,13 @@ export function TopNav({ active }: { active?: string }) {
                   key={item.href + item.label}
                   href={item.href}
                   className={`transition-colors font-['Space_Grotesk'] tracking-tighter uppercase text-sm font-bold ${
-                    isActive ? 'text-[#3A8BFF] border-b-2 border-[#3A8BFF] pb-1' : 'text-[#8b919f] hover:text-[#e5e2e1]'
+                    isActive
+                      ? item.gold
+                        ? 'text-[#f5c542] border-b-2 border-[#f5c542] pb-1'
+                        : 'text-[#3A8BFF] border-b-2 border-[#3A8BFF] pb-1'
+                      : item.gold
+                      ? 'text-[#f5c542]/70 hover:text-[#f5c542]'
+                      : 'text-[#8b919f] hover:text-[#e5e2e1]'
                   }`}
                 >
                   {item.label}
@@ -108,11 +115,13 @@ export function TopNav({ active }: { active?: string }) {
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
                   className={`flex items-center justify-between py-4 border-b border-[#414754]/20 font-['Space_Grotesk'] uppercase text-sm font-bold tracking-widest transition-colors ${
-                    isActive ? 'text-[#00eefc]' : 'text-[#8b919f] hover:text-[#e5e2e1]'
+                    isActive
+                      ? item.gold ? 'text-[#f5c542]' : 'text-[#00eefc]'
+                      : item.gold ? 'text-[#f5c542]/70 hover:text-[#f5c542]' : 'text-[#8b919f] hover:text-[#e5e2e1]'
                   }`}
                 >
                   {item.label}
-                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#00eefc]" />}
+                  {isActive && <span className={`w-1.5 h-1.5 rounded-full ${item.gold ? 'bg-[#f5c542]' : 'bg-[#00eefc]'}`} />}
                 </Link>
               )
             })}
