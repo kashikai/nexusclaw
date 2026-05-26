@@ -1,0 +1,2 @@
+2026-05-26T15:00:06+0900 | Level 6 autonomous decision | resolve preexisting Git conflicts | Preserved current working-tree versions for deleted-by-us files and merged both Next.js config settings to unblock repository status without touching contracts, mainnet deploys, tokens, or payment files.
+2026-05-26T15:02:24+0900 | Validation adjustment | leaderboard route backup | Moved untracked old Pages Router leaderboard file outside the repo to tmp/conflict-backups so Next.js build uses app/leaderboard/page.tsx only.
