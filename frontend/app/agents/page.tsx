@@ -7,7 +7,7 @@ import { TopNav } from '@/components/layout/TopNav'
 import { STAKING_ADDRESS, STAKING_ABI, BASESCAN_URL } from '@/config/contracts'
 import { formatTokenShort } from '@/lib/utils'
 
-// ── Supabase FIMATHE data ─────────────────────────────────────────────────────
+// ── Supabase Signal Agent V2 data ────────────────────────────────────────────
 
 const SUPA_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
 const SUPA_KEY  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -136,14 +136,14 @@ function FimateCard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="font-['Space_Grotesk'] font-black text-lg uppercase tracking-tight">FIMATHE BOT</h3>
+            <h3 className="font-['Space_Grotesk'] font-black text-lg uppercase tracking-tight">SIGNAL AGENT V2</h3>
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00eefc]/10">
               <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#00eefc]" />
               <span className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest text-[#00eefc]">Live</span>
             </div>
           </div>
           <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] leading-relaxed max-w-sm">
-            Autonomous FIMATHE trader running on XAUUSD M1. Self-optimizes parameters via Claude API after every 5 trades.
+            Autonomous trading agent on XAUUSD M1. Detects its own entries and self-optimizes parameters via Claude AI after every 5 trades.
           </p>
         </div>
         <span className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest px-2 py-1 rounded shrink-0 text-[#00eefc] border border-[#00eefc]/40 bg-[#00eefc]/10">
@@ -417,6 +417,17 @@ export default function AgentsPage() {
                 loading={isLoading}
               />
             ))}
+          </div>
+        </section>
+
+        {/* ── SIGNAL AGENT V2 ── */}
+        <section className="mb-16">
+          <h2 className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.25em] text-[#00eefc] mb-8">// Trading Agents</h2>
+          <FimateCard />
+          <div className="mt-4 text-right">
+            <Link href="/signal-agent" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-[#00eefc] hover:text-white transition-colors">
+              Full results + get Signal Agent V2 →
+            </Link>
           </div>
         </section>
 
