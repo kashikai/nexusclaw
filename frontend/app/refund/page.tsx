@@ -56,7 +56,7 @@ export default function RefundPage() {
                 'Change of mind after download',
                 'Inability to configure the software due to user error',
                 'Trading losses resulting from use of the Signal Agent',
-                'Incompatibility with third-party services (MT5 broker, Telegram channels)',
+                'Incompatibility with third-party services (MT5 broker, Anthropic API, Supabase)',
                 'Purchases where the download link was accessed',
               ].map((item) => (
                 <li key={item} className="flex gap-3">

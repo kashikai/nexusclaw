@@ -114,13 +114,13 @@ const AGENT_TYPES = [
   },
   {
     id: 'signal' as AgentType,
-    name: 'Signal Agent',
-    badge: 'EARLY ACCESS',
+    name: 'Signal Agent V2',
+    badge: 'NEW',
     badgeStyle: 'bg-[#f5c542] text-[#1a1200]',
     icon: 'candlestick_chart',
     iconColor: 'text-[#f5c542]',
-    description: 'Copies Telegram signals directly to MetaTrader 5. Parses entry, SL, and up to 4 TPs. Unlimited accounts. No subscription.',
-    setupTime: '~10 min',
+    description: 'Fully autonomous XAUUSD trading bot. Detects its own entries, self-optimizes via Claude AI after every 5 trades. Live results published publicly.',
+    setupTime: '~15 min',
     available: true,
     hoverCta: 'group-hover:bg-[#f5c542] group-hover:text-[#1a1200]',
     leftBorder: false,
@@ -647,32 +647,25 @@ export default function StartAgentContent() {
           <section ref={signalRef} className="bg-[#0e0e0e] border-y border-[#414754]/10 py-24 px-8">
             <div className="max-w-3xl mx-auto">
               <div className="font-['JetBrains_Mono'] text-[10px] text-[#f5c542] tracking-[0.4em] uppercase mb-4">
-                // SIGNAL AGENT — EARLY ACCESS
+                // SIGNAL AGENT V2 — AUTONOMOUS TRADING
               </div>
               <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-2 leading-none">
-                Signal Agent
+                Signal Agent V2
               </h2>
               <div className="flex items-baseline gap-4 mb-4">
                 <span className="text-5xl font-black text-[#f5c542]">$49.90</span>
-                <span className="font-['JetBrains_Mono'] text-xl text-[#414754] line-through">$97</span>
-                <span className="font-['JetBrains_Mono'] text-[10px] text-[#f5c542] uppercase tracking-widest border border-[#f5c542]/40 px-2 py-1">First 20 buyers</span>
+                <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase tracking-widest border border-[#414754]/40 px-2 py-1">ONE-TIME PAYMENT</span>
               </div>
-              <p className="text-[#8b919f] font-['JetBrains_Mono'] text-sm mb-2">
-                One-time payment. Price locks in permanently — no future charges.
+              <p className="text-[#8b919f] font-['JetBrains_Mono'] text-sm mb-12">
+                No subscription. No signal provider. The bot trades on its own, learns from every result.
               </p>
-              <div className="flex items-center gap-2 mb-12">
-                <span className="material-symbols-outlined text-[#f5c542] text-base">all_inclusive</span>
-                <span className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6]">
-                  Unlimited MT5 accounts — while competitors charge per account, you run as many as you want. Forever.
-                </span>
-              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] bg-[#414754]/10 mb-12">
                 {[
-                  { icon: 'telegram', title: 'Telegram → MT5', desc: 'Reads signals from any Telegram channel and executes them on MetaTrader 5 automatically.' },
-                  { icon: 'candlestick_chart', title: 'Multi-TP Support', desc: 'Opens up to 4 separate positions for signals with multiple take-profit targets.' },
-                  { icon: 'shield', title: 'Slippage Protection', desc: 'Converts to pending order if price moved adversely more than 10 pips since signal.' },
-                  { icon: 'schedule', title: 'Runs 24/7', desc: 'Keeps running on VPS or local machine. Connects to MT5 terminal with no cloud dependency.' },
+                  { icon: 'smart_toy', title: 'Fully Autonomous', desc: 'No Telegram needed. Detects its own entries on XAUUSD M1 and manages trades end-to-end.' },
+                  { icon: 'psychology', title: 'AI Self-Optimization', desc: 'Claude AI analyzes every 5 trades and adjusts parameters automatically. Max 20% change per cycle.' },
+                  { icon: 'bar_chart', title: 'Live Public Results', desc: 'Every trade logged in real time. Win rate and P&L visible publicly at nexusclaw.tech/signal-agent.' },
+                  { icon: 'schedule', title: 'Runs 24/7', desc: 'Runs on VPS or local PC. Connects directly to MetaTrader 5 — no cloud dependency.' },
                 ].map((f) => (
                   <div key={f.title} className="bg-[#131313] p-6 flex gap-4">
                     <span className="material-symbols-outlined text-[#f5c542] text-2xl flex-shrink-0">{f.icon}</span>
@@ -690,10 +683,12 @@ export default function StartAgentContent() {
                 </div>
                 <ul className="space-y-3 font-['JetBrains_Mono'] text-sm text-[#c1c6d6]">
                   {[
-                    'signal_copier.py — the main bot script',
-                    '.env.template — configuration file',
+                    'signal_agent_v2.py — main autonomous trading bot',
+                    'strategy_agent.py — Claude AI parameter optimizer',
+                    'trade_logger.py — Supabase trade logging module',
+                    '.env.template — pre-filled configuration file',
                     'requirements.txt — Python dependencies',
-                    'signal_agent_guide.pdf — illustrated setup guide (9 steps)',
+                    'setup_guide.pdf — step-by-step setup guide (EN + PT)',
                   ].map((item) => (
                     <li key={item} className="flex gap-3">
                       <span className="text-[#f5c542] flex-shrink-0">—</span>
@@ -709,9 +704,10 @@ export default function StartAgentContent() {
                 </div>
                 <ul className="space-y-1 font-['JetBrains_Mono'] text-xs text-[#c1c6d6]">
                   <li>Windows VPS or local PC (MetaTrader5 Python package is Windows-only)</li>
-                  <li>MetaTrader 5 terminal installed and logged into your broker account</li>
-                  <li>Python 3.11+ installed</li>
-                  <li>A Telegram account to connect to signal channels</li>
+                  <li>MetaTrader 5 terminal logged into a broker account (XAUUSD required)</li>
+                  <li>Python 3.11+</li>
+                  <li>Claude API key (Anthropic) — for AI self-optimization</li>
+                  <li>Supabase account — free tier is enough for live result logging</li>
                 </ul>
               </div>
 
@@ -858,7 +854,7 @@ export default function StartAgentContent() {
                     rel="noopener noreferrer"
                     className="inline-flex w-full items-center justify-between gap-4 bg-green-400 text-black px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
                   >
-                    <span>BUY SIGNAL AGENT — APPLY CODE HOLDER20</span>
+                    <span>BUY SIGNAL AGENT V2 — APPLY CODE HOLDER20</span>
                     <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
                       <span className="material-symbols-outlined text-base">lock</span>
                       Secure checkout via Stripe
@@ -875,7 +871,7 @@ export default function StartAgentContent() {
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-between gap-4 bg-[#f5c542] text-[#1a1200] px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
                 >
-                  <span>BUY SIGNAL AGENT — $49.90</span>
+                  <span>BUY SIGNAL AGENT V2 — $49.90</span>
                   <span className="font-['JetBrains_Mono'] text-sm font-normal flex items-center gap-2">
                     <span className="material-symbols-outlined text-base">lock</span>
                     Secure checkout via Stripe
