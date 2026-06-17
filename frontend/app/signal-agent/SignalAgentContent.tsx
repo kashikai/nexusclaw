@@ -181,7 +181,7 @@ function LiveResultsSection() {
               </div>
               {trades.slice(0, 10).map((t, i) => {
                 const isWin = t.result === 'TP'
-                const dt    = new Date(t.entry_time + 'Z')
+                const dt    = new Date(t.entry_time)
                 return (
                   <div key={t.ticket ?? i} className="grid grid-cols-5 gap-2 px-6 py-3 border-b border-[#111] font-['JetBrains_Mono'] text-[10px]">
                     <span className="text-[#8b919f]">
