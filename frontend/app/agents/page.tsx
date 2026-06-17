@@ -1,10 +1,195 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { useReadContracts } from 'wagmi'
 import { TopNav } from '@/components/layout/TopNav'
 import { STAKING_ADDRESS, STAKING_ABI, BASESCAN_URL } from '@/config/contracts'
 import { formatTokenShort } from '@/lib/utils'
+
+// ── Supabase FIMATHE data ─────────────────────────────────────────────────────
+
+const SUPA_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
+const SUPA_KEY  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+interface FimateTrade {
+  ticket: number
+  direction: 'BUY' | 'SELL'
+  result: 'TP' | 'SL' | 'MANUAL'
+  profit_pts: number
+  profit_jpy: number
+  canal_size_pts: number
+  was_reversal: boolean
+  entry_time: string
+  duration_min: number
+  created_at: string
+}
+
+interface FimateParams {
+  params: Record<string, number>
+  reasoning: string
+  win_rate: number
+  sample_size: number
+  created_at: string
+}
+
+async function fetchFimathe(): Promise<{ trades: FimateTrade[]; latestParams: FimateParams | null }> {
+  const headers = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+
+  const [tradesRes, paramsRes] = await Promise.all([
+    fetch(`${SUPA_URL}/rest/v1/fimathe_trades?order=created_at.desc&limit=20`, { headers }),
+    fetch(`${SUPA_URL}/rest/v1/fimathe_params?order=created_at.desc&limit=1`, { headers }),
+  ])
+
+  const trades: FimateTrade[] = tradesRes.ok ? await tradesRes.json() : []
+  const paramsArr: FimateParams[] = paramsRes.ok ? await paramsRes.json() : []
+
+  return { trades, latestParams: paramsArr[0] ?? null }
+}
+
+function useFimatheData() {
+  const [trades, setTrades] = useState<FimateTrade[]>([])
+  const [latestParams, setLatestParams] = useState<FimateParams | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      try {
+        const data = await fetchFimathe()
+        if (alive) {
+          setTrades(data.trades)
+          setLatestParams(data.latestParams)
+          setLoading(false)
+        }
+      } catch { /* silent */ }
+    }
+    load()
+    const id = setInterval(load, 30_000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
+
+  return { trades, latestParams, loading }
+}
+
+// ── FIMATHE summary stats ─────────────────────────────────────────────────────
+
+function FimateStats({ trades }: { trades: FimateTrade[] }) {
+  if (trades.length === 0) return null
+
+  const wins     = trades.filter(t => t.result === 'TP').length
+  const losses   = trades.filter(t => t.result === 'SL').length
+  const winRate  = Math.round(wins / trades.length * 100)
+  const totalPnl = trades.reduce((s, t) => s + (t.profit_jpy ?? 0), 0)
+  const avgPts   = Math.round(trades.reduce((s, t) => s + (t.profit_pts ?? 0), 0) / trades.length)
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {[
+        { label: 'Trades',   value: trades.length.toString(),                 accent: '#00eefc' },
+        { label: 'Win Rate', value: `${winRate}%`,                            accent: winRate >= 50 ? '#4ddbc9' : '#ffb4ab' },
+        { label: 'Total P&L',value: `¥${totalPnl >= 0 ? '+' : ''}${Math.round(totalPnl).toLocaleString('en-US')}`, accent: totalPnl >= 0 ? '#4ddbc9' : '#ffb4ab' },
+        { label: 'Avg Pts',  value: `${avgPts >= 0 ? '+' : ''}${avgPts}pts`, accent: avgPts >= 0 ? '#4ddbc9' : '#ffb4ab' },
+      ].map(s => (
+        <div key={s.label} className="bg-[#131313] rounded-lg p-4 border border-[#00eefc]/10">
+          <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] block mb-1">{s.label}</span>
+          <span className="font-['JetBrains_Mono'] text-sm font-bold" style={{ color: s.accent }}>{s.value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── FIMATHE trade row ─────────────────────────────────────────────────────────
+
+function TradeRow({ t }: { t: FimateTrade }) {
+  const isWin   = t.result === 'TP'
+  const dt      = new Date(t.entry_time + 'Z')
+  const dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' })
+
+  return (
+    <div className="grid grid-cols-5 gap-2 py-2 border-b border-[#1a1a1a] text-[10px] font-['JetBrains_Mono']">
+      <span className="text-[#8b919f]">{dateStr} <span className="text-[#414754]">{timeStr}</span></span>
+      <span className={t.direction === 'BUY' ? 'text-[#4ddbc9]' : 'text-[#ffb4ab]'}>
+        {t.direction}{t.was_reversal ? ' ↺' : ''}
+      </span>
+      <span className={isWin ? 'text-[#4ddbc9]' : 'text-[#ffb4ab]'}>{t.result}</span>
+      <span className={isWin ? 'text-[#4ddbc9]' : 'text-[#ffb4ab]'}>
+        {t.profit_pts >= 0 ? '+' : ''}{t.profit_pts}pts
+      </span>
+      <span className={isWin ? 'text-[#4ddbc9]' : 'text-[#ffb4ab]'}>
+        ¥{t.profit_jpy >= 0 ? '+' : ''}{Math.round(t.profit_jpy).toLocaleString('en-US')}
+      </span>
+    </div>
+  )
+}
+
+// ── FIMATHE card ──────────────────────────────────────────────────────────────
+
+function FimateCard() {
+  const { trades, latestParams, loading } = useFimatheData()
+
+  return (
+    <div className="bg-[#0e0e0e] rounded-lg p-8 border border-[#00eefc]/20 flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="font-['Space_Grotesk'] font-black text-lg uppercase tracking-tight">FIMATHE BOT</h3>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00eefc]/10">
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#00eefc]" />
+              <span className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest text-[#00eefc]">Live</span>
+            </div>
+          </div>
+          <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] leading-relaxed max-w-sm">
+            Autonomous FIMATHE trader running on XAUUSD M1. Self-optimizes parameters via Claude API after every 5 trades.
+          </p>
+        </div>
+        <span className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest px-2 py-1 rounded shrink-0 text-[#00eefc] border border-[#00eefc]/40 bg-[#00eefc]/10">
+          TRADING
+        </span>
+      </div>
+
+      {/* Stats */}
+      {loading ? (
+        <div className="font-['JetBrains_Mono'] text-[10px] text-[#414754] animate-pulse">Loading trades…</div>
+      ) : (
+        <FimateStats trades={trades} />
+      )}
+
+      {/* Trade table */}
+      {!loading && trades.length > 0 && (
+        <div>
+          <div className="grid grid-cols-5 gap-2 pb-1 mb-1 border-b border-[#414754]/30">
+            {['Date (JST)', 'Side', 'Result', 'Points', 'P&L'].map(h => (
+              <span key={h} className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest text-[#414754]">{h}</span>
+            ))}
+          </div>
+          {trades.slice(0, 10).map((t, i) => <TradeRow key={t.ticket ?? i} t={t} />)}
+        </div>
+      )}
+
+      {!loading && trades.length === 0 && (
+        <div className="font-['JetBrains_Mono'] text-[10px] text-[#414754]">No trades yet — bot is running.</div>
+      )}
+
+      {/* Agent reasoning */}
+      {latestParams && (
+        <div className="bg-[#131313] rounded px-4 py-3 border-l-2 border-[#00eefc]/40">
+          <span className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest text-[#414754] block mb-1">
+            Last Agent Adjustment · Win rate {latestParams.win_rate?.toFixed(1)}% · {latestParams.sample_size} trades
+          </span>
+          <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] italic">{latestParams.reasoning}</span>
+        </div>
+      )}
+
+      <div className="font-['JetBrains_Mono'] text-[8px] text-[#414754] uppercase tracking-widest">
+        XAUUSD · M1 · Auto-refreshes every 30s
+      </div>
+    </div>
+  )
+}
 
 const AGENT_V1 = '0xF350367d4E3e0e45dc0f9E425741A86b8cf7e66f' as const
 const NEGA2   = '0x5073190885B3717E99E9B5436EE67ae26B743f92' as const
