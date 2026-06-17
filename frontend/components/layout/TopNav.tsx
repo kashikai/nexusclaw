@@ -11,7 +11,6 @@ const NAV_ITEMS: { href: string; label: string; gold?: boolean }[] = [
   { href: '/start-agent', label: 'Start Agent' },
   { href: '/signal-agent', label: 'Signal Agent', gold: true },
   { href: '/staking', label: 'Staking' },
-  { href: '/pricing', label: 'Pricing' },
   { href: '/security', label: 'Security' },
   { href: '/docs', label: 'Docs' },
 ]

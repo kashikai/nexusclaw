@@ -370,8 +370,7 @@ function SectionFaq() {
         />
         <FaqItem
           q="What happens if agent stops?"
-          a={<>Self-hosted: restart manually. Managed plan: we auto-restart. See{' '}
-            <Link href="/pricing" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">/pricing</Link>.</>}
+          a="Self-hosted: restart manually. Managed plan: we auto-restart. Contact us on Telegram for details."
         />
         <FaqItem
           q="Where can I get help?"
