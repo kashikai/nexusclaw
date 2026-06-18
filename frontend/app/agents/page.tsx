@@ -104,7 +104,7 @@ function FimateStats({ trades }: { trades: FimateTrade[] }) {
 
 function TradeRow({ t }: { t: FimateTrade }) {
   const isWin   = t.result === 'TP'
-  const dt      = new Date(t.entry_time + 'Z')
+  const dt      = new Date(t.entry_time)
   const dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' })
 
