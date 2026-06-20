@@ -42,7 +42,7 @@ export default function TermsPage() {
             <ul className="space-y-2 list-none">
               {[
                 'Autonomous staking agent software (free, open source)',
-                'Signal Agent V2 — a digital software product sold for USD $49.90 (one-time payment)',
+                'NexusClaw Trader — a digital software product sold for USD $49.90 (one-time payment)',
                 '$NEXUSCLAW token rewards distributed through protocol participation',
               ].map((item) => (
                 <li key={item} className="flex gap-3">
@@ -59,9 +59,9 @@ export default function TermsPage() {
             <ul className="space-y-2 list-none">
               {[
                 'Token values can go to zero. Past performance is not indicative of future results.',
-                'Automated trading bots (including the Signal Agent) do not guarantee profits.',
+                'Automated trading bots (including NexusClaw Trader) do not guarantee profits.',
                 'You are solely responsible for your trading decisions and any resulting losses.',
-                'Signal Agent V2 trades autonomously on XAUUSD. Automated trading does not guarantee profits and can result in losses.',
+                'NexusClaw Trader trades autonomously on XAUUSD. Automated trading does not guarantee profits and can result in losses.',
                 'Smart contracts may contain bugs. Funds interacting with unaudited contracts are at risk.',
               ].map((item) => (
                 <li key={item} className="flex gap-3">
@@ -97,7 +97,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="font-['Space_Grotesk'] font-bold uppercase text-[#e5e2e1] mb-3 tracking-tight">7. Intellectual Property</h2>
-            <p>The Signal Agent software is licensed for personal use only. You may not resell, redistribute, or sublicense it without written permission.</p>
+            <p>The NexusClaw Trader software is licensed for personal use only. You may not resell, redistribute, or sublicense it without written permission.</p>
           </section>
 
           <section>

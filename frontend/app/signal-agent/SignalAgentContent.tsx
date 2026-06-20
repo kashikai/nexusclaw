@@ -66,6 +66,12 @@ interface LiveTrade {
   duration_min: number
 }
 
+interface StatTrade {
+  result: 'TP' | 'SL' | 'MANUAL'
+  profit_pts: number
+  profit_jpy: number
+}
+
 interface LiveParams {
   reasoning: string
   win_rate: number
@@ -74,21 +80,24 @@ interface LiveParams {
 }
 
 function useLiveData() {
-  const [trades, setTrades]           = useState<LiveTrade[]>([])
+  const [trades, setTrades]             = useState<LiveTrade[]>([])
+  const [allTrades, setAllTrades]       = useState<StatTrade[]>([])
   const [latestParams, setLatestParams] = useState<LiveParams | null>(null)
-  const [loading, setLoading]         = useState(true)
+  const [loading, setLoading]           = useState(true)
 
   useEffect(() => {
     let alive = true
     const load = async () => {
       try {
         const headers = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
-        const [tr, pr] = await Promise.all([
-          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?order=created_at.desc&limit=20`, { headers }),
+        const [tr10, trAll, pr] = await Promise.all([
+          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?order=created_at.desc&limit=10`, { headers }),
+          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?order=created_at.desc&select=result,profit_jpy,profit_pts`, { headers }),
           fetch(`${SUPA_URL}/rest/v1/fimathe_params?order=created_at.desc&limit=1`, { headers }),
         ])
         if (alive) {
-          setTrades(tr.ok ? await tr.json() : [])
+          setTrades(tr10.ok ? await tr10.json() : [])
+          setAllTrades(trAll.ok ? await trAll.json() : [])
           const p = pr.ok ? await pr.json() : []
           setLatestParams(p[0] ?? null)
           setLoading(false)
@@ -100,7 +109,7 @@ function useLiveData() {
     return () => { alive = false; clearInterval(id) }
   }, [])
 
-  return { trades, latestParams, loading }
+  return { trades, allTrades, latestParams, loading }
 }
 
 // ── Features ─────────────────────────────────────────────────────────────────
@@ -115,10 +124,10 @@ const FEATURES = [
 ]
 
 const FAQ = [
-  { q: 'What market does Signal Agent V2 trade?', a: 'XAUUSD (Gold) on the M1 timeframe. The channel strategy is tuned for Gold\'s intraday volatility patterns.' },
+  { q: 'What market does NexusClaw Trader trade?', a: 'XAUUSD (Gold) on the M1 timeframe. The channel strategy is tuned for Gold\'s intraday volatility patterns.' },
   { q: 'How does the AI optimization work?', a: 'After every 5 closed trades, Claude AI analyzes the results and suggests parameter adjustments. Each change is capped at 20% to avoid overfit. The core logic never changes.' },
   { q: 'Are the live results real?', a: 'Yes — every trade is logged automatically to a public database as it closes. You can see the raw data on this page in real time.' },
-  { q: 'Do I need a Telegram channel or signal provider?', a: 'No. Signal Agent V2 is fully autonomous — it reads the chart directly via MetaTrader 5 and decides entries on its own.' },
+  { q: 'Do I need a Telegram signal provider?', a: 'No. NexusClaw Trader is fully autonomous — it reads the chart directly via MetaTrader 5 and decides entries on its own.' },
   { q: 'Do I need an Anthropic / Claude API key?', a: 'Yes — a free or paid Claude API key is required for the AI optimization feature. Without it, the bot still trades but won\'t self-optimize.' },
   { q: 'Does it work with any MT5 broker?', a: 'Yes — any broker that supports the MetaTrader 5 terminal on Windows.' },
   { q: 'What is the $NEXUSCLAW holder discount?', a: 'Hold 1,000 $NEXUSCLAW tokens and get 20% off permanently. Use coupon HOLDER20 at checkout.' },
@@ -129,13 +138,12 @@ const FAQ = [
 type HolderStatus = { balance: string; staked: string; isHolder: boolean; isStaker: boolean } | null
 
 function LiveResultsSection() {
-  const { trades, latestParams, loading } = useLiveData()
+  const { trades, allTrades, latestParams, loading } = useLiveData()
 
-  const wins    = trades.filter(t => t.result === 'TP').length
-  const losses  = trades.filter(t => t.result === 'SL').length
-  const winRate = trades.length > 0 ? Math.round(wins / trades.length * 100) : 0
-  const totalPnl = trades.reduce((s, t) => s + (t.profit_jpy ?? 0), 0)
-  const avgPts   = trades.length > 0 ? Math.round(trades.reduce((s, t) => s + (t.profit_pts ?? 0), 0) / trades.length) : 0
+  const wins     = allTrades.filter(t => t.result === 'TP').length
+  const winRate  = allTrades.length > 0 ? Math.round(wins / allTrades.length * 100) : 0
+  const totalPnl = allTrades.reduce((s, t) => s + (t.profit_jpy ?? 0), 0)
+  const avgPts   = allTrades.length > 0 ? Math.round(allTrades.reduce((s, t) => s + (t.profit_pts ?? 0), 0) / allTrades.length) : 0
 
   return (
     <section className="border-y border-[#1e1e1e] bg-[#0a0a0a] px-6 md:px-16 py-24">
@@ -153,14 +161,14 @@ function LiveResultsSection() {
 
         {loading ? (
           <div className="text-[10px] text-[#414754] font-['JetBrains_Mono'] animate-pulse">Loading live data…</div>
-        ) : trades.length === 0 ? (
+        ) : allTrades.length === 0 ? (
           <div className="text-[10px] text-[#414754] font-['JetBrains_Mono']">Bot is running — first trades will appear here automatically.</div>
         ) : (
           <>
             {/* Stats row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-[#1e1e1e] mb-8">
               {[
-                { label: 'Total Trades',  value: trades.length.toString(),                                         color: '#e5e2e1' },
+                { label: 'Total Trades',  value: allTrades.length.toString(),                                         color: '#e5e2e1' },
                 { label: 'Win Rate',      value: `${winRate}%`,                                                   color: winRate >= 50 ? '#4ddbc9' : '#ffb4ab' },
                 { label: 'Total P&L',     value: `¥${totalPnl >= 0 ? '+' : ''}${Math.round(totalPnl).toLocaleString('en-US')}`, color: totalPnl >= 0 ? '#4ddbc9' : '#ffb4ab' },
                 { label: 'Avg Points',    value: `${avgPts >= 0 ? '+' : ''}${avgPts}pts`,                        color: avgPts >= 0 ? '#4ddbc9' : '#ffb4ab' },
@@ -252,7 +260,7 @@ export default function SignalAgentContent() {
 
   return (
     <div className="min-h-screen bg-[#0c0c0c] text-[#e5e2e1] font-['JetBrains_Mono']">
-      <TopNav active="/signal-agent" />
+      <TopNav active="/trader" />
 
       <main className="pt-24">
 
@@ -265,17 +273,21 @@ export default function SignalAgentContent() {
           <div className="relative z-10 max-w-3xl">
             <div className="inline-flex items-center gap-2 border border-green-500/40 bg-green-900/20 px-4 py-2 mb-8">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-[10px] uppercase tracking-[0.3em]">V2 — LIVE ON REAL ACCOUNT</span>
+              <span className="text-green-400 text-[10px] uppercase tracking-[0.3em]">NEXUSCLAW TRADER — LIVE ON REAL ACCOUNT</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-tighter leading-[1.0] mb-8">
-              SIGNAL AGENT V2<br />
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-tighter leading-[1.0] mb-6">
+              NEXUSCLAW TRADER<br />
               <span className="text-[#f5c542]">TRADES ITSELF.</span>{' '}
               <span className="text-[#414754]">LEARNS ITSELF.</span>
             </h1>
 
+            <p className="text-xl md:text-2xl font-black uppercase tracking-wide text-[#e5e2e1] mb-4">
+              No signals. No emotions. Just math.
+            </p>
+
             <p className="text-base md:text-lg text-[#c1c6d6] max-w-2xl leading-relaxed mb-10 font-light">
-              No signal channel. No manual input. Signal Agent V2 detects its own entries on XAUUSD, executes on MetaTrader 5, and self-optimizes parameters via Claude AI after every 5 trades.
+              NexusClaw Trader detects its own entries on XAUUSD, executes on MetaTrader 5, and self-optimizes parameters via Claude AI after every 5 trades — fully autonomous, 24/7.
             </p>
 
             <div className="space-y-3 mb-12">
@@ -298,7 +310,7 @@ export default function SignalAgentContent() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-[#f5c542] text-[#0c0c0c] px-10 py-5 text-sm font-black uppercase tracking-widest hover:brightness-110 transition-all"
               >
-                BUY SIGNAL AGENT V2 — $49.90 →
+                BUY NEXUSCLAW TRADER — $49.90 →
               </a>
             </div>
             <p className="text-[10px] text-[#8b919f] mt-3">$NEXUSCLAW holders pay $39.90 — check below</p>
@@ -359,7 +371,7 @@ export default function SignalAgentContent() {
               </h2>
               <ul className="space-y-5">
                 {[
-                  { file: 'signal_agent_v2.py',  desc: 'main autonomous trading bot' },
+                  { file: 'nexusclaw_trader.py',  desc: 'main autonomous trading bot' },
                   { file: 'strategy_agent.py',    desc: 'Claude AI parameter optimizer' },
                   { file: 'trade_logger.py',      desc: 'Supabase trade logging module' },
                   { file: '.env.template',         desc: 'pre-filled configuration file' },
@@ -560,7 +572,7 @@ export default function SignalAgentContent() {
                   isHolder ? 'bg-green-400 text-black' : 'bg-[#f5c542] text-[#0c0c0c]'
                 }`}
               >
-                <span>BUY SIGNAL AGENT V2 — {isHolder ? '$39.90 (HOLDER PRICE)' : '$49.90'} →</span>
+                <span>BUY NEXUSCLAW TRADER — {isHolder ? '$39.90 (HOLDER PRICE)' : '$49.90'} →</span>
                 <span className="font-normal text-xs">SECURE · STRIPE</span>
               </a>
 
@@ -577,7 +589,7 @@ export default function SignalAgentContent() {
       <footer className="border-t border-[#1e1e1e] bg-[#070707] px-6 md:px-16 py-10">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="text-[10px] text-[#414754] leading-relaxed max-w-lg">
-            Signal Agent V2 · NexusClaw Protocol · nexusclaw.tech<br />
+            NexusClaw Trader · NexusClaw Protocol · nexusclaw.tech<br />
             Support: <a href="mailto:contato@nexusclaw.tech" className="hover:text-[#f5c542] transition-colors">contato@nexusclaw.tech</a><br />
             ⚠ This software does not guarantee profits. Trading involves risk. Use at your own discretion.
           </div>

@@ -28,7 +28,7 @@ export default function RefundPage() {
 
           <section>
             <h2 className="font-['Space_Grotesk'] font-bold uppercase text-[#e5e2e1] mb-3 tracking-tight">1. Digital Products</h2>
-            <p>The Signal Agent is a digital software product delivered electronically. Due to the nature of digital goods, <span className="text-[#e5e2e1] font-bold">all sales are final</span> once the download link has been delivered.</p>
+            <p>NexusClaw Trader is a digital software product delivered electronically. Due to the nature of digital goods, <span className="text-[#e5e2e1] font-bold">all sales are final</span> once the download link has been delivered.</p>
           </section>
 
           <section>
@@ -55,7 +55,7 @@ export default function RefundPage() {
               {[
                 'Change of mind after download',
                 'Inability to configure the software due to user error',
-                'Trading losses resulting from use of the Signal Agent',
+                'Trading losses resulting from use of NexusClaw Trader',
                 'Incompatibility with third-party services (MT5 broker, Anthropic API, Supabase)',
                 'Purchases where the download link was accessed',
               ].map((item) => (

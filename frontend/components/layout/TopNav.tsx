@@ -9,7 +9,7 @@ const NAV_ITEMS: { href: string; label: string; gold?: boolean }[] = [
   { href: '/proof', label: 'Proof' },
   { href: '/agents', label: 'Agents' },
   { href: '/start-agent', label: 'Start Agent' },
-  { href: '/signal-agent', label: 'Signal Agent', gold: true },
+  { href: '/trader', label: 'Trader', gold: true },
   { href: '/staking', label: 'Staking' },
   { href: '/security', label: 'Security' },
   { href: '/docs', label: 'Docs' },

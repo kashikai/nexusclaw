@@ -1,9 +1,5 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import dynamic from 'next/dynamic'
-
-const SignalAgentContent = dynamic(() => import('./SignalAgentContent'), { ssr: false })
-
-export default function SignalAgentPage() {
-  return <SignalAgentContent />
+export default function OldSignalAgentPage() {
+  redirect('/trader')
 }

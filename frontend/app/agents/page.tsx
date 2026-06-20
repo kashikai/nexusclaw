@@ -136,7 +136,7 @@ function FimateCard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="font-['Space_Grotesk'] font-black text-lg uppercase tracking-tight">SIGNAL AGENT V2</h3>
+            <h3 className="font-['Space_Grotesk'] font-black text-lg uppercase tracking-tight">NEXUSCLAW TRADER</h3>
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00eefc]/10">
               <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#00eefc]" />
               <span className="font-['JetBrains_Mono'] text-[8px] uppercase tracking-widest text-[#00eefc]">Live</span>
@@ -425,8 +425,8 @@ export default function AgentsPage() {
           <h2 className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.25em] text-[#00eefc] mb-8">// Trading Agents</h2>
           <FimateCard />
           <div className="mt-4 text-right">
-            <Link href="/signal-agent" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-[#00eefc] hover:text-white transition-colors">
-              Full results + get Signal Agent V2 →
+            <Link href="/trader" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-[#00eefc] hover:text-white transition-colors">
+              Full results + get NexusClaw Trader →
             </Link>
           </div>
         </section>

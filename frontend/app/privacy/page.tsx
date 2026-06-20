@@ -44,7 +44,7 @@ export default function PrivacyPage() {
               </div>
               <div className="border border-[#414754]/30 p-4">
                 <p className="text-[#abc7ff] uppercase text-[10px] tracking-widest mb-2">Payment Data</p>
-                <p>Payments for the Signal Agent are processed by Stripe. We do not store credit card numbers or payment details. Stripe's privacy policy applies to payment processing.</p>
+                <p>Payments for NexusClaw Trader are processed by Stripe. We do not store credit card numbers or payment details. Stripe's privacy policy applies to payment processing.</p>
               </div>
               <div className="border border-[#414754]/30 p-4">
                 <p className="text-[#abc7ff] uppercase text-[10px] tracking-widest mb-2">Usage Data</p>
