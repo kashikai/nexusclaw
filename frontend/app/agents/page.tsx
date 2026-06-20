@@ -7,7 +7,7 @@ import { TopNav } from '@/components/layout/TopNav'
 import { STAKING_ADDRESS, STAKING_ABI, BASESCAN_URL } from '@/config/contracts'
 import { formatTokenShort } from '@/lib/utils'
 
-// ── Supabase Signal Agent V2 data ────────────────────────────────────────────
+// ── Supabase NexusClaw Trader data ───────────────────────────────────────────
 
 const SUPA_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
 const SUPA_KEY  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -397,7 +397,7 @@ export default function AgentsPage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00eefc]" />
               </span>
               <span className="font-['JetBrains_Mono'] text-xs text-[#00eefc]">
-                {isLoading ? '—' : (totalStakers?.toString() ?? '—')} agents active
+                {isLoading ? '—' : ((totalStakers ?? 0n) + 1n).toString()} agents active
               </span>
             </div>
             <span className="font-['JetBrains_Mono'] text-[10px] text-[#414754] uppercase tracking-widest">
@@ -408,7 +408,7 @@ export default function AgentsPage() {
 
         {/* ── ACTIVE AGENTS ── */}
         <section className="mb-16">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
             {KNOWN_AGENTS.map((agent, i) => (
               <AgentCard
                 key={agent.address}
@@ -418,11 +418,6 @@ export default function AgentsPage() {
               />
             ))}
           </div>
-        </section>
-
-        {/* ── SIGNAL AGENT V2 ── */}
-        <section className="mb-16">
-          <h2 className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.25em] text-[#00eefc] mb-8">// Trading Agents</h2>
           <FimateCard />
           <div className="mt-4 text-right">
             <Link href="/trader" className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-[#00eefc] hover:text-white transition-colors">
