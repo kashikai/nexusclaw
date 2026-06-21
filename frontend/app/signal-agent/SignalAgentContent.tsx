@@ -584,7 +584,7 @@ export default function SignalAgentContent() {
                 <a href="/refund" className="hover:text-[#f5c542] transition-colors">See our Refund Policy</a>
               </p>
               <p className="text-[10px] text-[#414754] text-center leading-relaxed border-t border-[#1e1e1e] pt-4">
-                ⚠ Trading involves risk. NexusClaw Trader is automation software, not financial advice. No profit is guaranteed. Test on demo or small size before committing real capital.</p>
+                ⚠ Trading involves risk. NexusClaw Trader is automation software, not financial advice. No profit is guaranteed. Test on demo or small size before committing real capital.
               </p>
             </div>
           </div>
