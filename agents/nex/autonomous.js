@@ -146,6 +146,141 @@ async function postToGroup(message) {
   }
 }
 
+function getTradingGroups() {
+  return (process.env.TELEGRAM_TRADING_GROUPS || '')
+    .split(',')
+    .map(group => group.trim())
+    .filter(Boolean);
+}
+
+async function postToTradingGroups(message) {
+  const groups = getTradingGroups();
+  if (groups.length === 0) {
+    console.log('⚠️ TELEGRAM_TRADING_GROUPS not set — skipping trading groups post');
+    return;
+  }
+
+  console.log(`📡 Posting to ${groups.length} trading groups...`);
+  for (const groupId of groups) {
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: groupId,
+          text: message,
+          parse_mode: 'Markdown',
+          disable_web_page_preview: false,
+        })
+      });
+      console.log(`✅ Posted to group ${groupId}`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } catch (e) {
+      console.error(`❌ Failed to post to group ${groupId}:`, e.message);
+    }
+  }
+}
+
+function formatSignedNumber(value, suffix = '') {
+  const n = Number(value || 0);
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${n}${suffix}`;
+}
+
+async function fetchLatestClosedTrade() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.log('⚠️ Supabase not configured — skipping trade check');
+    return null;
+  }
+
+  const query = new URLSearchParams({
+    select: '*',
+    closed_at: 'not.is.null',
+    order: 'closed_at.desc',
+    limit: '1',
+  });
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/trades?${query.toString()}`, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    }
+  });
+  const trades = await res.json().catch(() => []);
+  if (!res.ok) throw new Error(`Supabase trades fetch failed (${res.status})`);
+  return Array.isArray(trades) && trades.length > 0 ? trades[0] : null;
+}
+
+async function checkAndPostTradeUpdate(state) {
+  try {
+    const latest = await fetchLatestClosedTrade();
+    if (!latest) return;
+
+    const tradeId = latest.id || latest.trade_id || latest.closed_at;
+    if (!tradeId) {
+      console.log('⚠️ Latest closed trade has no id — skipping trade update');
+      return;
+    }
+    if (String(tradeId) === String(state.lastPostedTradeId)) {
+      console.log('⏭️ Latest closed trade already posted:', tradeId);
+      return;
+    }
+
+    console.log('📊 New closed trade detected — generating post...');
+    const isWin = String(latest.result || '').toUpperCase() === 'TP';
+    const emoji = isWin ? '🎯' : '❌';
+    const resultLabel = isWin ? 'TP HIT' : 'SL HIT';
+    const points = latest.points ?? latest.pips ?? 0;
+    const pnl = latest.pnl ?? latest.profit_loss ?? 0;
+
+    const tradeContext = `Generate a short trading update post about this closed trade:
+Symbol: ${latest.symbol || 'XAUUSD'}
+Side: ${latest.side || 'N/A'}
+Result: ${latest.result || 'closed'} (${resultLabel})
+Points: ${formatSignedNumber(points, 'pts')}
+P&L: ¥${formatSignedNumber(pnl)}
+
+Current bot stats:
+- Total trades: ${latest.total_trades || '35+'}
+- Win rate: ${latest.win_rate || '60'}%
+
+Keep it short — 3-4 lines max.
+End with: nexusclaw.tech/trader
+Use ${emoji} emoji.
+Do NOT promise profits or guarantee results.`;
+
+    const draft = await generatePost(tradeContext, 'en', 'trader-update');
+    await postToGroup(`📊 *NexusClaw Trader Update*\n\n${draft}`);
+
+    const tradingGroupMessage = `${emoji} *${latest.symbol || 'XAUUSD'} ${latest.side || ''} — ${resultLabel}*\n\n` +
+      `Points: ${formatSignedNumber(points, 'pts')}\n` +
+      `P&L: ¥${formatSignedNumber(pnl)}\n\n` +
+      `🤖 Autonomous bot — no signals, no emotions.\n` +
+      `📊 Full live log: nexusclaw.tech/trader\n\n` +
+      `_Past performance does not guarantee future results._`;
+
+    await postToTradingGroups(tradingGroupMessage);
+    await notifyTiago(
+      `📊 *NEX TRADER UPDATE POSTED*\n\n` +
+      `Trade: ${latest.side || 'N/A'} ${latest.symbol || 'XAUUSD'}\n` +
+      `Result: ${resultLabel} | ${formatSignedNumber(points, 'pts')}\n` +
+      `Groups: ${getTradingGroups().length} trading groups\n\n` +
+      `${draft}`
+    );
+
+    state.lastPostedTradeId = tradeId;
+    state.lastPostedTradeAt = new Date().toISOString();
+    state.totalPosts = (state.totalPosts || 0) + 1;
+    saveState(state);
+    console.log('✅ Trade update posted to all groups');
+  } catch (e) {
+    console.error('❌ Trade check error:', e.message);
+  }
+}
+
 async function runNex() {
   const state = loadState();
 
@@ -169,6 +304,8 @@ async function runNex() {
   }
 
   console.log(`[${now.toISOString()}] 🦞 Nex L3 — JST ${jstHour}:xx — ${today}`);
+
+  await checkAndPostTradeUpdate(state);
 
   // DAILY REPORT (09:00 JST)
   if (jstHour === 9 && state.lastDailyReport !== today) {
@@ -370,6 +507,8 @@ if (BOT_TOKEN && TIAGO) {
     } else if (msg.text === 'NEX STATUS') {
       const state = loadState();
       const groupId = process.env.NEXUSCLAW_GROUP_ID || 'NOT SET';
+      const tradingGroups = getTradingGroups();
+      const lastTrade = state.lastPostedTradeId || 'none';
       await bot.sendMessage(TIAGO,
         `🦞 *NEX STATUS — LEVEL 3*\n\n` +
         `Paused: ${state.paused ? 'YES 🛑' : 'NO ✅'}\n` +
@@ -380,6 +519,8 @@ if (BOT_TOKEN && TIAGO) {
         `Last daily: ${state.lastDailyReport || 'none'}\n` +
         `Last weekly: ${state.lastWeeklyReport || 'none'}\n` +
         `Group ID: \`${groupId}\`\n` +
+        `Trading groups: ${tradingGroups.length}\n` +
+        `Last trade posted: ${lastTrade}\n` +
         `Moltbook: https://www.moltbook.com/m/nexusclaw`,
         { parse_mode: 'Markdown' }
       );

@@ -2,15 +2,24 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 
-require('dotenv').config();
+require('dotenv').config({ path: '../../.env' });
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TIAGO_CHAT_ID = process.env.TIAGO_TELEGRAM_ID;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const STATE_PATH = fs.existsSync(path.join(__dirname, 'nex-state.json'))
+  ? path.join(__dirname, 'nex-state.json')
+  : path.join(__dirname, '..', 'nex-state.json');
 
 console.log('Starting Nex Bot Multilingual...');
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const pendingDrafts = new Map();
+const FREE_MODELS = [
+  'z-ai/glm-4.5-air:free',
+  'deepseek/deepseek-v4-flash:free',
+  'qwen/qwen3-next-80b-a3b-instruct:free',
+  'meta-llama/llama-3.3-70b-instruct:free'
+];
 
 // Language names for display
 const LANG_NAMES = {
@@ -23,36 +32,47 @@ const LANG_NAMES = {
 
 // Generate draft using OpenRouter with language
 async function generateDraft(techUpdate, postType, language) {
-  try {
+  const messages = [
+    { 
+      role: 'system', 
+      content: `You are Nex, NexusClaw community agent. Write in ${LANG_NAMES[language] || 'English'}. Energetic but credible. Hook/Body/CTA/Tags format. No price promises. Use local slang when appropriate, but keep Moltbook-friendly agent economy language. Use ONLY facts from the tech update. Do not invent metrics, deployments, gas savings, dates, partnerships, launches, or performance claims. Output ONLY the post text.`
+    },
+    { 
+      role: 'user', 
+      content: `Tech update: ${techUpdate}\n\nGenerate community post in ${language}. Include relevant hashtags.` 
+    }
+  ];
+
+  for (const model of FREE_MODELS) {
+    try {
+      console.log(`Trying OpenRouter free model: ${model}`);
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + OPENROUTER_API_KEY,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://nexusclaw.vercel.app'
+        'HTTP-Referer': 'https://nexusclaw.vercel.app',
+        'X-Title': 'NexusClaw Agent Nex'
       },
       body: JSON.stringify({
-        model: 'moonshotai/kimi-k2.5',
-        max_tokens: 400,
-        messages: [
-          { 
-            role: 'system', 
-            content: `You are Nex, NexusClaw community agent. Write in ${LANG_NAMES[language] || 'English'}. Energetic but credible. Hook/Body/CTA/Tags format. No price promises. Use local crypto slang when appropriate.`
-          },
-          { 
-            role: 'user', 
-            content: `Tech update: ${techUpdate}\n\nGenerate community post in ${language}. Include relevant hashtags.` 
-          }
-        ]
+        model,
+        max_tokens: 500,
+        reasoning: { enabled: false },
+        messages
       })
     });
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
-  } catch (error) {
-    console.error('API error:', error);
-    return `🦞⚡ Update:\n\n${techUpdate}\n\n#NexusClaw`;
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${data?.error?.message || response.statusText}`);
+      const draft = data?.choices?.[0]?.message?.content?.trim();
+      if (!draft) throw new Error(`empty content (finish=${data?.choices?.[0]?.finish_reason || 'unknown'})`);
+      return draft;
+    } catch (error) {
+      console.error(`API error with ${model}:`, error.message);
+    }
   }
+
+  return `🦞⚡ Update:\n\n${techUpdate}\n\n#NexusClaw #AgentEconomy`;
 }
 
 // Send draft for review
@@ -95,7 +115,7 @@ bot.onText(/\/start/, (msg) => {
 });
 
 // /draft <texto> — Manual in Portuguese
-bot.onText(/\/draft (.+)/, async (msg, match) => {
+bot.onText(/\/draft ([\s\S]+)/, async (msg, match) => {
   if (msg.chat.id.toString() !== TIAGO_CHAT_ID) return;
   await sendDraftForReview(match[1].trim(), 'manual', 'pt');
   await bot.sendMessage(TIAGO_CHAT_ID, '✅ Draft manual enviado!');
@@ -108,7 +128,7 @@ bot.onText(/\/gen (pt|en|ko|es|jp) (.+)/, async (msg, match) => {
   const lang = match[1];
   const techUpdate = match[2].trim();
   
-  await bot.sendMessage(TIAGO_CHAT_ID, `🦞⚡ Gerando em ${LANG_NAMES[lang]} com Kimi K2...`);
+  await bot.sendMessage(TIAGO_CHAT_ID, `🦞⚡ Gerando em ${LANG_NAMES[lang]} com modelos gratuitos...`);
   
   const draft = await generateDraft(techUpdate, 'generated', lang);
   await sendDraftForReview(draft, 'generated', lang);
@@ -142,6 +162,30 @@ bot.onText(/\/gen-jp (.+)/, async (msg, match) => {
   const draft = await generateDraft(match[1].trim(), 'generated', 'jp');
   await sendDraftForReview(draft, 'generated', 'jp');
   await bot.sendMessage(TIAGO_CHAT_ID, '✅ 日本語 draft generated!');
+});
+
+// /status
+bot.onText(/\/status/, async (msg) => {
+  if (msg.chat.id.toString() !== TIAGO_CHAT_ID) return;
+  const state = fs.existsSync(STATE_PATH)
+    ? JSON.parse(fs.readFileSync(STATE_PATH, 'utf-8'))
+    : {};
+  const tradingGroups = (process.env.TELEGRAM_TRADING_GROUPS || '')
+    .split(',')
+    .map(group => group.trim())
+    .filter(Boolean);
+  const lastTrade = state.lastPostedTradeId || 'none';
+
+  await bot.sendMessage(TIAGO_CHAT_ID,
+    `🦞⚡ *NEX STATUS*\n\n` +
+    `Paused: ${state.paused ? 'yes' : 'no'}\n` +
+    `Posts today: ${state.postsToday || 0}\n` +
+    `Total posts: ${state.totalPosts || 0}\n` +
+    `Last post: ${state.lastPostTime || 'none'}\n` +
+    `Trading groups: ${tradingGroups.length}\n` +
+    `Last trade posted: ${lastTrade}\n`,
+    { parse_mode: 'Markdown' }
+  );
 });
 
 // Button handlers

@@ -1,4 +1,4 @@
-require("dotenv").config({ path: '../../../.env' });
+require("dotenv").config({ path: '../../.env' });
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
@@ -8,6 +8,7 @@ const TIAGO = process.env.TIAGO_TELEGRAM_ID;
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const MOLTBOOK_KEY = process.env.MOLTBOOK_API_KEY;
 const SUBMOLT = 'nexusclaw';
+const STATE_PATH = path.join(__dirname, 'nex-state.json');
 
 const LANG = {
   pt: 'Portuguese (Brazil)',
@@ -134,12 +135,20 @@ bot.onText(/\/status/, async (msg) => {
       headers: { 'Authorization': 'Bearer ' + MOLTBOOK_KEY }
     });
     const a = await r.json();
+    const state = fs.existsSync(STATE_PATH) ? JSON.parse(fs.readFileSync(STATE_PATH, 'utf-8')) : {};
+    const tradingGroups = (process.env.TELEGRAM_TRADING_GROUPS || '')
+      .split(',')
+      .map(group => group.trim())
+      .filter(Boolean);
+    const lastTrade = state.lastPostedTradeId || 'none';
     await bot.sendMessage(TIAGO,
       `🦞⚡ *NEX STATUS*\n\n` +
       `Name: ${a.name}\n` +
       `Karma: ${a.karma || 0}\n` +
       `Posts: ${a.post_count || 0}\n` +
       `Followers: ${a.follower_count || 0}\n` +
+      `Trading groups: ${tradingGroups.length}\n` +
+      `Last trade posted: ${lastTrade}\n` +
       `Profile: https://www.moltbook.com/u/${a.name}\n` +
       `Submolt: https://www.moltbook.com/m/nexusclaw`,
       { parse_mode: 'Markdown' }
