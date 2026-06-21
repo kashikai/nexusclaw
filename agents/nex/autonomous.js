@@ -190,6 +190,7 @@ function formatSignedNumber(value, suffix = '') {
 async function fetchLatestClosedTrade() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+  const tradesTable = process.env.SUPABASE_TRADES_TABLE || 'trades';
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.log('⚠️ Supabase not configured — skipping trade check');
@@ -198,28 +199,48 @@ async function fetchLatestClosedTrade() {
 
   const query = new URLSearchParams({
     select: '*',
-    closed_at: 'not.is.null',
-    order: 'closed_at.desc',
+    order: tradesTable === 'trades' ? 'closed_at.desc' : 'exit_time.desc',
     limit: '1',
   });
+  if (tradesTable === 'trades') {
+    query.set('closed_at', 'not.is.null');
+  } else {
+    query.set('exit_time', 'not.is.null');
+  }
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/trades?${query.toString()}`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${tradesTable}?${query.toString()}`, {
     headers: {
       apikey: SUPABASE_KEY,
       Authorization: `Bearer ${SUPABASE_KEY}`,
     }
   });
   const trades = await res.json().catch(() => []);
-  if (!res.ok) throw new Error(`Supabase trades fetch failed (${res.status})`);
+  if (!res.ok) throw new Error(`Supabase ${tradesTable} fetch failed (${res.status})`);
   return Array.isArray(trades) && trades.length > 0 ? trades[0] : null;
+}
+
+function normalizeTrade(raw) {
+  const result = String(raw.result || '').toUpperCase();
+  return {
+    id: raw.id || raw.ticket || raw.closed_at || raw.exit_time,
+    symbol: raw.symbol || process.env.TRADER_SYMBOL || 'XAUUSD',
+    side: raw.side || raw.direction || 'N/A',
+    result,
+    closedAt: raw.closed_at || raw.exit_time || raw.created_at,
+    points: raw.points ?? raw.profit_pts ?? raw.pips ?? 0,
+    pnl: raw.pnl ?? raw.profit_jpy ?? raw.profit_loss ?? 0,
+    totalTrades: raw.total_trades || null,
+    winRate: raw.win_rate || null,
+  };
 }
 
 async function checkAndPostTradeUpdate(state) {
   try {
-    const latest = await fetchLatestClosedTrade();
-    if (!latest) return;
+    const rawLatest = await fetchLatestClosedTrade();
+    if (!rawLatest) return;
+    const latest = normalizeTrade(rawLatest);
 
-    const tradeId = latest.id || latest.trade_id || latest.closed_at;
+    const tradeId = latest.id;
     if (!tradeId) {
       console.log('⚠️ Latest closed trade has no id — skipping trade update');
       return;
@@ -230,22 +251,22 @@ async function checkAndPostTradeUpdate(state) {
     }
 
     console.log('📊 New closed trade detected — generating post...');
-    const isWin = String(latest.result || '').toUpperCase() === 'TP';
+    const isWin = latest.result === 'TP' || latest.result === 'WIN';
     const emoji = isWin ? '🎯' : '❌';
     const resultLabel = isWin ? 'TP HIT' : 'SL HIT';
-    const points = latest.points ?? latest.pips ?? 0;
-    const pnl = latest.pnl ?? latest.profit_loss ?? 0;
+    const points = latest.points;
+    const pnl = latest.pnl;
 
     const tradeContext = `Generate a short trading update post about this closed trade:
-Symbol: ${latest.symbol || 'XAUUSD'}
-Side: ${latest.side || 'N/A'}
+Symbol: ${latest.symbol}
+Side: ${latest.side}
 Result: ${latest.result || 'closed'} (${resultLabel})
 Points: ${formatSignedNumber(points, 'pts')}
 P&L: ¥${formatSignedNumber(pnl)}
 
 Current bot stats:
-- Total trades: ${latest.total_trades || '35+'}
-- Win rate: ${latest.win_rate || '60'}%
+- Total trades: ${latest.totalTrades || '35+'}
+- Win rate: ${latest.winRate || '60'}%
 
 Keep it short — 3-4 lines max.
 End with: nexusclaw.tech/trader
@@ -255,7 +276,7 @@ Do NOT promise profits or guarantee results.`;
     const draft = await generatePost(tradeContext, 'en', 'trader-update');
     await postToGroup(`📊 *NexusClaw Trader Update*\n\n${draft}`);
 
-    const tradingGroupMessage = `${emoji} *${latest.symbol || 'XAUUSD'} ${latest.side || ''} — ${resultLabel}*\n\n` +
+    const tradingGroupMessage = `${emoji} *${latest.symbol} ${latest.side} — ${resultLabel}*\n\n` +
       `Points: ${formatSignedNumber(points, 'pts')}\n` +
       `P&L: ¥${formatSignedNumber(pnl)}\n\n` +
       `🤖 Autonomous bot — no signals, no emotions.\n` +
@@ -265,7 +286,7 @@ Do NOT promise profits or guarantee results.`;
     await postToTradingGroups(tradingGroupMessage);
     await notifyTiago(
       `📊 *NEX TRADER UPDATE POSTED*\n\n` +
-      `Trade: ${latest.side || 'N/A'} ${latest.symbol || 'XAUUSD'}\n` +
+      `Trade: ${latest.side} ${latest.symbol}\n` +
       `Result: ${resultLabel} | ${formatSignedNumber(points, 'pts')}\n` +
       `Groups: ${getTradingGroups().length} trading groups\n\n` +
       `${draft}`
