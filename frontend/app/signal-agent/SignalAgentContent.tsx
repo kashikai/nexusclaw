@@ -10,6 +10,7 @@ import { TopNav } from '@/components/layout/TopNav'
 const STAKING_ADDRESS = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe' as const
 const TOKEN_ADDRESS   = '0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6' as const
 const STRIPE_LINK     = 'https://buy.stripe.com/00w9AM2y10wub4VfpC77O02'
+const TG_CHANNEL      = 'https://t.me/nexusclaw_live'
 const SUPA_URL        = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
 const SUPA_KEY        = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
@@ -311,6 +312,15 @@ export default function SignalAgentContent() {
                 className="inline-flex items-center gap-3 bg-[#f5c542] text-[#0c0c0c] px-10 py-5 text-sm font-black uppercase tracking-widest hover:brightness-110 transition-all"
               >
                 BUY NEXUSCLAW TRADER — $49.90 →
+              </a>
+              <a
+                href={TG_CHANNEL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 border border-[#229ED9]/40 text-[#229ED9] px-8 py-5 text-sm font-black uppercase tracking-widest hover:bg-[#229ED9]/10 transition-all"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 13.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
+                FOLLOW LIVE TRADES
               </a>
             </div>
             <p className="text-[10px] text-[#8b919f] mt-3">$NEXUSCLAW holders pay $39.90 — check below</p>
