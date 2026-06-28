@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 function XIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -56,9 +58,9 @@ export function SiteFooter() {
         </div>
 
         <div className="flex items-center gap-6">
-          <a href="/docs" className="text-xs text-gray-500 hover:text-white transition-colors font-mono">Docs</a>
-          <a href="/terms" className="text-xs text-gray-500 hover:text-white transition-colors font-mono">Terms</a>
-          <a href="/privacy" className="text-xs text-gray-500 hover:text-white transition-colors font-mono">Privacy</a>
+          <Link href="/docs" className="text-xs text-gray-500 hover:text-white transition-colors font-mono">Docs</Link>
+          <Link href="/terms" className="text-xs text-gray-500 hover:text-white transition-colors font-mono">Terms</Link>
+          <Link href="/privacy" className="text-xs text-gray-500 hover:text-white transition-colors font-mono">Privacy</Link>
         </div>
       </div>
     </footer>

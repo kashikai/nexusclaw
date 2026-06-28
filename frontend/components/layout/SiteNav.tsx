@@ -73,7 +73,7 @@ export function SiteNav({ variant = 'public', active }: SiteNavProps) {
                       ) : (
                         <button
                           onClick={() => {
-                            const hasInjected = typeof window !== 'undefined' && !!(window as any).ethereum
+                            const hasInjected = typeof window !== 'undefined' && !!(window as { ethereum?: unknown }).ethereum
                             if (isMobileDevice() && !hasInjected) {
                               setMobileModalOpen(true)
                             } else {
@@ -119,6 +119,14 @@ export function SiteNav({ variant = 'public', active }: SiteNavProps) {
           </div>
         </div>
       </nav>
+
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
     </>
   )
 }
