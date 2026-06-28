@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem'
 import { base } from 'viem/chains'
 import { STAKING_ADDRESS, STAKING_ABI } from '@/config/contracts'
-import { TopNav } from '@/components/layout/TopNav'
+import { PageShell } from '@/components/layout/PageShell'
 
 const DEPLOY_BLOCK = 44182433n
 
@@ -201,295 +200,149 @@ export default function LeaderboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
-      <TopNav active="/leaderboard" />
+    <PageShell variant="public">
+      <div className="max-w-6xl mx-auto px-6 py-16">
 
-      <main className="pt-24 pb-16 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          {/* Header */}
-          <div className="border-l-4 border-[#abc7ff] pl-6 py-2 mb-12 mt-8">
-            <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">AGENT LEADERBOARD</h1>
-            <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">Real-time on-chain staker rankings // Base Mainnet</p>
-          </div>
-
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-            {/* Total Stakers */}
-            <div
-              className="p-8 border-l border-[#abc7ff]"
-              style={{
-                background: 'rgba(32,31,31,0.6)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 0 40px rgba(171,199,255,0.05)',
-              }}
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-[0.2em] text-[#8b919f]">
-                  Total Active Agents
-                </span>
-                <span className="material-symbols-outlined text-[#abc7ff] text-sm">hub</span>
-              </div>
-              <div className="text-4xl font-bold font-['Space_Grotesk'] tracking-tighter">
-                {loading ? (
-                  <span className="text-[#414754]">—</span>
-                ) : (
-                  stats?.totalStakers.toString() ?? '—'
-                )}
-              </div>
-              <div className="mt-2 text-[#00eefc] text-[10px] font-['JetBrains_Mono']">
-                LIVE <span className="text-[#8b919f]">ON-CHAIN COUNT</span>
-              </div>
-            </div>
-
-            {/* Total Staked */}
-            <div
-              className="p-8 border-l border-[#00eefc]"
-              style={{
-                background: 'rgba(32,31,31,0.6)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 0 40px rgba(171,199,255,0.05)',
-              }}
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-[0.2em] text-[#8b919f]">
-                  Total Staked
-                </span>
-                <span className="material-symbols-outlined text-[#00eefc] text-sm">account_balance</span>
-              </div>
-              <div className="text-4xl font-bold font-['Space_Grotesk'] tracking-tighter">
-                {loading ? (
-                  <span className="text-[#414754]">—</span>
-                ) : stats ? (
-                  formatTokens(stats.totalStaked)
-                ) : (
-                  '—'
-                )}
-              </div>
-              <div className="mt-2 text-[#00eefc] text-[10px] font-['JetBrains_Mono']">
-                $NEXUSCLAW <span className="text-[#8b919f]">LOCKED</span>
-              </div>
-            </div>
-
-            {/* Pool Runway */}
-            <div
-              className="p-8 border-l border-[#e04cff]"
-              style={{
-                background: 'rgba(32,31,31,0.6)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 0 40px rgba(171,199,255,0.05)',
-              }}
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-[0.2em] text-[#8b919f]">
-                  Pool Runway
-                </span>
-                <span className="material-symbols-outlined text-[#e04cff] text-sm">speed</span>
-              </div>
-              <div className="text-4xl font-bold font-['Space_Grotesk'] tracking-tighter">
-                {loading ? (
-                  <span className="text-[#414754]">—</span>
-                ) : stats ? (
-                  `${stats.runwayDays > 9999n ? '999+' : stats.runwayDays.toString()} DAYS`
-                ) : (
-                  '—'
-                )}
-              </div>
-              <div className="mt-2 text-[#00eefc] text-[10px] font-['JetBrains_Mono']">
-                OPTIMAL <span className="text-[#8b919f]">CAPACITY</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Leaderboard Table */}
-          <div
-            className="border border-[#414754]/30"
-            style={{
-              background: 'rgba(32,31,31,0.6)',
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 0 40px rgba(171,199,255,0.05)',
-            }}
-          >
-            {/* Table Header Bar */}
-            <div className="p-6 border-b border-[#414754]/30 flex justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-[#abc7ff] animate-pulse" />
-                <h2 className="font-['JetBrains_Mono'] text-xs uppercase tracking-widest">
-                  Live_Ranking_Feed
-                </h2>
-              </div>
-              <div className="flex space-x-4">
-                {!loading && stakers.length > 0 && (
-                  <button
-                    onClick={exportCSV}
-                    className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-widest text-[#abc7ff] border border-[#abc7ff] px-3 py-1 hover:bg-[#abc7ff] hover:text-[#001b3f] transition-all"
-                  >
-                    Export_CSV
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Table Content */}
-            <div className="overflow-x-auto">
-              {loading && (
-                <div className="py-24 text-center">
-                  <div className="inline-flex items-center gap-3 text-[#8b919f] font-['JetBrains_Mono'] text-xs uppercase tracking-widest">
-                    <div className="w-2 h-2 bg-[#abc7ff] animate-pulse" />
-                    Synchronizing on-chain data...
-                  </div>
-                </div>
-              )}
-
-              {!loading && error && (
-                <div className="py-24 text-center">
-                  <p className="text-[#ff6b6b] font-['JetBrains_Mono'] text-xs uppercase tracking-widest">
-                    Error: {error}
-                  </p>
-                </div>
-              )}
-
-              {!loading && !error && stakers.length === 0 && (
-                <div className="py-24 text-center">
-                  <p className="text-[#8b919f] font-['JetBrains_Mono'] text-xs uppercase tracking-widest">
-                    No active stakers found
-                  </p>
-                </div>
-              )}
-
-              {!loading && !error && stakers.length > 0 && (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-widest text-[#8b919f] border-b border-[#414754]/20">
-                      <th className="px-8 py-4 font-medium">Rank</th>
-                      <th className="px-8 py-4 font-medium">Address</th>
-                      <th className="px-8 py-4 font-medium">Staked ($NEXUSCLAW)</th>
-                      <th className="px-8 py-4 font-medium">Pending Rewards</th>
-                      <th className="px-8 py-4 font-medium">Staking Since</th>
-                      <th className="px-8 py-4 font-medium text-right">Effective APY</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-['JetBrains_Mono'] text-sm">
-                    {stakers.slice(0, displayCount).map((s, i) => (
-                      <tr
-                        key={s.address}
-                        className="hover:bg-[#2a2a2a] transition-colors border-b border-[#414754]/10"
-                      >
-                        <td className="px-8 py-6">
-                          <span className={i === 0 ? 'text-[#00eefc]' : 'text-[#8b919f]'}>
-                            #{String(i + 1).padStart(2, '0')}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <a
-                            href={`https://basescan.org/address/${s.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#e5e2e1] hover:text-[#abc7ff] transition-colors"
-                          >
-                            {formatAddress(s.address)}
-                          </a>
-                        </td>
-                        <td className="px-8 py-6 font-bold text-[#e5e2e1]">
-                          {formatTokens(s.staked)}
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="text-[#abc7ff]">+{formatTokens(s.pending)}</span>
-                        </td>
-                        <td className="px-8 py-6 text-[#8b919f]">{formatDate(s.stakedAt)}</td>
-                        <td className="px-8 py-6 text-right">
-                          <span className="bg-[#00eefc]/10 text-[#00eefc] px-2 py-1 text-[11px]">
-                            {(Number(s.effectiveAPY) / 100).toFixed(1)}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Load More */}
-            {!loading && stakers.length > displayCount && (
-              <div className="p-6 flex justify-center border-t border-[#414754]/10">
-                <button
-                  onClick={() => setDisplayCount((c) => c + 20)}
-                  className="flex items-center space-x-3 group"
-                >
-                  <span className="w-10 h-px bg-[#414754] group-hover:bg-[#abc7ff] group-hover:w-20 transition-all duration-300" />
-                  <span className="text-[10px] font-['JetBrains_Mono'] uppercase tracking-[0.3em] text-[#8b919f] group-hover:text-[#abc7ff] transition-colors">
-                    Load_More_Nodes
-                  </span>
-                  <span className="w-10 h-px bg-[#414754] group-hover:bg-[#abc7ff] group-hover:w-20 transition-all duration-300" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <footer className="mt-20 flex flex-col md:flex-row justify-between items-start md:items-end border-t border-[#414754]/20 pt-10 pb-20 md:pb-10">
-            <div className="max-w-md">
-              <div className="text-[#abc7ff] font-black tracking-tighter text-lg mb-2 font-['Space_Grotesk']">
-                NEXUS_CLAW
-              </div>
-              <p className="text-[#414754] text-[10px] font-['JetBrains_Mono'] leading-relaxed uppercase tracking-wider">
-                Protocol security is maintained via shard-level encryption. All staking yields are
-                subject to the Clawback Clause (Section 4.2). Total transparency is forced through
-                decentralized ledger architecture.
-              </p>
-            </div>
-            <div className="mt-8 md:mt-0 flex flex-col items-end gap-6">
-              <div className="flex space-x-12">
-                <div>
-                  <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mb-2">
-                    SYSTEM_CLOCK
-                  </div>
-                  <div className="text-sm font-['JetBrains_Mono'] text-[#e5e2e1]">
-                    {clock || '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mb-2">
-                    NETWORK
-                  </div>
-                  <div className="text-sm font-['JetBrains_Mono'] text-[#00eefc]">BASE</div>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-6 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest">
-                <a href="https://github.com/kashikai/nexusclaw" target="_blank" rel="noopener noreferrer" className="text-[#414754] hover:text-[#00eefc] transition-colors">GitHub</a>
-                <a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="text-[#414754] hover:text-[#00eefc] transition-colors">Explorer</a>
-                <a href="/terms" className="text-[#414754] hover:text-[#00eefc] transition-colors">Terms</a>
-                <a href="/privacy" className="text-[#414754] hover:text-[#00eefc] transition-colors">Privacy</a>
-                <a href="/refund" className="text-[#414754] hover:text-[#00eefc] transition-colors">Refund</a>
-              </div>
-            </div>
-          </footer>
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2">Agent Leaderboard</h1>
+          <p className="font-mono text-xs text-gray-500 uppercase tracking-widest">Real-time on-chain staker rankings // Base Mainnet</p>
         </div>
-      </main>
 
-      {/* Mobile Bottom Nav */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 w-full border-t border-[#414754]/30 flex justify-around items-center py-4 z-50"
-        style={{ background: 'rgba(32,31,31,0.85)', backdropFilter: 'blur(20px)' }}
-      >
-        <Link href="/" className="flex flex-col items-center text-[#8b919f]">
-          <span className="material-symbols-outlined">home</span>
-          <span className="text-[8px] font-['JetBrains_Mono'] mt-1">HOME</span>
-        </Link>
-        <Link href="/staking" className="flex flex-col items-center text-[#8b919f]">
-          <span className="material-symbols-outlined">monitoring</span>
-          <span className="text-[8px] font-['JetBrains_Mono'] mt-1">STAKE</span>
-        </Link>
-        <Link href="/leaderboard" className="flex flex-col items-center text-[#abc7ff]">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-            leaderboard
-          </span>
-          <span className="text-[8px] font-['JetBrains_Mono'] mt-1">RANK</span>
-        </Link>
-        <Link href="/staking" className="flex flex-col items-center text-[#8b919f]">
-          <span className="material-symbols-outlined">account_balance_wallet</span>
-          <span className="text-[8px] font-['JetBrains_Mono'] mt-1">WALLET</span>
-        </Link>
-      </nav>
-    </div>
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+          <div className="border border-cyan-900 bg-[#111111] p-6">
+            <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest mb-3">Total Active Agents</div>
+            <div className="text-3xl font-bold text-cyan-400">
+              {loading ? '—' : (stats?.totalStakers.toString() ?? '—')}
+            </div>
+            <div className="font-mono text-[10px] text-gray-600 mt-1">LIVE ON-CHAIN COUNT</div>
+          </div>
+
+          <div className="border border-[#1f2937] bg-[#111111] p-6">
+            <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest mb-3">Total Staked</div>
+            <div className="text-3xl font-bold text-cyan-400">
+              {loading ? '—' : stats ? formatTokens(stats.totalStaked) : '—'}
+            </div>
+            <div className="font-mono text-[10px] text-gray-600 mt-1">$NEXUSCLAW LOCKED</div>
+          </div>
+
+          <div className="border border-[#1f2937] bg-[#111111] p-6">
+            <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest mb-3">Pool Runway</div>
+            <div className="text-3xl font-bold text-cyan-400">
+              {loading ? '—' : stats ? `${stats.runwayDays > 9999n ? '999+' : stats.runwayDays.toString()} days` : '—'}
+            </div>
+            <div className="font-mono text-[10px] text-gray-600 mt-1">OPTIMAL CAPACITY</div>
+          </div>
+        </div>
+
+        {/* Leaderboard Table */}
+        <div className="border border-[#1f2937] bg-[#111111]">
+          {/* Table header bar */}
+          <div className="px-6 py-4 border-b border-[#1f2937] flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
+              <span className="font-mono text-xs uppercase tracking-widest text-gray-400">Live Ranking Feed</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-[10px] text-gray-600">{clock}</span>
+              {!loading && stakers.length > 0 && (
+                <button
+                  onClick={exportCSV}
+                  className="font-mono text-[10px] uppercase tracking-widest text-cyan-400 border border-cyan-900 px-3 py-1 hover:bg-cyan-950/30 transition-all"
+                >
+                  Export CSV
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Loading state */}
+          {loading && (
+            <div className="py-24 text-center">
+              <div className="inline-flex items-center gap-3 text-gray-500 font-mono text-xs uppercase tracking-widest">
+                <div className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
+                Synchronizing on-chain data...
+              </div>
+            </div>
+          )}
+
+          {/* Error state */}
+          {!loading && error && (
+            <div className="py-24 text-center">
+              <p className="text-red-400 font-mono text-xs uppercase tracking-widest">Error: {error}</p>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && !error && stakers.length === 0 && (
+            <div className="py-24 text-center">
+              <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">No active stakers found</p>
+            </div>
+          )}
+
+          {/* Table */}
+          {!loading && !error && stakers.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="font-mono text-[10px] uppercase tracking-widest text-gray-500 border-b border-[#1f2937]">
+                    <th className="px-6 py-3 font-medium">Rank</th>
+                    <th className="px-6 py-3 font-medium">Address</th>
+                    <th className="px-6 py-3 font-medium">Staked</th>
+                    <th className="px-6 py-3 font-medium">Pending</th>
+                    <th className="px-6 py-3 font-medium">Since</th>
+                    <th className="px-6 py-3 font-medium text-right">APY</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono text-sm">
+                  {stakers.slice(0, displayCount).map((s, i) => (
+                    <tr key={s.address} className="hover:bg-[#0d0d0d] transition-colors border-b border-[#1f2937]">
+                      <td className="px-6 py-4">
+                        <span className={i === 0 ? 'text-cyan-400 font-bold' : 'text-gray-500'}>
+                          #{String(i + 1).padStart(2, '0')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <a
+                          href={`https://basescan.org/address/${s.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white hover:text-cyan-400 transition-colors"
+                        >
+                          {formatAddress(s.address)}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-white">{formatTokens(s.staked)}</td>
+                      <td className="px-6 py-4">
+                        <span className="text-cyan-400">+{formatTokens(s.pending)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-400">{formatDate(s.stakedAt)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="border border-cyan-900 bg-cyan-950/20 text-cyan-400 px-2 py-0.5 text-[11px] font-mono">
+                          {(Number(s.effectiveAPY) / 100).toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Load more */}
+          {!loading && stakers.length > displayCount && (
+            <div className="px-6 py-4 border-t border-[#1f2937] text-center">
+              <button
+                onClick={() => setDisplayCount((c) => c + 20)}
+                className="font-mono text-[10px] uppercase tracking-widest text-gray-400 hover:text-cyan-400 transition-colors"
+              >
+                Load More →
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </PageShell>
   )
 }
