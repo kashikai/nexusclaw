@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPublicClient, http, formatUnits } from 'viem';
 import { base } from 'viem/chains';
 import Image from 'next/image';
+import { PageShell } from '../components/layout/PageShell';
 
 const STAKING_ADDRESS = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe' as const;
 const AGENT_ADDRESS = '0xF350367d4E3e0e45dc0f9E425741A86b8cf7e66f' as const;
@@ -57,37 +58,9 @@ export default function HomeContent() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white font-mono">
-
-      {/* ── NAVBAR ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-[#0a0a0a]/90 backdrop-blur border-b border-[#1f2937]">
-        <a href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-cyan-500">
-            <Image src="/hero-lobster.png" alt="NexusClaw" width={32} height={32} className="object-cover object-top scale-150" />
-          </div>
-          <span className="font-bold text-lg tracking-wider">NexusClaw</span>
-        </a>
-        <div className="hidden md:flex items-center gap-8 text-xs text-gray-400">
-          {[
-            { label: 'Proof', href: '/proof' },
-            { label: 'Agents', href: '/agents' },
-            { label: 'Trader', href: '/trader' },
-            { label: 'Token', href: '/staking' },
-            { label: 'Staking', href: '/staking' },
-            { label: 'Docs', href: '/docs' },
-          ].map(item => (
-            <a key={item.label} href={item.href} className="hover:text-cyan-400 transition-colors">
-              {item.label}
-            </a>
-          ))}
-        </div>
-        <a href="/staking" className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs hover:bg-cyan-400 hover:text-black transition-all">
-          Launch App →
-        </a>
-      </nav>
-
+    <PageShell variant="public">
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      <section className="relative min-h-screen flex items-center overflow-hidden">
         {/* Hero image — right side */}
         <div className="absolute right-0 top-0 w-1/2 h-full opacity-80">
           <Image
@@ -275,23 +248,70 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-[#1f2937] px-6 py-8">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-500">© 2026 NexusClaw. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <a href="https://x.com/nexusclawbot" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white text-xs">X</a>
-            <a href="https://t.me/NexusClawCommunity" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white text-xs">Telegram</a>
-            <a href="https://github.com/kashikai/nexusclaw" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white text-xs">GitHub</a>
+      {/* ── START YOUR EDGE (PRICING) ── */}
+      <section className="border-t border-[#1f2937] px-6 py-16 bg-[#0d0d0d]">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-10">
+            <div className="text-xs text-gray-500 uppercase tracking-widest mb-2">Pricing</div>
+            <h2 className="text-2xl font-bold">Start Your Edge</h2>
+            <p className="text-gray-400 text-sm mt-2">Choose how you run your agent.</p>
           </div>
-          <div className="flex items-center gap-6">
-            <a href="/docs" className="text-gray-500 hover:text-white text-xs">Docs</a>
-            <a href="/security" className="text-gray-500 hover:text-white text-xs">Terms</a>
-            <a href="/security" className="text-gray-500 hover:text-white text-xs">Privacy</a>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Self-hosted */}
+            <div className="border border-[#1f2937] bg-[#111111] p-6 flex flex-col">
+              <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">Self-Hosted</div>
+              <div className="text-4xl font-bold mb-1">$0<span className="text-lg font-normal text-gray-500">/mo</span></div>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">Run your own agent. Full control, your infrastructure.</p>
+              <ul className="space-y-2 mb-8 flex-1">
+                {['Open source code', 'Your own keys', 'Community support'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-400">
+                    <span className="text-cyan-400">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/start-agent" className="block text-center border border-[#1f2937] text-gray-400 py-2 text-xs hover:border-cyan-900 hover:text-cyan-400 transition-all">
+                Get Started →
+              </a>
+            </div>
+
+            {/* Managed Agent — POPULAR */}
+            <div className="border border-cyan-900 bg-[#111111] p-6 flex flex-col relative">
+              <div className="absolute top-0 right-0 bg-cyan-400 text-black text-[10px] font-bold px-3 py-1 uppercase tracking-widest">Popular</div>
+              <div className="text-xs text-cyan-400 uppercase tracking-widest mb-4">Managed Agent</div>
+              <div className="text-4xl font-bold mb-1 text-cyan-400">$49<span className="text-lg font-normal text-gray-500">/mo</span></div>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">We run it. You earn. Zero infrastructure overhead.</p>
+              <ul className="space-y-2 mb-8 flex-1">
+                {['Hosted & monitored 24/7', 'Automatic compounding', 'Priority support'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-400">
+                    <span className="text-cyan-400">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/start-agent" className="block text-center bg-cyan-400 text-black font-bold py-2 text-xs hover:bg-cyan-300 transition-all">
+                Launch Agent →
+              </a>
+            </div>
+
+            {/* Agent Launch */}
+            <div className="border border-[#1f2937] bg-[#111111] p-6 flex flex-col">
+              <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">Agent Launch</div>
+              <div className="text-4xl font-bold mb-1">$199<span className="text-lg font-normal text-gray-500">/mo</span></div>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">Launch your custom agent. Built and managed for you.</p>
+              <ul className="space-y-2 mb-8 flex-1">
+                {['Custom strategy', 'Dedicated instance', 'White-glove onboarding'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-400">
+                    <span className="text-cyan-400">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/start-agent" className="block text-center border border-[#1f2937] text-gray-400 py-2 text-xs hover:border-cyan-900 hover:text-cyan-400 transition-all">
+                Contact Us →
+              </a>
+            </div>
           </div>
         </div>
-      </footer>
-
-    </main>
+      </section>
+    </PageShell>
   );
 }
