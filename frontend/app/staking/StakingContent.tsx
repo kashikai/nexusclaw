@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { parseEther, formatEther } from 'viem'
-import { TopNav } from '@/components/layout/TopNav'
+import { PageShell } from '@/components/layout/PageShell'
 import { TOKEN_ADDRESS, STAKING_ADDRESS, TOKEN_ABI, STAKING_ABI, APY_PERCENT, BASESCAN_URL } from '@/config/contracts'
 import { formatToken, formatTokenShort, shortenAddress } from '@/lib/utils'
 import { MobileBanner } from '@/components/MobileBanner'
@@ -79,94 +79,126 @@ export default function StakingContent() {
   function setMaxUnstake() { if (userStaked) setUnstakeAmount(formatEther((userStaked as any)[0])) }
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
+    <PageShell variant="app">
       <MobileBanner />
-      <TopNav active="/staking" />
 
-      <main className="pt-24 pb-16 px-8 max-w-[1440px] mx-auto">
-        {/* Header */}
-        <div className="border-l-4 border-[#abc7ff] pl-6 py-2 mb-10 mt-8">
-          <h1 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-black tracking-tighter uppercase leading-none mb-2">STAKING TERMINAL</h1>
-          <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">Secure Node Environment // Base Mainnet</p>
+      {/* Header */}
+      <section className="max-w-6xl mx-auto px-6 py-12">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 border border-cyan-900 bg-cyan-950/30 px-3 py-1 text-xs text-cyan-400 font-mono mb-4">
+            <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />
+            {launched ? 'ACTIVE' : 'OFFLINE'} — BASE MAINNET
+          </div>
+          <h1 className="text-4xl font-bold mb-1">Staking Terminal</h1>
+          <p className="text-gray-400 text-sm font-mono">Secure Node Environment // Base Mainnet</p>
         </div>
 
-        {/* Metrics */}
+        {/* Metric cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <MetricCard label="Total Staked" value={totalStaked ? formatTokenShort(totalStaked as bigint) : '0'} sub="$NEXUSCLAW" color="#abc7ff" icon="token" />
-          <MetricCard label="Your Staked" value={userStakedAmount ? formatTokenShort(userStakedAmount) : '0'} sub="$NEXUSCLAW" color="#abc7ff" icon="account_balance_wallet" />
-          <MetricCard label="Pending Rewards" value={userPending ? formatTokenShort(userPending) : '0'} sub="$NEXUSCLAW" color="#4ddbc9" icon="redeem" />
-          <MetricCard label="APY" value={`${effectiveAPY}%`} sub={`Runway: ${runwayDays}d`} color="#3A8BFF" icon="trending_up" />
+          <MetricCard label="Total Staked" value={totalStaked ? formatTokenShort(totalStaked as bigint) : '0'} sub="$NEXUSCLAW" accentClass="text-cyan-400" />
+          <MetricCard label="Your Staked" value={userStakedAmount ? formatTokenShort(userStakedAmount) : '0'} sub="$NEXUSCLAW" accentClass="text-cyan-400" />
+          <MetricCard label="Pending Rewards" value={userPending ? formatTokenShort(userPending) : '0'} sub="$NEXUSCLAW" accentClass="text-green-400" />
+          <MetricCard label="APY" value={`${effectiveAPY}%`} sub={`Runway: ${runwayDays}d`} accentClass="text-cyan-400" />
         </div>
+      </section>
 
-        {/* Staking Interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* Staking Interface */}
+      <section className="border-t border-[#1f2937] px-6 py-12">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          {/* Main staking card */}
           <div className="lg:col-span-8">
-            <div className="bg-[#1c1b1b] border border-[#414754]/20 p-8 rounded-lg">
-              <h3 className="font-['Space_Grotesk'] text-2xl font-bold text-[#e5e2e1] mb-6 tracking-tight">Stake $NEXUSCLAW</h3>
+            <div className="border border-[#1f2937] bg-[#111111] p-6">
+              <h3 className="font-bold text-lg mb-6">Stake $NEXUSCLAW</h3>
 
               {!isConnected ? (
-                <div className="text-center py-16 text-[#8b919f]">
-                  <span className="material-symbols-outlined text-6xl mb-4 block">wallet</span>
+                <div className="text-center py-16 text-gray-400">
                   <p className="text-xl mb-2">Connect your wallet to start staking</p>
-                  <p className="text-sm text-[#414754]">Base Mainnet — 20% APY rewards</p>
+                  <p className="text-sm text-gray-600">Base Mainnet — 20% APY rewards</p>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center font-['JetBrains_Mono'] text-xs text-[#8b919f] uppercase tracking-widest">
+                  <div className="flex justify-between items-center font-mono text-xs text-gray-400 uppercase tracking-widest">
                     <span>Balance: {tokenBalance ? formatTokenShort(tokenBalance as bigint) : '0'} $NEXUSCLAW</span>
-                    <span className={launched ? 'text-[#4ddbc9]' : 'text-[#ffb4ab]'}>{launched ? '● Active' : '● Offline'}</span>
+                    <span className={launched ? 'text-green-400' : 'text-red-400'}>{launched ? '● Active' : '● Offline'}</span>
                   </div>
 
+                  {/* Stake input */}
                   <div>
-                    <label className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] mb-2 block">Amount to stake</label>
+                    <label className="font-mono text-[10px] uppercase text-gray-500 mb-2 block">Amount to stake</label>
                     <div className="relative">
-                      <input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="0.00"
-                        className="w-full bg-[#201f1f] border border-[#414754]/30 rounded-lg py-5 px-6 text-2xl font-bold text-[#abc7ff] focus:ring-2 focus:ring-[#3A8BFF]/30 focus:outline-none transition-all" />
+                      <input
+                        type="number"
+                        value={stakeAmount}
+                        onChange={(e) => setStakeAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-[#0a0a0a] border border-[#1f2937] py-4 px-4 text-2xl font-bold text-cyan-400 focus:outline-none focus:border-cyan-900 transition-all"
+                      />
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                        <button onClick={setMaxStake} className="font-['JetBrains_Mono'] text-[10px] px-2 py-1 bg-[#353534] hover:bg-[#414754] rounded transition-colors">MAX</button>
-                        <span className="font-['JetBrains_Mono'] text-sm font-bold text-[#c1c6d6]">$NEXUSCLAW</span>
+                        <button onClick={setMaxStake} className="font-mono text-[10px] px-2 py-1 border border-[#1f2937] text-gray-400 hover:text-white hover:border-gray-500 transition-colors">MAX</button>
+                        <span className="font-mono text-sm text-gray-400">$NEXUSCLAW</span>
                       </div>
                     </div>
                   </div>
 
+                  {/* Action buttons */}
                   <div className="flex gap-3">
                     {needsApproval ? (
-                      <button onClick={handleApprove} disabled={!stakeAmount || isBusy}
-                        className="flex-1 py-4 bg-[#4ddbc9] text-[#00201c] font-['Space_Grotesk'] font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50">
+                      <button
+                        onClick={handleApprove}
+                        disabled={!stakeAmount || isBusy}
+                        className="flex-1 py-3 bg-cyan-400 text-black font-bold uppercase tracking-widest text-sm hover:bg-cyan-300 transition-all disabled:opacity-50"
+                      >
                         {isApprovePending || isApproveConfirming ? 'Approving...' : 'Approve'}
                       </button>
                     ) : (
-                      <button onClick={handleStake} disabled={!stakeAmount || isBusy}
-                        className="flex-1 py-4 bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] font-['Space_Grotesk'] font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50">
+                      <button
+                        onClick={handleStake}
+                        disabled={!stakeAmount || isBusy}
+                        className="flex-1 py-3 bg-cyan-400 text-black font-bold uppercase tracking-widest text-sm hover:bg-cyan-300 transition-all disabled:opacity-50"
+                      >
                         {isStakePending || isStakeConfirming ? 'Staking...' : 'Stake $NEXUSCLAW'}
                       </button>
                     )}
-                    <button onClick={handleClaim} disabled={userPending === 0n || isBusy}
-                      className="py-4 px-6 bg-[#4ddbc9]/20 text-[#4ddbc9] border border-[#4ddbc9]/30 font-['Space_Grotesk'] font-bold uppercase tracking-widest text-sm rounded-lg hover:bg-[#4ddbc9]/30 active:scale-[0.98] transition-all disabled:opacity-50">
+                    <button
+                      onClick={handleClaim}
+                      disabled={userPending === 0n || isBusy}
+                      className="py-3 px-6 border border-[#1f2937] text-gray-400 font-mono text-sm hover:border-cyan-900 hover:text-cyan-400 transition-all disabled:opacity-50"
+                    >
                       {isClaimPending || isClaimConfirming ? 'Claiming...' : `Claim ${userPending > 0n ? formatTokenShort(userPending) : ''}`}
                     </button>
                   </div>
 
+                  {/* Unstake section */}
                   {userStakedAmount > 0n && (
-                    <div className="border-t border-[#414754]/20 pt-6">
-                      <label className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] mb-2 block">Amount to unstake</label>
+                    <div className="border-t border-[#1f2937] pt-6">
+                      <label className="font-mono text-[10px] uppercase text-gray-500 mb-2 block">Amount to unstake</label>
                       <div className="relative mb-3">
-                        <input type="number" value={unstakeAmount} onChange={(e) => setUnstakeAmount(e.target.value)} placeholder="0.00"
-                          className="w-full bg-[#201f1f] border border-[#414754]/30 rounded-lg py-4 px-6 text-lg font-bold text-[#ffb4ab] focus:ring-2 focus:ring-[#ffb4ab]/30 focus:outline-none transition-all" />
+                        <input
+                          type="number"
+                          value={unstakeAmount}
+                          onChange={(e) => setUnstakeAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-[#0a0a0a] border border-[#1f2937] py-3 px-4 text-lg font-bold text-red-400 focus:outline-none focus:border-red-900 transition-all"
+                        />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                          <button onClick={setMaxUnstake} className="font-['JetBrains_Mono'] text-[10px] px-2 py-1 bg-[#353534] hover:bg-[#414754] rounded transition-colors">MAX</button>
+                          <button onClick={setMaxUnstake} className="font-mono text-[10px] px-2 py-1 border border-[#1f2937] text-gray-400 hover:text-white transition-colors">MAX</button>
                         </div>
                       </div>
-                      <button onClick={handleUnstake} disabled={!unstakeAmount || isBusy}
-                        className="py-3 px-6 bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/30 font-['Space_Grotesk'] font-bold uppercase tracking-widest text-sm rounded-lg hover:bg-[#ffb4ab]/30 active:scale-[0.98] transition-all disabled:opacity-50">
+                      <button
+                        onClick={handleUnstake}
+                        disabled={!unstakeAmount || isBusy}
+                        className="py-2 px-6 border border-red-900 text-red-400 font-mono text-sm hover:bg-red-950/20 transition-all disabled:opacity-50"
+                      >
                         {isUnstakePending || isUnstakeConfirming ? 'Unstaking...' : 'Unstake'}
                       </button>
                     </div>
                   )}
 
+                  {/* Success notification */}
                   {(isApproveSuccess || isStakeSuccess || isClaimSuccess || isUnstakeSuccess) && (
-                    <div className="bg-[#4ddbc9]/10 border border-[#4ddbc9]/20 p-4 rounded-lg font-['JetBrains_Mono'] text-xs text-[#4ddbc9]">
-                      ✅ Transaction confirmed!
+                    <div className="border border-green-900 bg-green-950/20 p-4 font-mono text-xs text-green-400">
+                      ✓ Transaction confirmed!
                       {stakeHash && <p className="mt-1">Stake: <a href={`https://basescan.org/tx/${stakeHash}`} target="_blank" rel="noopener noreferrer" className="underline">{stakeHash.slice(0, 10)}...</a></p>}
                       {claimHash && <p className="mt-1">Claim: <a href={`https://basescan.org/tx/${claimHash}`} target="_blank" rel="noopener noreferrer" className="underline">{claimHash.slice(0, 10)}...</a></p>}
                       {unstakeHash && <p className="mt-1">Unstake: <a href={`https://basescan.org/tx/${unstakeHash}`} target="_blank" rel="noopener noreferrer" className="underline">{unstakeHash.slice(0, 10)}...</a></p>}
@@ -177,11 +209,11 @@ export default function StakingContent() {
             </div>
           </div>
 
-          {/* Stats Sidebar */}
+          {/* Stats sidebar */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-[#1c1b1b] border border-[#414754]/20 p-6 rounded-lg">
-              <h4 className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] tracking-widest mb-4">Protocol Stats</h4>
-              <div className="space-y-4">
+            <div className="border border-[#1f2937] bg-[#111111] p-6">
+              <h4 className="font-mono text-[10px] uppercase text-gray-500 tracking-widest mb-4">Protocol Stats</h4>
+              <div className="space-y-3">
                 <StatRow label="Total Stakers" value={totalStakers?.toString() || '0'} />
                 <StatRow label="Total Staked" value={totalStaked ? formatTokenShort(totalStaked as bigint) : '0'} />
                 <StatRow label="Reward Pool" value={rewardPool ? formatTokenShort(rewardPool as bigint) : '0'} />
@@ -190,43 +222,46 @@ export default function StakingContent() {
                 <StatRow label="Status" value={launched ? 'Active' : 'Inactive'} />
               </div>
             </div>
-            <div className="bg-[#1c1b1b] border border-[#414754]/20 p-6 rounded-lg">
-              <h4 className="font-['JetBrains_Mono'] text-[10px] uppercase text-[#8b919f] tracking-widest mb-4">Your Position</h4>
-              <div className="space-y-4">
+
+            <div className="border border-[#1f2937] bg-[#111111] p-6">
+              <h4 className="font-mono text-[10px] uppercase text-gray-500 tracking-widest mb-4">Your Position</h4>
+              <div className="space-y-3">
                 <StatRow label="Staked" value={userStakedAmount ? formatTokenShort(userStakedAmount) : '0'} />
-                <StatRow label="Pending Rewards" value={userPending ? formatTokenShort(userPending) : '0'} />
+                <StatRow label="Pending" value={userPending ? formatTokenShort(userPending) : '0'} />
                 <StatRow label="APY" value={`${effectiveAPY}%`} />
               </div>
             </div>
-            <a href={`${BASESCAN_URL}/address/${STAKING_ADDRESS}`} target="_blank" rel="noopener noreferrer"
-              className="block text-center py-3 bg-[#201f1f] border border-[#414754]/20 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-[#abc7ff] hover:bg-[#353534] rounded-lg transition-all">
+
+            <a
+              href={`${BASESCAN_URL}/address/${STAKING_ADDRESS}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center py-3 border border-[#1f2937] font-mono text-[10px] uppercase tracking-widest text-gray-400 hover:border-cyan-900 hover:text-cyan-400 transition-all"
+            >
               View on Basescan →
             </a>
           </div>
         </div>
-      </main>
-    </div>
+      </section>
+    </PageShell>
   )
 }
 
-function MetricCard({ label, value, sub, color, icon }: { label: string; value: string; sub: string; color: string; icon: string }) {
+function MetricCard({ label, value, sub, accentClass }: { label: string; value: string; sub: string; accentClass: string }) {
   return (
-    <div className="bg-[#1c1b1b] p-5 rounded-lg border-l-4" style={{ borderLeftColor: color }}>
-      <div className="flex items-start justify-between mb-4">
-        <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] tracking-widest uppercase">{label}</span>
-        <span className="material-symbols-outlined text-lg opacity-60" style={{ color }}>{icon}</span>
-      </div>
-      <h3 className="font-['Space_Grotesk'] text-3xl font-bold tracking-tight" style={{ color }}>{value}</h3>
-      <p className="font-['JetBrains_Mono'] text-xs opacity-60 mt-1 text-[#8b919f]">{sub}</p>
+    <div className="border border-[#1f2937] bg-[#111111] p-4">
+      <span className="font-mono text-[10px] text-gray-500 tracking-widest uppercase block mb-3">{label}</span>
+      <div className={`text-2xl font-bold ${accentClass}`}>{value}</div>
+      <p className="font-mono text-xs text-gray-600 mt-1">{sub}</p>
     </div>
   )
 }
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center">
-      <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] uppercase">{label}</span>
-      <span className="font-['Space_Grotesk'] font-bold text-sm text-[#e5e2e1]">{value}</span>
+    <div className="flex justify-between items-center py-1.5 border-b border-[#1f2937]">
+      <span className="font-mono text-[10px] text-gray-500 uppercase">{label}</span>
+      <span className="font-mono font-bold text-xs text-white">{value}</span>
     </div>
   )
 }
