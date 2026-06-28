@@ -1,4 +1,4 @@
-import { TopNav } from '@/components/layout/TopNav'
+import { PageShell } from '@/components/layout/PageShell'
 
 const STAKING_ADDRESS = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe'
 const MULTISIG_ADDRESS = '0x02320eCCB3B67e802C29f9e9F8703D5756535515'
@@ -20,10 +20,10 @@ const FEATURES = [
 ]
 
 const RISKS = [
-  { risk: 'No external audit', severity: 'MEDIUM', color: '#ffb4ab', mitigation: 'Multisig 3/5 controls all admin' },
-  { risk: 'Reward pool is finite', severity: 'LOW', color: '#ffd97d', mitigation: 'rewardPoolRunway() monitored' },
-  { risk: 'Token has 1% transfer fee', severity: 'LOW', color: '#ffd97d', mitigation: 'Agents account for burn' },
-  { risk: 'No timelock on admin', severity: 'MEDIUM', color: '#ffb4ab', mitigation: '3/5 threshold required' },
+  { risk: 'No external audit', severity: 'MEDIUM', color: '#f87171', mitigation: 'Multisig 3/5 controls all admin' },
+  { risk: 'Reward pool is finite', severity: 'LOW', color: '#fbbf24', mitigation: 'rewardPoolRunway() monitored' },
+  { risk: 'Token has 1% transfer fee', severity: 'LOW', color: '#fbbf24', mitigation: 'Agents account for burn' },
+  { risk: 'No timelock on admin', severity: 'MEDIUM', color: '#f87171', mitigation: '3/5 threshold required' },
 ]
 
 const FIXES = [
@@ -45,7 +45,7 @@ const ROADMAP = [
 
 function SectionTitle({ label }: { label: string }) {
   return (
-    <h2 className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.25em] text-[#00eefc] mb-6">{label}</h2>
+    <h2 className="font-mono text-xs uppercase tracking-[0.25em] text-cyan-400 mb-6">{label}</h2>
   )
 }
 
@@ -55,7 +55,7 @@ function AddressLink({ address, label }: { address: string; label?: string }) {
       href={`${BASESCAN}/address/${address}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-['JetBrains_Mono'] text-xs text-[#abc7ff] hover:text-[#3A8BFF] transition-colors break-all"
+      className="font-mono text-xs text-cyan-400 hover:text-white transition-colors break-all"
     >
       {label ?? address}
     </a>
@@ -64,9 +64,9 @@ function AddressLink({ address, label }: { address: string; label?: string }) {
 
 function StatusRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between py-3 border-b border-[#1a1a1a] gap-1">
-      <span className="font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.2em] text-[#8b919f] shrink-0 sm:w-32">{label}</span>
-      <span className="font-['JetBrains_Mono'] text-xs text-[#e5e2e1] sm:text-right">{value}</span>
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between py-3 border-b border-[#1f2937] gap-1">
+      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400 shrink-0 sm:w-32">{label}</span>
+      <span className="font-mono text-xs text-white sm:text-right">{value}</span>
     </div>
   )
 }
@@ -77,32 +77,30 @@ function VerifyBtn({ href, label }: { href: string; label: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-5 py-3 bg-[#1c1b1b] border border-[#414754]/30 rounded hover:border-[#abc7ff]/40 hover:bg-[#222] transition-all font-['JetBrains_Mono'] text-xs uppercase tracking-widest text-[#c1c6d6] hover:text-[#abc7ff]"
+      className="flex items-center gap-2 px-5 py-3 bg-[#111111] border border-[#1f2937] hover:border-cyan-400/40 hover:bg-[#111111] transition-all font-mono text-xs uppercase tracking-widest text-gray-400 hover:text-cyan-400"
     >
       {label}
-      <span className="text-[#414754]">↗</span>
+      <span className="text-gray-600">↗</span>
     </a>
   )
 }
 
 export default function SecurityPage() {
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
-      <TopNav active="/security" />
+    <PageShell variant="public">
+      <main className="pb-24 px-4 md:px-8 max-w-[1440px] mx-auto">
 
-      <main className="pt-24 pb-24 px-4 md:px-8 max-w-[1440px] mx-auto">
-
-        {/* ── HERO ── */}
+        {/* HERO */}
         <section className="mt-12 mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4ddbc9]/10 border border-[#4ddbc9]/30 rounded-full mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4ddbc9]" />
-            <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#4ddbc9]">Verified on Basescan</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-400/10 border border-cyan-400/30 mb-8">
+            <span className="w-1.5 h-1.5 bg-cyan-400" />
+            <span className="font-mono text-[9px] uppercase tracking-widest text-cyan-400">Verified on Basescan</span>
           </div>
-          <div className="border-l-4 border-[#ffb4ab] pl-6 py-2">
-            <h1 className="font-['Space_Grotesk'] text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none mb-2">
+          <div className="border-l-4 border-red-400 pl-6 py-2">
+            <h1 className="font-mono text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none mb-2 text-white">
               SECURITY
             </h1>
-            <p className="font-['JetBrains_Mono'] text-xs uppercase tracking-[0.2em] text-[#8b919f]">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-gray-400">
               We hide nothing. Every risk is documented.
             </p>
           </div>
@@ -110,8 +108,8 @@ export default function SecurityPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
-          {/* ── CONTRACT STATUS ── */}
-          <section className="bg-[#0e0e0e] border border-[#4ddbc9]/20 rounded-lg p-8">
+          {/* CONTRACT STATUS */}
+          <section className="bg-[#0a0a0a] border border-[#1f2937] p-8">
             <SectionTitle label="// Active Contract" />
             <div className="space-y-0">
               <StatusRow label="Contract" value="NexusClawStaking v10.3" />
@@ -121,8 +119,8 @@ export default function SecurityPage() {
                 label="Status"
                 value={
                   <span className="flex items-center gap-2 justify-end">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#4ddbc9]" />
-                    <span className="text-[#4ddbc9]">Verified ✅</span>
+                    <span className="w-1.5 h-1.5 bg-cyan-400" />
+                    <span className="text-cyan-400">Verified ✅</span>
                   </span>
                 }
               />
@@ -131,45 +129,45 @@ export default function SecurityPage() {
             </div>
           </section>
 
-          {/* ── SECURITY FEATURES ── */}
-          <section className="bg-[#0e0e0e] border border-[#4ddbc9]/20 rounded-lg p-8">
+          {/* SECURITY FEATURES */}
+          <section className="bg-[#0a0a0a] border border-[#1f2937] p-8">
             <SectionTitle label="// What Is Protected" />
             <div className="space-y-3">
               {FEATURES.map((f) => (
                 <div key={f} className="flex items-start gap-3">
-                  <span className="text-[#4ddbc9] text-sm shrink-0 mt-0.5">✅</span>
-                  <span className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6] leading-relaxed">{f}</span>
+                  <span className="text-cyan-400 text-sm shrink-0 mt-0.5">✅</span>
+                  <span className="font-mono text-xs text-gray-400 leading-relaxed">{f}</span>
                 </div>
               ))}
             </div>
           </section>
         </div>
 
-        {/* ── KNOWN RISKS ── */}
-        <section className="bg-[#0e0e0e] border border-[#ffb4ab]/20 rounded-lg p-8 mb-6">
+        {/* KNOWN RISKS */}
+        <section className="bg-[#0a0a0a] border border-red-400/20 p-8 mb-6">
           <SectionTitle label="// Known Risks — We Are Honest" />
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#1e1e1e]">
-                  <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3 pr-6">Risk</th>
-                  <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3 pr-6">Severity</th>
-                  <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3">Mitigation</th>
+                <tr className="border-b border-[#1f2937]">
+                  <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3 pr-6">Risk</th>
+                  <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3 pr-6">Severity</th>
+                  <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3">Mitigation</th>
                 </tr>
               </thead>
               <tbody>
                 {RISKS.map((r) => (
-                  <tr key={r.risk} className="border-b border-[#1a1a1a]">
-                    <td className="font-['JetBrains_Mono'] text-xs text-[#e5e2e1] py-4 pr-6 align-top">{r.risk}</td>
+                  <tr key={r.risk} className="border-b border-[#1f2937]">
+                    <td className="font-mono text-xs text-white py-4 pr-6 align-top">{r.risk}</td>
                     <td className="py-4 pr-6 align-top">
                       <span
-                        className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest px-2 py-0.5 rounded"
+                        className="font-mono text-[9px] uppercase tracking-widest px-2 py-0.5"
                         style={{ color: r.color, border: `1px solid ${r.color}30`, background: `${r.color}10` }}
                       >
                         {r.severity}
                       </span>
                     </td>
-                    <td className="font-['JetBrains_Mono'] text-xs text-[#8b919f] py-4 align-top">{r.mitigation}</td>
+                    <td className="font-mono text-xs text-gray-400 py-4 align-top">{r.mitigation}</td>
                   </tr>
                 ))}
               </tbody>
@@ -179,45 +177,45 @@ export default function SecurityPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
-          {/* ── ISSUES FIXED ── */}
-          <section className="bg-[#0e0e0e] border border-[#414754]/20 rounded-lg p-8">
+          {/* ISSUES FIXED */}
+          <section className="bg-[#0a0a0a] border border-[#1f2937] p-8">
             <SectionTitle label="// Resolved Since Pre-Mainnet" />
             <div className="space-y-0">
               {FIXES.map((f) => (
-                <div key={f.issue} className="flex items-start justify-between gap-4 py-3 border-b border-[#1a1a1a]">
-                  <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] leading-relaxed">{f.issue}</span>
-                  <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#4ddbc9] shrink-0 mt-0.5">{f.fix}</span>
+                <div key={f.issue} className="flex items-start justify-between gap-4 py-3 border-b border-[#1f2937]">
+                  <span className="font-mono text-[10px] text-gray-400 leading-relaxed">{f.issue}</span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-cyan-400 shrink-0 mt-0.5">{f.fix}</span>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* ── NEXT STEPS ── */}
-          <section className="bg-[#0e0e0e] border border-[#414754]/20 rounded-lg p-8">
+          {/* NEXT STEPS */}
+          <section className="bg-[#0a0a0a] border border-[#1f2937] p-8">
             <SectionTitle label="// Roadmap" />
             <div className="space-y-4 mb-8">
               {ROADMAP.map((item) => (
                 <div key={item} className="flex items-start gap-3">
-                  <span className="font-['JetBrains_Mono'] text-[#ffd97d] text-sm shrink-0 mt-0.5">⏳</span>
-                  <span className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6] leading-relaxed">{item}</span>
+                  <span className="font-mono text-yellow-400 text-sm shrink-0 mt-0.5">⏳</span>
+                  <span className="font-mono text-xs text-gray-400 leading-relaxed">{item}</span>
                 </div>
               ))}
             </div>
 
-            <div className="bg-[#131313] border-l-2 border-[#ffb4ab]/40 p-4 rounded mt-6">
-              <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] leading-relaxed uppercase tracking-wide">
+            <div className="bg-[#111111] border-l-2 border-red-400/40 p-4 mt-6">
+              <p className="font-mono text-[10px] text-gray-400 leading-relaxed uppercase tracking-wide">
                 Found a vulnerability?{' '}
-                <a href={GITHUB_URL + '/issues'} target="_blank" rel="noopener noreferrer" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">Open a GitHub issue</a>
+                <a href={GITHUB_URL + '/issues'} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-white transition-colors">Open a GitHub issue</a>
                 {' '}or contact{' '}
-                <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">@nexusclawofficial</a>
+                <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-white transition-colors">@nexusclawofficial</a>
                 {' '}on Telegram.
               </p>
             </div>
           </section>
         </div>
 
-        {/* ── VERIFY ── */}
-        <section className="bg-[#0e0e0e] border border-[#414754]/20 rounded-lg p-8">
+        {/* VERIFY */}
+        <section className="bg-[#0a0a0a] border border-[#1f2937] p-8">
           <SectionTitle label="// Verify" />
           <div className="flex flex-wrap gap-3">
             <VerifyBtn href={`${BASESCAN}/address/${STAKING_ADDRESS}`} label="View Contract on Basescan →" />
@@ -227,6 +225,6 @@ export default function SecurityPage() {
         </section>
 
       </main>
-    </div>
+    </PageShell>
   )
 }
