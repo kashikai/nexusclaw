@@ -1,5 +1,7 @@
+import { ReactNode } from 'react'
+
 interface StatCardProps {
-  icon: string
+  icon: ReactNode
   value: string
   label: string
   valueColor?: string
