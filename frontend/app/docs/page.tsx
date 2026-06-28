@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { TopNav } from '@/components/layout/TopNav'
+import { PageShell } from '@/components/layout/PageShell'
 
 const BASESCAN = 'https://basescan.org'
 const GITHUB   = 'https://github.com/kashikai/nexusclaw'
@@ -23,7 +23,7 @@ const NAV = [
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="bg-[#070707] border border-[#1e1e1e] rounded p-5 overflow-x-auto font-['JetBrains_Mono'] text-xs text-[#c1c6d6] leading-relaxed my-4">
+    <pre className="bg-[#0a0a0a] border border-[#1f2937] p-5 overflow-x-auto font-mono text-xs text-white leading-relaxed my-4">
       <code>{children}</code>
     </pre>
   )
@@ -31,7 +31,7 @@ function Code({ children }: { children: string }) {
 
 function InlineCode({ children }: { children: string }) {
   return (
-    <code className="font-['JetBrains_Mono'] text-xs text-[#00eefc] bg-[#070707] px-1.5 py-0.5 rounded">
+    <code className="font-mono text-xs text-cyan-400 bg-[#0a0a0a] px-1.5 py-0.5">
       {children}
     </code>
   )
@@ -39,7 +39,7 @@ function InlineCode({ children }: { children: string }) {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-['Space_Grotesk'] text-2xl font-black uppercase tracking-tight mb-6 text-[#e5e2e1]">
+    <h2 className="font-mono text-2xl font-black uppercase tracking-tight mb-6 text-white">
       {children}
     </h2>
   )
@@ -47,7 +47,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function SubHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="font-['Space_Grotesk'] font-bold uppercase tracking-wide text-sm text-[#abc7ff] mt-8 mb-3">
+    <h3 className="font-mono font-bold uppercase tracking-wide text-sm text-cyan-400 mt-8 mb-3">
       {children}
     </h3>
   )
@@ -55,7 +55,7 @@ function SubHeading({ children }: { children: React.ReactNode }) {
 
 function Body({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-['JetBrains_Mono'] text-xs text-[#8b919f] leading-relaxed mb-4">
+    <p className="font-mono text-xs text-gray-400 leading-relaxed mb-4">
       {children}
     </p>
   )
@@ -67,7 +67,7 @@ function AddrLink({ addr, label }: { addr: string; label?: string }) {
       href={`${BASESCAN}/address/${addr}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-['JetBrains_Mono'] text-xs text-[#abc7ff] hover:text-[#3A8BFF] transition-colors break-all"
+      className="font-mono text-xs text-cyan-400 hover:text-white transition-colors break-all"
     >
       {label ?? addr}
     </a>
@@ -75,24 +75,24 @@ function AddrLink({ addr, label }: { addr: string; label?: string }) {
 }
 
 function Divider() {
-  return <div className="border-t border-[#1e1e1e] my-8" />
+  return <div className="border-t border-[#1f2937] my-8" />
 }
 
 function StepBadge({ n }: { n: number }) {
   return (
     <div className="flex items-center gap-3 mb-3">
-      <span className="w-6 h-6 rounded-full bg-[#00eefc]/10 border border-[#00eefc]/40 flex items-center justify-center font-['JetBrains_Mono'] text-[10px] text-[#00eefc] font-bold shrink-0">
+      <span className="w-6 h-6 bg-cyan-950/10 border border-cyan-400/40 flex items-center justify-center font-mono text-[10px] text-cyan-400 font-bold shrink-0">
         {n}
       </span>
-      <div className="h-px flex-1 bg-[#1e1e1e]" />
+      <div className="h-px flex-1 bg-[#1f2937]" />
     </div>
   )
 }
 
 function FnRow({ fn }: { fn: string }) {
   return (
-    <div className="flex items-center gap-3 py-2 border-b border-[#1a1a1a]">
-      <span className="w-1 h-4 bg-[#00eefc]/40 rounded shrink-0" />
+    <div className="flex items-center gap-3 py-2 border-b border-[#1f2937]">
+      <span className="w-1 h-4 bg-cyan-400/40 shrink-0" />
       <InlineCode>{fn}</InlineCode>
     </div>
   )
@@ -100,29 +100,29 @@ function FnRow({ fn }: { fn: string }) {
 
 function EnvRow({ variable, description, def }: { variable: string; description: string; def: string }) {
   return (
-    <tr className="border-b border-[#1a1a1a]">
+    <tr className="border-b border-[#1f2937]">
       <td className="py-3 pr-4 align-top"><InlineCode>{variable}</InlineCode></td>
-      <td className="py-3 pr-4 align-top font-['JetBrains_Mono'] text-[10px] text-[#8b919f]">{description}</td>
-      <td className="py-3 align-top font-['JetBrains_Mono'] text-[10px] text-[#414754]">{def}</td>
+      <td className="py-3 pr-4 align-top font-mono text-[10px] text-gray-400">{description}</td>
+      <td className="py-3 align-top font-mono text-[10px] text-gray-600">{def}</td>
     </tr>
   )
 }
 
 function ContractRow({ label, addr, status }: { label: string; addr: string; status: string }) {
   return (
-    <tr className="border-b border-[#1a1a1a]">
-      <td className="py-4 pr-6 font-['JetBrains_Mono'] text-xs text-[#c1c6d6] align-top whitespace-nowrap">{label}</td>
+    <tr className="border-b border-[#1f2937]">
+      <td className="py-4 pr-6 font-mono text-xs text-white align-top whitespace-nowrap">{label}</td>
       <td className="py-4 pr-6 align-top"><AddrLink addr={addr} /></td>
-      <td className="py-4 align-top font-['JetBrains_Mono'] text-xs text-[#4ddbc9]">{status}</td>
+      <td className="py-4 align-top font-mono text-xs text-cyan-400">{status}</td>
     </tr>
   )
 }
 
 function FaqItem({ q, a }: { q: string; a: React.ReactNode }) {
   return (
-    <div className="py-5 border-b border-[#1a1a1a]">
-      <p className="font-['Space_Grotesk'] font-bold text-sm uppercase tracking-wide text-[#e5e2e1] mb-2">{q}</p>
-      <p className="font-['JetBrains_Mono'] text-xs text-[#8b919f] leading-relaxed">{a}</p>
+    <div className="py-5 border-b border-[#1f2937]">
+      <p className="font-mono font-bold text-sm uppercase tracking-wide text-white mb-2">{q}</p>
+      <p className="font-mono text-xs text-gray-400 leading-relaxed">{a}</p>
     </div>
   )
 }
@@ -140,22 +140,22 @@ function SectionOverview() {
 
       <SubHeading>Key Links</SubHeading>
       <div className="space-y-3">
-        <div className="flex items-center gap-3 py-2 border-b border-[#1a1a1a]">
-          <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] w-24 shrink-0">Website</span>
+        <div className="flex items-center gap-3 py-2 border-b border-[#1f2937]">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-gray-400 w-24 shrink-0">Website</span>
           <a href="https://nexusclaw.tech" target="_blank" rel="noopener noreferrer"
-            className="font-['JetBrains_Mono'] text-xs text-[#abc7ff] hover:text-[#3A8BFF] transition-colors">
+            className="font-mono text-xs text-cyan-400 hover:text-white transition-colors">
             nexusclaw.tech ↗
           </a>
         </div>
-        <div className="flex items-center gap-3 py-2 border-b border-[#1a1a1a]">
-          <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] w-24 shrink-0">GitHub</span>
+        <div className="flex items-center gap-3 py-2 border-b border-[#1f2937]">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-gray-400 w-24 shrink-0">GitHub</span>
           <a href={GITHUB} target="_blank" rel="noopener noreferrer"
-            className="font-['JetBrains_Mono'] text-xs text-[#abc7ff] hover:text-[#3A8BFF] transition-colors">
+            className="font-mono text-xs text-cyan-400 hover:text-white transition-colors">
             github.com/kashikai/nexusclaw ↗
           </a>
         </div>
-        <div className="flex items-center gap-3 py-2 border-b border-[#1a1a1a]">
-          <span className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] w-24 shrink-0">Contract</span>
+        <div className="flex items-center gap-3 py-2 border-b border-[#1f2937]">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-gray-400 w-24 shrink-0">Contract</span>
           <AddrLink addr={STAKING_ADDR} label={`${STAKING_ADDR.slice(0, 10)}...${STAKING_ADDR.slice(-8)} ↗`} />
         </div>
       </div>
@@ -170,7 +170,7 @@ function SectionOverview() {
       </Body>
       <Body>
         Agent V1 is live on Base Mainnet and has been running continuously since April 2026.
-        View it at <Link href="/proof" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">/proof</Link>.
+        View it at <Link href="/proof" className="text-cyan-400 hover:text-white transition-colors">/proof</Link>.
       </Body>
     </div>
   )
@@ -185,7 +185,7 @@ function SectionQuickStart() {
       <SubHeading>Get $NEXUSCLAW</SubHeading>
       <Body>
         Complete the X Challenge at{' '}
-        <Link href="/start-agent" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">/start-agent</Link>
+        <Link href="/start-agent" className="text-cyan-400 hover:text-white transition-colors">/start-agent</Link>
         {' '}to receive 1,000 $NEXUSCLAW free.
       </Body>
 
@@ -221,10 +221,10 @@ function SectionContracts() {
       <div className="overflow-x-auto mb-8">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[#1e1e1e]">
-              <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3 pr-6">Contract</th>
-              <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3 pr-6">Address</th>
-              <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3">Status</th>
+            <tr className="border-b border-[#1f2937]">
+              <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3 pr-6">Contract</th>
+              <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3 pr-6">Address</th>
+              <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -272,9 +272,9 @@ function SectionAgentV1() {
           { file: 'utils/logger.js',            desc: 'Structured logging' },
           { file: 'abis/',                      desc: 'Contract ABI definitions' },
         ].map(({ file, desc }) => (
-          <div key={file} className="flex items-start gap-4 py-2 border-b border-[#1a1a1a]">
+          <div key={file} className="flex items-start gap-4 py-2 border-b border-[#1f2937]">
             <InlineCode>{file}</InlineCode>
-            <span className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] mt-0.5">{desc}</span>
+            <span className="font-mono text-[10px] text-gray-400 mt-0.5">{desc}</span>
           </div>
         ))}
       </div>
@@ -285,10 +285,10 @@ function SectionAgentV1() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[#1e1e1e]">
-              <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3 pr-4">Variable</th>
-              <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3 pr-4">Description</th>
-              <th className="text-left font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#8b919f] pb-3">Default</th>
+            <tr className="border-b border-[#1f2937]">
+              <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3 pr-4">Variable</th>
+              <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3 pr-4">Description</th>
+              <th className="text-left font-mono text-[9px] uppercase tracking-widest text-gray-400 pb-3">Default</th>
             </tr>
           </thead>
           <tbody>
@@ -305,8 +305,8 @@ function SectionAgentV1() {
 
       <Divider />
 
-      <div className="bg-[#1a0a00] border-l-4 border-[#ffb4ab] p-5 rounded">
-        <p className="font-['JetBrains_Mono'] text-xs text-[#ffb4ab] leading-relaxed">
+      <div className="bg-[#0a0a0a] border-l-4 border-red-400 p-5">
+        <p className="font-mono text-xs text-red-400 leading-relaxed">
           ⚠️ Never use your main wallet. Always create a dedicated agent wallet with only the funds needed for operation.
         </p>
       </div>
@@ -331,18 +331,18 @@ function SectionSecurity() {
           'No external audit yet — planned Phase 5',
           'Emergency withdraw always available to users',
         ].map((item, i) => (
-          <div key={i} className="flex items-start gap-3 py-2 border-b border-[#1a1a1a]">
-            <span className="font-['JetBrains_Mono'] text-[#4ddbc9] text-xs shrink-0 mt-0.5">
+          <div key={i} className="flex items-start gap-3 py-2 border-b border-[#1f2937]">
+            <span className="font-mono text-cyan-400 text-xs shrink-0 mt-0.5">
               {i === 2 ? '⚠️' : '✅'}
             </span>
-            <span className="font-['JetBrains_Mono'] text-xs text-[#c1c6d6]">{item}</span>
+            <span className="font-mono text-xs text-white">{item}</span>
           </div>
         ))}
       </div>
 
       <Link
         href="/security"
-        className="inline-flex items-center gap-2 px-5 py-3 bg-[#1c1b1b] border border-[#414754]/30 rounded font-['JetBrains_Mono'] text-xs uppercase tracking-widest text-[#abc7ff] hover:border-[#abc7ff]/40 hover:text-[#e5e2e1] transition-all"
+        className="inline-flex items-center gap-2 px-5 py-3 bg-[#111111] border border-[#1f2937] font-mono text-xs uppercase tracking-widest text-cyan-400 hover:border-cyan-400/40 hover:text-white transition-all"
       >
         Full security details → /security
       </Link>
@@ -362,7 +362,7 @@ function SectionFaq() {
         <FaqItem
           q="How much $NEXUSCLAW do I need?"
           a={<>Minimum 100 tokens recommended. Get free tokens via X Challenge at{' '}
-            <Link href="/start-agent" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">/start-agent</Link>.</>}
+            <Link href="/start-agent" className="text-cyan-400 hover:text-white transition-colors">/start-agent</Link>.</>}
         />
         <FaqItem
           q="Is my private key safe?"
@@ -375,9 +375,9 @@ function SectionFaq() {
         <FaqItem
           q="Where can I get help?"
           a={<>
-            <a href={TELEGRAM} target="_blank" rel="noopener noreferrer" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">Telegram @nexusclawofficial</a>
+            <a href={TELEGRAM} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-white transition-colors">Telegram @nexusclawofficial</a>
             {' '}or open a{' '}
-            <a href={GITHUB + '/issues'} target="_blank" rel="noopener noreferrer" className="text-[#abc7ff] hover:text-[#e5e2e1] transition-colors">GitHub issue</a>.
+            <a href={GITHUB + '/issues'} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-white transition-colors">GitHub issue</a>.
           </>}
         />
       </div>
@@ -399,68 +399,64 @@ export default function DocsPage() {
   const Content = SECTIONS[active] ?? SectionOverview
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1]">
-      <TopNav active="/docs" />
+    <PageShell variant="public">
+      <div className="max-w-6xl mx-auto px-6 flex gap-0 min-h-[calc(100vh-5rem)]">
 
-      <div className="pt-20 max-w-[1440px] mx-auto px-4 md:px-8">
-        <div className="flex gap-0 min-h-[calc(100vh-5rem)]">
-
-          {/* ── SIDEBAR ── */}
-          <aside className="hidden md:flex flex-col w-56 shrink-0 border-r border-[#1e1e1e] pt-12 pr-6 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto">
-            <p className="font-['JetBrains_Mono'] text-[9px] uppercase tracking-[0.3em] text-[#414754] mb-6">Docs</p>
-            <nav className="flex flex-col gap-1">
-              {NAV.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActive(item.id)}
-                  className={`text-left px-3 py-2 rounded font-['JetBrains_Mono'] text-xs uppercase tracking-widest transition-colors ${
-                    active === item.id
-                      ? 'text-[#00eefc] bg-[#00eefc]/5 border-l-2 border-[#00eefc]'
-                      : 'text-[#8b919f] hover:text-[#e5e2e1] hover:bg-[#1c1b1b] border-l-2 border-transparent'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-
-            <div className="mt-auto pt-8 pb-8">
-              <a
-                href={GITHUB}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest text-[#414754] hover:text-[#abc7ff] transition-colors"
+        {/* SIDEBAR */}
+        <aside className="hidden md:flex flex-col w-56 shrink-0 border-r border-[#1f2937] pt-12 pr-6 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto">
+          <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-gray-600 mb-6">Docs</p>
+          <nav className="flex flex-col gap-1">
+            {NAV.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActive(item.id)}
+                className={`text-left px-3 py-2 font-mono text-xs uppercase tracking-widest transition-colors ${
+                  active === item.id
+                    ? 'text-cyan-400 bg-cyan-950/10 border-l-2 border-cyan-400'
+                    : 'text-gray-400 hover:text-white hover:bg-[#111111] border-l-2 border-transparent'
+                }`}
               >
-                GitHub ↗
-              </a>
-            </div>
-          </aside>
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-          {/* ── MOBILE NAV ── */}
-          <div className="md:hidden w-full pt-6 pb-4 overflow-x-auto">
-            <div className="flex gap-2 min-w-max">
-              {NAV.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActive(item.id)}
-                  className={`px-3 py-1.5 rounded font-['JetBrains_Mono'] text-[9px] uppercase tracking-widest transition-colors whitespace-nowrap ${
-                    active === item.id
-                      ? 'text-[#00eefc] bg-[#00eefc]/10 border border-[#00eefc]/30'
-                      : 'text-[#8b919f] border border-[#1e1e1e] hover:text-[#e5e2e1]'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
+          <div className="mt-auto pt-8 pb-8">
+            <a
+              href={GITHUB}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-gray-600 hover:text-cyan-400 transition-colors"
+            >
+              GitHub ↗
+            </a>
           </div>
+        </aside>
 
-          {/* ── CONTENT ── */}
-          <main className="flex-1 min-w-0 pt-12 pb-24 md:pl-12">
-            <Content />
-          </main>
+        {/* MOBILE NAV */}
+        <div className="md:hidden w-full pt-6 pb-4 overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            {NAV.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActive(item.id)}
+                className={`px-3 py-1.5 font-mono text-[9px] uppercase tracking-widest transition-colors whitespace-nowrap ${
+                  active === item.id
+                    ? 'text-cyan-400 border border-cyan-900 bg-cyan-950/10'
+                    : 'text-gray-400 border border-[#1f2937] hover:text-white'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* CONTENT */}
+        <main className="flex-1 min-w-0 pt-12 pb-24 md:pl-12">
+          <Content />
+        </main>
       </div>
-    </div>
+    </PageShell>
   )
 }
