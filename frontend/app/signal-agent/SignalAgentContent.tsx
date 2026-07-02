@@ -125,7 +125,7 @@ const FEATURES = [
 ]
 
 const FAQ = [
-  { q: 'What market does NexusClaw Trader trade?', a: 'XAUUSD (Gold) on the M1 timeframe. The channel strategy is tuned for Gold\'s intraday volatility patterns.' },
+  { q: 'What market does NexusClaw Trader trade?', a: 'Gold (XAUUSD) by default, but the channel strategy works on any symbol your broker offers. You choose the timeframe that fits your style — M1 for high-frequency scalping, M5/M15 for calmer, lower-noise entries.' },
   { q: 'How does the AI parameter review work?', a: 'After every 5 closed trades, Claude AI analyzes the results and suggests parameter adjustments inside capped limits (max 20% change per cycle). The core entry/exit logic never changes — only tunable values like canal size thresholds.' },
   { q: 'Are the live results real?', a: 'Yes — every trade is logged automatically to a public database as it closes. You can see the raw data on this page in real time.' },
   { q: 'Do I need a Telegram signal provider?', a: 'No. NexusClaw Trader is fully autonomous — it reads the chart directly via MetaTrader 5 and decides entries on its own.' },
@@ -171,7 +171,7 @@ function LiveResultsSection() {
               {[
                 { label: 'Total Trades',  value: allTrades.length.toString(),                                         color: 'white' },
                 { label: 'Win Rate',      value: `${winRate}%`,                                                   color: winRate >= 50 ? '#4ddbc9' : '#ffb4ab' },
-                { label: 'Total P&L',     value: `¥${totalPnl >= 0 ? '+' : ''}${Math.round(totalPnl).toLocaleString('en-US')}`, color: totalPnl >= 0 ? '#4ddbc9' : '#ffb4ab' },
+                { label: 'Total P&L',     value: `$${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: totalPnl >= 0 ? '#4ddbc9' : '#ffb4ab' },
                 { label: 'Avg Points',    value: `${avgPts >= 0 ? '+' : ''}${avgPts}pts`,                        color: avgPts >= 0 ? '#4ddbc9' : '#ffb4ab' },
               ].map(s => (
                 <div key={s.label} className="bg-[#111111] p-8">
@@ -184,7 +184,7 @@ function LiveResultsSection() {
             {/* Trade table */}
             <div className="bg-[#111111] border border-[#1f2937]">
               <div className="grid grid-cols-5 gap-2 px-6 py-3 border-b border-[#1f2937]">
-                {['Date (JST)', 'Side', 'Result', 'Points', 'P&L (JPY)'].map(h => (
+                {['Date (JST)', 'Side', 'Result', 'Points', 'P&L (USD)'].map(h => (
                   <span key={h} className="text-[8px] uppercase tracking-widest text-gray-600 font-mono">{h}</span>
                 ))}
               </div>
@@ -202,7 +202,7 @@ function LiveResultsSection() {
                     </span>
                     <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.result}</span>
                     <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.profit_pts >= 0 ? '+' : ''}{t.profit_pts}pts</span>
-                    <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>¥{t.profit_jpy >= 0 ? '+' : ''}{Math.round(t.profit_jpy).toLocaleString('en-US')}</span>
+                    <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>${t.profit_jpy >= 0 ? '+' : ''}{t.profit_jpy.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )
               })}

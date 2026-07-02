@@ -88,7 +88,7 @@ function FimateStats({ trades }: { trades: FimateTrade[] }) {
       {[
         { label: 'Trades',    value: trades.length.toString(),                                                          accent: 'text-cyan-400' },
         { label: 'Win Rate',  value: `${winRate}%`,                                                                    accent: winRate >= 50 ? 'text-cyan-400' : 'text-red-400' },
-        { label: 'Total P&L', value: `¥${totalPnl >= 0 ? '+' : ''}${Math.round(totalPnl).toLocaleString('en-US')}`,   accent: totalPnl >= 0 ? 'text-cyan-400' : 'text-red-400' },
+        { label: 'Total P&L', value: `$${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,   accent: totalPnl >= 0 ? 'text-cyan-400' : 'text-red-400' },
         { label: 'Avg Pts',   value: `${avgPts >= 0 ? '+' : ''}${avgPts}pts`,                                         accent: avgPts >= 0 ? 'text-cyan-400' : 'text-red-400' },
       ].map(s => (
         <div key={s.label} className="bg-[#111111] p-4 border border-[#1f2937]">
@@ -119,7 +119,7 @@ function TradeRow({ t }: { t: FimateTrade }) {
         {t.profit_pts >= 0 ? '+' : ''}{t.profit_pts}pts
       </span>
       <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>
-        ¥{t.profit_jpy >= 0 ? '+' : ''}{Math.round(t.profit_jpy).toLocaleString('en-US')}
+        ${t.profit_jpy >= 0 ? '+' : ''}{t.profit_jpy.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </span>
     </div>
   )
