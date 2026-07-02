@@ -37,7 +37,7 @@ async function fetchFimathe(): Promise<{ trades: FimateTrade[]; latestParams: Fi
   const headers = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
 
   const [tradesRes, paramsRes] = await Promise.all([
-    fetch(`${SUPA_URL}/rest/v1/fimathe_trades?order=created_at.desc&limit=20`, { headers }),
+    fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&limit=20`, { headers }),
     fetch(`${SUPA_URL}/rest/v1/fimathe_params?order=created_at.desc&limit=1`, { headers }),
   ])
 
