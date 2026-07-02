@@ -24,11 +24,10 @@ const NAV_LINKS = [
 ]
 
 interface SiteNavProps {
-  variant?: 'public' | 'app'
   active?: string
 }
 
-export function SiteNav({ variant = 'public', active }: SiteNavProps) {
+export function SiteNav({ active }: SiteNavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileModalOpen, setMobileModalOpen] = useState(false)
 
@@ -59,41 +58,34 @@ export function SiteNav({ variant = 'public', active }: SiteNavProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            {variant === 'app' ? (
-              <ConnectButton.Custom>
-                {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
-                  const connected = mounted && account && chain
-                  return (
-                    <div {...(!mounted && { 'aria-hidden': true, style: { opacity: 0, pointerEvents: 'none', userSelect: 'none' } })}>
-                      {connected ? (
-                        <button onClick={openAccountModal}
-                          className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs font-mono hover:bg-cyan-400 hover:text-black transition-all">
-                          {account.displayName}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            const hasInjected = typeof window !== 'undefined' && !!(window as { ethereum?: unknown }).ethereum
-                            if (isMobileDevice() && !hasInjected) {
-                              setMobileModalOpen(true)
-                            } else {
-                              openConnectModal()
-                            }
-                          }}
-                          className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs font-mono hover:bg-cyan-400 hover:text-black transition-all">
-                          Connect Wallet
-                        </button>
-                      )}
-                    </div>
-                  )
-                }}
-              </ConnectButton.Custom>
-            ) : (
-              <Link href="/staking"
-                className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs font-mono hover:bg-cyan-400 hover:text-black transition-all">
-                Launch App →
-              </Link>
-            )}
+            <ConnectButton.Custom>
+              {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
+                const connected = mounted && account && chain
+                return (
+                  <div {...(!mounted && { 'aria-hidden': true, style: { opacity: 0, pointerEvents: 'none', userSelect: 'none' } })}>
+                    {connected ? (
+                      <button onClick={openAccountModal}
+                        className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs font-mono hover:bg-cyan-400 hover:text-black transition-all">
+                        {account.displayName}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const hasInjected = typeof window !== 'undefined' && !!(window as { ethereum?: unknown }).ethereum
+                          if (isMobileDevice() && !hasInjected) {
+                            setMobileModalOpen(true)
+                          } else {
+                            openConnectModal()
+                          }
+                        }}
+                        className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs font-mono hover:bg-cyan-400 hover:text-black transition-all">
+                        Connect Wallet
+                      </button>
+                    )}
+                  </div>
+                )
+              }}
+            </ConnectButton.Custom>
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}

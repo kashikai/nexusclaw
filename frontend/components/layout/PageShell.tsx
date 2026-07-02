@@ -12,7 +12,7 @@ interface PageShellProps {
 export function PageShell({ children, variant = 'public', active, className = '' }: PageShellProps) {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-mono flex flex-col">
-      <SiteNav variant={variant} active={active} />
+      <SiteNav active={active} />
       <main className={`pt-20 flex-1 ${className}`}>
         {children}
       </main>
