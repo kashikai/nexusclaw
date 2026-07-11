@@ -50,7 +50,7 @@ export default function GovernanceContent() {
             </div>
             <div className="space-y-3">
               {[
-                { label: 'Timelock', desc: '24h delay on critical operations', icon: 'schedule' },
+                { label: 'Administrative Timelock', desc: 'Planned for privileged operations', icon: 'schedule' },
                 { label: 'Reentrancy Guard', desc: 'Protection against reentrancy attacks', icon: 'lock' },
                 { label: 'Access Control', desc: 'Role-based permissions (Admin/Funder)', icon: 'admin_panel_settings' },
                 { label: 'Emergency Withdraw', desc: 'Users can always exit positions', icon: 'emergency' },

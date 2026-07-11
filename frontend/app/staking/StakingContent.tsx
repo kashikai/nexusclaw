@@ -114,7 +114,7 @@ export default function StakingContent() {
               {!isConnected ? (
                 <div className="text-center py-16 text-gray-400">
                   <p className="text-xl mb-2">Connect your wallet to start staking</p>
-                  <p className="text-sm text-gray-600">Base Mainnet — 20% APY rewards</p>
+                  <p className="text-sm text-gray-600">Estimated protocol reward rate. Not guaranteed.</p>
                 </div>
               ) : (
                 <div className="space-y-6">

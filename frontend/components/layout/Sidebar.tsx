@@ -9,6 +9,7 @@ const navItems = [
   { href: '/staking', label: 'Staking', icon: 'account_balance_wallet' },
   { href: '/governance', label: 'Governance', icon: 'gavel' },
   { href: '/analytics', label: 'Analytics', icon: 'analytics' },
+  { href: '/trader', label: 'Trader', icon: 'monitoring' },
 ]
 
 export function Sidebar() {
@@ -42,7 +43,7 @@ export function Sidebar() {
                 {(() => {
                   if (!connected) return (
                     <button onClick={openConnectModal} className="w-full py-4 bg-nc-blue text-nc-bg font-bold uppercase tracking-widest text-sm hover:brightness-110 active:scale-95 transition-all">
-                      Connect Wallet
+                      Open Wallet
                     </button>
                   )
                   if (chain.unsupported) return (

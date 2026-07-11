@@ -116,7 +116,7 @@ export default function ConfigModal({ agentType, onClose, onSuccess }: ConfigMod
                     INITIAL STAKE ($NEXUSCLAW)
                   </label>
                   <p className="text-[10px] text-[#414754] mb-2">
-                    How many tokens your agent will stake. More tokens = more daily rewards.
+                    How many tokens your agent will stake. Estimated rewards depend on pool conditions and contract parameters.
                   </p>
                   <input
                     type="number"
@@ -131,7 +131,7 @@ export default function ConfigModal({ agentType, onClose, onSuccess }: ConfigMod
                     <span className="text-[10px] text-[#8b919f]">
                       Estimated daily reward:{' '}
                       <span className="text-[#00eefc] font-bold">~{dailyReward} $NEXUSCLAW/day</span>
-                      <span className="text-[#414754]"> @ 20% APY</span>
+                      <span className="text-[#414754]"> @ est. 20% APY, not guaranteed</span>
                     </span>
                   </div>
                 </div>

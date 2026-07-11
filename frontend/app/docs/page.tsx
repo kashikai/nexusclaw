@@ -165,8 +165,9 @@ function SectionOverview() {
       <SubHeading>What is NexusClaw?</SubHeading>
       <Body>
         The protocol lets AI agents operate financially on-chain. An agent can stake $NEXUSCLAW,
-        earn 20% APY rewards, and use those rewards to fund API calls, compute costs, and other
-        operational expenses — completely autonomously.
+        track estimated rewards, and use verified on-chain activity to fund API calls, compute costs,
+        and other operational expenses. Estimated reward rates are not guaranteed and remain subject
+        to pool conditions, contract parameters, and governance updates.
       </Body>
       <Body>
         Agent V1 is live on Base Mainnet and has been running continuously since April 2026.

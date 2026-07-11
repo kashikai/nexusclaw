@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
+import { MobileBanner } from '@/components/MobileBanner'
 
 function HexLogo() {
   return (
@@ -29,11 +29,10 @@ interface SiteNavProps {
 
 export function SiteNav({ active }: SiteNavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [mobileModalOpen, setMobileModalOpen] = useState(false)
 
   return (
     <>
-      <MobileBanner forceOpen={mobileModalOpen} onForceClose={() => setMobileModalOpen(false)} />
+      <MobileBanner />
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/90 backdrop-blur border-b border-[#1f2937]">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
@@ -59,7 +58,7 @@ export function SiteNav({ active }: SiteNavProps) {
 
           <div className="flex items-center gap-3">
             <ConnectButton.Custom>
-              {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
+              {({ account, chain, openAccountModal, mounted }) => {
                 const connected = mounted && account && chain
                 return (
                   <div {...(!mounted && { 'aria-hidden': true, style: { opacity: 0, pointerEvents: 'none', userSelect: 'none' } })}>
@@ -69,18 +68,11 @@ export function SiteNav({ active }: SiteNavProps) {
                         {account.displayName}
                       </button>
                     ) : (
-                      <button
-                        onClick={() => {
-                          const hasInjected = typeof window !== 'undefined' && !!(window as { ethereum?: unknown }).ethereum
-                          if (isMobileDevice() && !hasInjected) {
-                            setMobileModalOpen(true)
-                          } else {
-                            openConnectModal()
-                          }
-                        }}
+                      <Link
+                        href="/proof"
                         className="border border-cyan-400 text-cyan-400 px-4 py-2 text-xs font-mono hover:bg-cyan-400 hover:text-black transition-all">
-                        Connect Wallet
-                      </button>
+                        View Live Proof
+                      </Link>
                     )}
                   </div>
                 )

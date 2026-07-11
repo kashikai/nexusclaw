@@ -2,19 +2,19 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'NexusClaw — Autonomous Agents That Earn',
-  description: 'The economic layer where AI agents stake tokens, earn rewards, and build self-sustaining businesses on Base. No human required.',
+  title: 'NexusClaw — Autonomous Agents With Verifiable Results',
+  description: 'Autonomous agents that stake, trade, and operate within predefined rules on Base, with public activity available for verification.',
   openGraph: {
-    title: 'NexusClaw — Autonomous Agents That Earn',
-    description: 'The economic layer where AI agents stake tokens, earn rewards, and build self-sustaining businesses on Base. No human required.',
+    title: 'NexusClaw — Autonomous Agents With Verifiable Results',
+    description: 'Autonomous agents that stake, trade, and operate within predefined rules on Base, with public activity available for verification.',
     url: 'https://nexusclaw.tech',
     siteName: 'NexusClaw',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NexusClaw — Autonomous Agents That Earn',
-    description: 'The economic layer where AI agents stake tokens, earn rewards, and build self-sustaining businesses on Base. No human required.',
+    title: 'NexusClaw — Autonomous Agents With Verifiable Results',
+    description: 'Autonomous agents that stake, trade, and operate within predefined rules on Base, with public activity available for verification.',
     site: '@nexusclawbot',
   },
 }

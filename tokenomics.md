@@ -15,7 +15,7 @@ Detailed allocation table and vesting schedules above in README.
 - **Deflationary**: Tx fees fund burns.
 - **Incentives**: High APY early staking to bootstrap TVL.
 - **Risks Mitigated**:
-  - Rug-proof: Multi-sig treasury, audited contracts.
+  - Security: 3/5 Safe multisig admin, verified contracts, external audit pending.
   - Volatility: LP incentives + insurance fund.
 
 More to come...

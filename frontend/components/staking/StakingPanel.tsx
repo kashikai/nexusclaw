@@ -77,7 +77,7 @@ export function StakingPanel() {
             <div className="text-center py-12 text-slate-500">
               <span className="material-symbols-outlined text-5xl mb-4 block">wallet</span>
               <p className="text-lg">Connect your wallet to start staking</p>
-              <p className="text-sm mt-2 text-slate-600">Base Mainnet — 20% APY</p>
+              <p className="text-sm mt-2 text-slate-600">Estimated protocol reward rate. Not guaranteed.</p>
             </div>
           ) : (
             <div className="space-y-6">

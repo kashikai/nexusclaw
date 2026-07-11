@@ -45,15 +45,15 @@ Sourcify: Verified ✅
 
 ### Fixes Implemented & Verified
 - ✅ **FIX CRITICAL**: Fee distribution (50% burn / 30% treasury / 20% staking) — ON-CHAIN ✅
-- ✅ **FIX CRITICAL**: Timelock 24h on toggleBurnFee, setBlacklist, setDexWhitelist — DEPLOYED ✅
+- ⏳ **FIX CRITICAL**: Administrative timelock for privileged operations — PLANNED
 - ✅ **FIX HIGH**: DEX whitelist separated from burn fee (exempts anti-snipe only, NOT fees) — LIVE ✅
 - ✅ **FIX MEDIUM**: disableMinting() implemented + tested — READY ✅
 
 ### Test Suite Status
 - ✅ 12/12 Core NexusClaw tests PASS
-- ✅ Timelock queueing + execution tests PASS
-- ✅ Blacklist timelock tests PASS
-- ✅ DEX whitelist timelock tests PASS
+- ⏳ Administrative timelock tests pending implementation
+- ⏳ Blacklist delay tests pending implementation
+- ⏳ DEX whitelist delay tests pending implementation
 - ✅ DisableMinting() tests PASS
 - ✅ No reentrancy vulnerabilities
 - ✅ No overflow/underflow risks
@@ -77,7 +77,7 @@ Sourcify: Verified ✅
 - ✅ Block: 39393220
 - ⏳ Call launch() to enable trading (next step)
 - ⏳ On-chain fee split test (trigger transfers, monitor balances)
-- ⏳ Timelock test (queue 24h, execute after delay)
+- ⏳ Administrative timelock design review
 - ⏳ Monitoramento 48h: Tenderly alerts + DEX activity
 - ⏳ Anti-snipe test (max buy 0.5%, first 24h)
 
@@ -96,7 +96,7 @@ Sourcify: Verified ✅
 ## FASE 3 – Segurança e Proteção (Day 5-7, ⏳ AWAITING)
 
 - ⏳ Multisig 3/5 totalmente operacional
-- ⏳ Time-lock de 24h em todas operações críticas ✅ (implementado no contrato)
+- ⏳ Administrative timelock for critical operations planned; not currently implemented
 - ⏳ Insurance fund de 5B separado para proteção contra exploits
 - ⏳ Whitelist inicial de pares DEX
 - ⏳ Tenderly alerts + monitoramento on-chain contínuo
@@ -117,10 +117,10 @@ Sourcify: Verified ✅
 | Item | Status | Notes |
 |------|--------|-------|
 | Fee split 50/30/20 on-chain | ✅ | Deployed & verified |
-| Timelock 24h operational | ✅ | queueToggleBurnFee, executeToggleBurnFee ready |
+| Administrative timelock operational | ⏳ | Planned; not currently implemented |
 | DEX whitelist fix (separate from fees) | ✅ | On-chain, exempts anti-snipe only |
 | MINTER_ROLE revocable via disableMinting() | ✅ | Deployed, tested |
-| All tests passing | ✅ | 12 core + timelock + security |
+| All implemented tests passing | ✅ | Core + security checks |
 | 48h Sepolia monitoring clean | ⏳ | In progress (started: 2026-03-27 04:54) |
 | Multisig 3/5 operational | ⏳ | Pending mainnet setup |
 | Deployer roles revoked | ⏳ | Post-mainnet deploy |
@@ -145,7 +145,7 @@ Sourcify: Verified ✅
 
 1. ✅ Call `launch()` on Sepolia contract (0xb7D...) to enable trading
 2. ⏳ Test fee split on-chain (transfer tokens, check balances)
-3. ⏳ Test timelock (queue + execute after 24h delay)
+3. ⏳ Design and test administrative timelock
 4. ⏳ Monitor Tenderly alerts + DEX activity for 48h
 5. ⏳ Final review + multisig setup
 6. 🚀 **Mainnet deploy (post-monitoring)**

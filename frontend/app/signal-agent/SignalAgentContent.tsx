@@ -116,7 +116,7 @@ function useLiveData() {
 // ── Features ─────────────────────────────────────────────────────────────────
 
 const FEATURES = [
-  { icon: '🤖', title: 'AUTONOMOUS EXECUTION', desc: 'Autonomous execution within predefined risk rules. Detects its own entry zones, manages the trade, and resets — 24/7 without human input.' },
+  { icon: '🤖', title: 'AUTONOMOUS EXECUTION', desc: 'Autonomous execution within predefined risk rules. Detects entry zones, manages trades, and resets according to configured parameters.' },
   { icon: '🧠', title: 'AI PARAMETER REVIEW', desc: 'Claude AI analyzes closed trades and suggests parameter adjustments inside capped limits (max 20% per cycle). Core logic never changes.' },
   { icon: '📊', title: 'PUBLIC LIVE RESULTS', desc: 'Every trade logged in real time. Win rate, P&L and AI decisions are public — no cherry-picking, no backtest theater.' },
   { icon: '🎯', title: 'CHANNEL BREAKOUT LOGIC', desc: 'Waits for a confirmed 2-phase breakout before entering. Built-in Kit de Bengala filter avoids abnormal candles.' },
@@ -125,11 +125,11 @@ const FEATURES = [
 ]
 
 const FAQ = [
-  { q: 'What market does NexusClaw Trader trade?', a: 'Gold (XAUUSD) by default, but the channel strategy works on any symbol your broker offers. You choose the timeframe that fits your style — M1 for high-frequency scalping, M5/M15 for calmer, lower-noise entries.' },
-  { q: 'How does the AI parameter review work?', a: 'After every 5 closed trades, Claude AI analyzes the results and suggests parameter adjustments inside capped limits (max 20% change per cycle). The core entry/exit logic never changes — only tunable values like canal size thresholds.' },
+  { q: 'What market does NexusClaw Trader trade?', a: 'Gold (XAUUSD) by default. The strategy can be configured for different timeframes depending on broker conditions and risk preference. M1 is more aggressive; M5/M15 may reduce noise but does not guarantee better results.' },
+  { q: 'How does the AI parameter review work?', a: 'Claude reviews closed-trade data and may propose limited parameter adjustments within predefined limits. The core trading logic and risk controls remain unchanged.' },
   { q: 'Are the live results real?', a: 'Yes — every trade is logged automatically to a public database as it closes. You can see the raw data on this page in real time.' },
-  { q: 'Do I need a Telegram signal provider?', a: 'No. NexusClaw Trader is fully autonomous — it reads the chart directly via MetaTrader 5 and decides entries on its own.' },
-  { q: 'Do I need an Anthropic / Claude API key?', a: 'Yes — a free or paid Claude API key is required for the AI optimization feature. Without it, the bot still trades but won\'t self-optimize.' },
+  { q: 'Do I need a Telegram signal provider?', a: 'No. NexusClaw Trader operates autonomously within predefined rules — it reads chart conditions directly via MetaTrader 5 and executes only when configured criteria are met.' },
+  { q: 'Do I need an Anthropic / Claude API key?', a: 'Yes — a free or paid Claude API key is required for AI parameter review. Without it, the bot still trades, but Claude will not review closed-trade data or suggest parameter adjustments.' },
   { q: 'Does it work with any MT5 broker?', a: 'Yes — any broker that supports the MetaTrader 5 terminal on Windows.' },
   { q: 'What is the $NEXUSCLAW holder discount?', a: 'Hold 1,000 $NEXUSCLAW tokens and get 20% off permanently. Use coupon HOLDER20 at checkout.' },
 ]
@@ -275,8 +275,8 @@ export default function SignalAgentContent() {
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-tighter leading-[1.0] mb-6">
             NEXUSCLAW TRADER<br />
-            <span className="text-yellow-400">TRADES ITSELF.</span>{' '}
-            <span className="text-gray-600">LEARNS ITSELF.</span>
+            <span className="text-yellow-400">AUTONOMOUS EXECUTION.</span>{' '}
+            <span className="text-gray-600">AI-ASSISTED REVIEW.</span>
           </h1>
 
           <p className="text-xl md:text-2xl font-black uppercase tracking-wide text-white mb-4">
@@ -284,7 +284,7 @@ export default function SignalAgentContent() {
           </p>
 
           <p className="text-base md:text-lg text-white max-w-2xl leading-relaxed mb-10 font-light">
-            NexusClaw Trader detects its own entries on XAUUSD and executes on MetaTrader 5 within predefined risk rules. Claude AI analyzes each closed trade and suggests parameter adjustments inside capped limits — no manual input required.
+            NexusClaw Trader detects predefined XAUUSD entry conditions by default and executes on MetaTrader 5 within predefined risk rules. Claude reviews closed-trade data and may propose limited parameter adjustments inside capped limits under predefined risk rules.
           </p>
 
           <div className="space-y-3 mb-12">

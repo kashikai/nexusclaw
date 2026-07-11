@@ -18,11 +18,11 @@
 All admin functions are controlled by a **3-of-5 Safe Multisig** on Base Mainnet:
 - Address: `0x02320eCCB3B67e802C29f9e9F8703D5756535515`
 - No single point of failure — 3 signers required for any protocol change
-- Timelock: 24h delay on critical operations
+- Administrative timelock planned for critical operations
 
 ### Audit
 
-Contract v10.3 has been reviewed internally. See `AUDIT_REPORT.md` for findings.
+Contract v10.3 has been reviewed internally with AI-assisted analysis. External security audit is pending. See `AUDIT_REPORT.md` for findings.
 
 ---
 

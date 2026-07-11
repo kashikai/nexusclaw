@@ -126,12 +126,12 @@ export default function AnalyticsContent() {
             </h3>
             <div className="space-y-3">
               {[
-                { label: 'APY', value: '20%', active: true },
+                { label: 'Est. APY', value: '20%', active: true },
                 { label: 'Reward Runway', value: runway ? `${Number(runway) > 999 ? '999+' : Number(runway)}d` : '—', active: true },
                 { label: 'Staking', value: 'Active', active: true },
-                { label: 'Audit', value: 'Passed (v10.3)', active: true },
+                { label: 'Security Review', value: 'Internal', active: true },
                 { label: 'Multisig', value: '3/5 Safe', active: true },
-                { label: 'Timelock', value: '24h', active: true },
+                { label: 'Timelock', value: 'Planned', active: false },
               ].map((h) => (
                 <div key={h.label} className="flex justify-between items-center py-2 border-b border-[#1f2937]">
                   <span className="text-sm text-gray-400 font-mono">{h.label}</span>
@@ -142,6 +142,9 @@ export default function AnalyticsContent() {
                 </div>
               ))}
             </div>
+            <p className="font-['JetBrains_Mono'] text-[10px] text-[#8b919f] leading-relaxed mt-4">
+              Estimated protocol reward rate. Not guaranteed. Subject to pool conditions, contract parameters, and governance updates.
+            </p>
           </div>
 
           {/* Verified Contracts */}

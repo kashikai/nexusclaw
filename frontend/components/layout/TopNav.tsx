@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
+import { MobileBanner } from '@/components/MobileBanner'
 
 const NAV_ITEMS: { href: string; label: string; gold?: boolean }[] = [
   { href: '/proof', label: 'Proof' },
@@ -16,12 +17,13 @@ const NAV_ITEMS: { href: string; label: string; gold?: boolean }[] = [
 ]
 
 export function TopNav({ active }: { active?: string }) {
-  const [mobileModalOpen, setMobileModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const pathname = usePathname()
+  const currentPath = pathname || active
 
   return (
     <>
-      <MobileBanner forceOpen={mobileModalOpen} onForceClose={() => setMobileModalOpen(false)} />
+      <MobileBanner />
 
       <nav className="fixed top-0 w-full z-50 bg-[#070707]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
         <div className="flex justify-between items-center px-6 py-4 max-w-[1440px] mx-auto">
@@ -29,10 +31,9 @@ export function TopNav({ active }: { active?: string }) {
             <img src="/logo.png" alt="NexusClaw" className="h-10 md:h-14 w-auto" />
           </Link>
 
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-10">
             {NAV_ITEMS.map((item) => {
-              const isActive = active === item.href
+              const isActive = currentPath === item.href
               return (
                 <Link
                   key={item.href + item.label}
@@ -53,10 +54,9 @@ export function TopNav({ active }: { active?: string }) {
             })}
           </div>
 
-          {/* Right side: wallet + hamburger */}
           <div className="flex items-center gap-4">
             <ConnectButton.Custom>
-              {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
+              {({ account, chain, openAccountModal, mounted }) => {
                 const connected = mounted && account && chain
                 return (
                   <div {...(!mounted && { 'aria-hidden': true, style: { opacity: 0, pointerEvents: 'none', userSelect: 'none' } })}>
@@ -65,26 +65,19 @@ export function TopNav({ active }: { active?: string }) {
                         {account.displayName}
                       </button>
                     ) : (
-                      <button
-                        onClick={() => {
-                          const hasInjected = typeof window !== 'undefined' && !!(window as any).ethereum
-                          if (isMobileDevice() && !hasInjected) {
-                            setMobileModalOpen(true)
-                          } else {
-                            openConnectModal()
-                          }
-                        }}
-                        className="bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all"
+                      <Link
+                        href="/proof"
+                        className="block bg-gradient-to-r from-[#abc7ff] to-[#448fff] text-[#00285a] px-4 sm:px-6 py-2 rounded-sm font-['Space_Grotesk'] font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:brightness-110 transition-all"
                       >
-                        Connect Wallet
-                      </button>
+                        <span className="hidden sm:inline">View Live Proof</span>
+                        <span className="sm:hidden">Proof</span>
+                      </Link>
                     )}
                   </div>
                 )
               }}
             </ConnectButton.Custom>
 
-            {/* Hamburger — mobile only */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-[6px] group"
@@ -99,15 +92,14 @@ export function TopNav({ active }: { active?: string }) {
 
         <div className="bg-gradient-to-r from-transparent via-[#414754]/30 to-transparent h-[1px] w-full" />
 
-        {/* Mobile drawer */}
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            menuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+            menuOpen ? 'max-h-[calc(100vh-73px)] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="bg-[#070707]/95 backdrop-blur-xl border-t border-[#414754]/20 px-6 py-4 flex flex-col gap-1">
+          <div className="bg-[#070707] border-t border-b border-[#414754]/30 px-6 pt-5 pb-8 flex flex-col gap-1 shadow-2xl min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] overflow-y-auto">
             {NAV_ITEMS.map((item) => {
-              const isActive = active === item.href
+              const isActive = currentPath === item.href
               return (
                 <Link
                   key={item.href + item.label}

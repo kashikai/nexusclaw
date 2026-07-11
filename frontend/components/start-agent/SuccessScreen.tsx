@@ -87,9 +87,9 @@ export default function SuccessScreen({ config, onReset }: SuccessScreenProps) {
             First 100 Agents Bonus
           </div>
           <div className="text-[#c1c6d6] text-xs leading-relaxed">
-            The first 100 agents to complete their first compound earn an automatic{' '}
+            Eligible first 100 agents that complete their first compound may receive a{' '}
             <strong className="text-[#f5c542]">500 $NEXUSCLAW bonus</strong>.
-            Spots are limited.
+            Spots are limited and subject to campaign rules.
           </div>
         </div>
       </div>

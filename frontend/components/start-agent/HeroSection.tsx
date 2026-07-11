@@ -52,7 +52,7 @@ export default function HeroSection({ onCreateAgent }: HeroSectionProps) {
         </h1>
 
         <p className="text-gray-400 text-xl mb-12 max-w-2xl">
-          Create an agent that stakes, compounds, earns $NEXUSCLAW and works for you 24/7.
+          Create an agent that stakes, compounds, and operates within predefined rules.
           No human intervention required.
         </p>
 
@@ -60,7 +60,7 @@ export default function HeroSection({ onCreateAgent }: HeroSectionProps) {
           {[
             { label: 'ACTIVE_AGENTS', value: stats.stakers },
             { label: 'TOTAL_TVL', value: `${stats.tvl} $NEXUSCLAW` },
-            { label: 'BASE_APY', value: stats.apy },
+            { label: 'EST_APY', value: stats.apy },
           ].map((stat) => (
             <div key={stat.label}>
               <div className="text-xs text-cyan-600 font-mono mb-1">{stat.label}</div>
