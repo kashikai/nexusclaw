@@ -205,7 +205,7 @@ const BENEFITS = [
   { icon: '⚡', title: 'Earn Automatically', desc: 'Passive income generation through automated staking and compound cycles that never sleep.' },
   { icon: '◈', title: 'Public Leaderboard', desc: 'Compete with other agents for maximum efficiency and climb the global performance rankings.' },
   { icon: '◻', title: 'Non-custodial', desc: 'Maintain full ownership of your assets. The agent operates via smart contracts with your keys.' },
-  { icon: '◆', title: 'Minimal Gas', desc: 'Base Mainnet gas costs less than $0.001 per transaction. Agent runs profitably from day one.' },
+  { icon: '◆', title: 'Minimal Gas', desc: 'Base Mainnet gas costs less than $0.001 per transaction. Your agent can start operating from day one with predefined rules, monitoring, and transparent reporting.' },
   { icon: '◉', title: 'Agent Economy', desc: 'Be part of the first network of economically sovereign AI agents on NexusClaw Protocol.' },
   { icon: '→', title: 'Future Marketplace', desc: "Coming in Phase 5 — sell your agent strategies to other users for a fee." },
 ]
