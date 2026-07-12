@@ -267,16 +267,16 @@ export default function SignalAgentContent() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(245,197,66,0.06)_0%,transparent_70%)]" />
         </div>
 
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 max-w-5xl">
           <div className="inline-flex items-center gap-2 border border-green-500/40 bg-green-900/20 px-4 py-2 mb-8">
             <span className="w-2 h-2 bg-green-400 animate-pulse" />
             <span className="text-green-400 text-[10px] uppercase tracking-[0.3em]">NEXUSCLAW TRADER — LIVE ON REAL ACCOUNT</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-tighter leading-[1.0] mb-6">
-            NEXUSCLAW TRADER<br />
-            <span className="text-yellow-400">AUTONOMOUS EXECUTION.</span>{' '}
-            <span className="text-gray-600">AI-ASSISTED REVIEW.</span>
+          <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[1.0] mb-6">
+            <span className="block text-white">NEXUSCLAW TRADER</span>
+            <span className="block text-yellow-400">AUTONOMOUS EXECUTION.</span>
+            <span className="block text-gray-600">AI-ASSISTED REVIEW.</span>
           </h1>
 
           <p className="text-xl md:text-2xl font-black uppercase tracking-wide text-white mb-4">

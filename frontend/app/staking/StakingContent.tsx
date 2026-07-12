@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { parseEther, formatEther } from 'viem'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { PageShell } from '@/components/layout/PageShell'
 import { TOKEN_ADDRESS, STAKING_ADDRESS, TOKEN_ABI, STAKING_ABI, APY_PERCENT, BASESCAN_URL } from '@/config/contracts'
 import { formatToken, formatTokenShort, shortenAddress } from '@/lib/utils'
-import { MobileBanner } from '@/components/MobileBanner'
+import { MobileBanner, isMobileDevice } from '@/components/MobileBanner'
 
 export default function StakingContent() {
   const { address, isConnected } = useAccount()
@@ -15,6 +16,7 @@ export default function StakingContent() {
   const [stakeAmount, setStakeAmount] = useState('')
   const [unstakeAmount, setUnstakeAmount] = useState('')
   const [approvedAmount, setApprovedAmount] = useState<bigint>(0n)
+  const [mobileWalletOpen, setMobileWalletOpen] = useState(false)
 
   // === READ ===
   const { data: tokenBalance, refetch: refetchBalance } = useReadContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined })
@@ -80,7 +82,7 @@ export default function StakingContent() {
 
   return (
     <PageShell variant="app">
-      <MobileBanner />
+      <MobileBanner forceOpen={mobileWalletOpen} onForceClose={() => setMobileWalletOpen(false)} />
 
       {/* Header */}
       <section className="max-w-6xl mx-auto px-6 py-12">
@@ -115,6 +117,38 @@ export default function StakingContent() {
                 <div className="text-center py-16 text-gray-400">
                   <p className="text-xl mb-2">Connect your wallet to start staking</p>
                   <p className="text-sm text-gray-600">Estimated protocol reward rate. Not guaranteed.</p>
+                  <div className="mt-6 flex justify-center">
+                    <ConnectButton.Custom>
+                      {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
+                        const connected = mounted && account && chain
+                        return (
+                          <div {...(!mounted && { 'aria-hidden': true, style: { opacity: 0, pointerEvents: 'none', userSelect: 'none' } })}>
+                            {connected ? (
+                              <button
+                                onClick={openAccountModal}
+                                className="px-8 py-3 bg-cyan-400 text-black font-bold uppercase tracking-widest text-sm hover:bg-cyan-300 transition-all"
+                              >
+                                {account.displayName}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  if (isMobileDevice()) {
+                                    setMobileWalletOpen(true)
+                                    return
+                                  }
+                                  openConnectModal?.()
+                                }}
+                                className="px-8 py-3 bg-cyan-400 text-black font-bold uppercase tracking-widest text-sm hover:bg-cyan-300 transition-all"
+                              >
+                                Connect Wallet
+                              </button>
+                            )}
+                          </div>
+                        )
+                      }}
+                    </ConnectButton.Custom>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-6">
