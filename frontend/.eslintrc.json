@@ -1,0 +1,21 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "react/jsx-no-comment-textnodes": "off",
+    "react/no-unescaped-entities": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "app/county-hunter/**/*.{ts,tsx}",
+        "app/api/county-hunter/**/*.{ts,tsx}",
+        "features/county-hunter/**/*.{ts,tsx}",
+        "tests/county-hunter/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "react/jsx-no-comment-textnodes": "error",
+        "react/no-unescaped-entities": "error"
+      }
+    }
+  ]
+}

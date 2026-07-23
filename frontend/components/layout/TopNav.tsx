@@ -6,9 +6,12 @@ import { usePathname } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MobileBanner } from '@/components/MobileBanner'
 
+const COUNTY_HUNTER_ENABLED = process.env.NEXT_PUBLIC_COUNTY_HUNTER_ENABLED === 'true'
+
 const NAV_ITEMS: { href: string; label: string; gold?: boolean }[] = [
   { href: '/proof', label: 'Proof' },
   { href: '/agents', label: 'Agents' },
+  ...(COUNTY_HUNTER_ENABLED ? [{ href: '/county-hunter', label: 'County Hunter' }] : []),
   { href: '/start-agent', label: 'Start Agent' },
   { href: '/trader', label: 'Trader', gold: true },
   { href: '/staking', label: 'Staking' },

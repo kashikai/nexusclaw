@@ -4,5 +4,7 @@
 /lib/
 /sdk/node_modules/
 /.env
+**/.env.local
+**/.env.staging.local
 /cache/
 /broadcast/

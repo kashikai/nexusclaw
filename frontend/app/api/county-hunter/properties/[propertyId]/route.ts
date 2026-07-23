@@ -1,0 +1,51 @@
+import { NextResponse } from 'next/server'
+import type { CountyHunterProperty } from '@/features/county-hunter/types'
+import { requireCountyHunterPermission } from '@/features/county-hunter/server/auth'
+import { parsePropertyPatch } from '@/features/county-hunter/server/payloads'
+import { countyHunterRest } from '@/features/county-hunter/server/rest'
+import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
+import { CountyHunterValidationError, isUuid } from '@/features/county-hunter/validation'
+import { requireCountyHunterResource } from '@/features/county-hunter/server/resource'
+
+export const dynamic = 'force-dynamic'
+
+type RouteContext = { params: { propertyId: string } }
+
+function filters(organizationId: string, propertyId: string) {
+  if (!isUuid(propertyId)) throw new CountyHunterValidationError('propertyId is invalid.')
+  return new URLSearchParams({
+    id: `eq.${propertyId}`,
+    organization_id: `eq.${organizationId}`,
+    select: '*,county:county_hunter_counties(name),auction:county_hunter_auctions(sale_date)',
+  }).toString()
+}
+
+export async function GET(request: Request, { params }: RouteContext) {
+  try {
+    const context = await requireCountyHunterPermission(request, 'county_hunter.view')
+    const rows = await countyHunterRest<CountyHunterProperty[]>(
+      context,
+      'county_hunter_properties',
+      filters(context.organizationId, params.propertyId),
+    )
+    return NextResponse.json(requireCountyHunterResource(rows, 'Property'))
+  } catch (error) {
+    return countyHunterErrorResponse(error)
+  }
+}
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  try {
+    const context = await requireCountyHunterPermission(request, 'county_hunter.manage')
+    const payload = parsePropertyPatch(await request.json())
+    const rows = await countyHunterRest<CountyHunterProperty[]>(
+      context,
+      'county_hunter_properties',
+      filters(context.organizationId, params.propertyId),
+      { method: 'PATCH', body: JSON.stringify(payload), prefer: 'return=representation' },
+    )
+    return NextResponse.json(requireCountyHunterResource(rows, 'Property'))
+  } catch (error) {
+    return countyHunterErrorResponse(error)
+  }
+}
