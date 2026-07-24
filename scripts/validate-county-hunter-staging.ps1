@@ -169,8 +169,14 @@ if ($PreflightOnly) {
   if ($env:NEXT_PUBLIC_SUPABASE_URL) {
     try {
       $apiUri = [uri]$env:NEXT_PUBLIC_SUPABASE_URL
-      if ($apiUri.Scheme -ne 'https') {
-        $issues.Add('NEXT_PUBLIC_SUPABASE_URL must use HTTPS.')
+      if (
+        $apiUri.Scheme -ne 'https' -or
+        $apiUri.AbsolutePath -ne '/' -or
+        $apiUri.Query -or
+        $apiUri.Fragment -or
+        $apiUri.UserInfo
+      ) {
+        $issues.Add('NEXT_PUBLIC_SUPABASE_URL must be an HTTPS origin without a path, query, fragment, or credentials.')
       }
     } catch {
       $issues.Add('NEXT_PUBLIC_SUPABASE_URL is not a valid URL.')
@@ -305,6 +311,15 @@ if ($databaseUri.Host -notmatch '(\.supabase\.co|\.supabase\.com)$') {
 
 if ($env:NEXT_PUBLIC_SUPABASE_URL) {
   try { $apiUri = [uri]$env:NEXT_PUBLIC_SUPABASE_URL } catch { throw 'NEXT_PUBLIC_SUPABASE_URL is invalid.' }
+  if (
+    $apiUri.Scheme -ne 'https' -or
+    $apiUri.AbsolutePath -ne '/' -or
+    $apiUri.Query -or
+    $apiUri.Fragment -or
+    $apiUri.UserInfo
+  ) {
+    throw 'NEXT_PUBLIC_SUPABASE_URL must be an HTTPS origin without a path, query, fragment, or credentials.'
+  }
   if ($apiUri.Host -ne "$ProjectRef.supabase.co") {
     throw 'NEXT_PUBLIC_SUPABASE_URL and the confirmed staging project ref do not match.'
   }

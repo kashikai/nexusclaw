@@ -3,6 +3,7 @@ import type { CountyHunterCounty } from '@/features/county-hunter/types'
 import { requireCountyHunterPermission } from '@/features/county-hunter/server/auth'
 import { countyHunterRest, organizationFilter } from '@/features/county-hunter/server/rest'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
+import { COUNTY_HUNTER_COUNTY_WITH_STATE_SELECT } from '@/features/county-hunter/server/selects'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
     const query = new URLSearchParams({
-      select: '*,state:county_hunter_states(code,name)',
+      select: COUNTY_HUNTER_COUNTY_WITH_STATE_SELECT,
       organization_id: `eq.${context.organizationId}`,
       order: 'name.asc',
     })

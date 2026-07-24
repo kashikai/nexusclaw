@@ -6,6 +6,7 @@ import { countyHunterRest } from '@/features/county-hunter/server/rest'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
 import { CountyHunterValidationError, isUuid } from '@/features/county-hunter/validation'
 import { requireCountyHunterResource } from '@/features/county-hunter/server/resource'
+import { COUNTY_HUNTER_COUNTY_WITH_STATE_SELECT } from '@/features/county-hunter/server/selects'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ function filters(context: { organizationId: string }, countyId: string) {
   return new URLSearchParams({
     id: `eq.${countyId}`,
     organization_id: `eq.${context.organizationId}`,
-    select: '*,state:county_hunter_states(code,name)',
+    select: COUNTY_HUNTER_COUNTY_WITH_STATE_SELECT,
   }).toString()
 }
 

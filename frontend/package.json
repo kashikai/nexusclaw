@@ -9,6 +9,7 @@
     "postinstall": "npm dedupe",
     "start": "next start",
     "test": "vitest run",
+    "test:county-hunter:staging-e2e": "node scripts/validate-county-hunter-siwe-e2e.mjs",
     "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {

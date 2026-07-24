@@ -4,6 +4,7 @@ import { requireCountyHunterPermission } from '@/features/county-hunter/server/a
 import { parseAuctionCreate } from '@/features/county-hunter/server/payloads'
 import { countyHunterRest } from '@/features/county-hunter/server/rest'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
+import { COUNTY_HUNTER_AUCTION_WITH_COUNTY_SELECT } from '@/features/county-hunter/server/selects'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
     const url = new URL(request.url)
     const query = new URLSearchParams({
-      select: '*,county:county_hunter_counties(name,slug)',
+      select: COUNTY_HUNTER_AUCTION_WITH_COUNTY_SELECT,
       organization_id: `eq.${context.organizationId}`,
       order: 'sale_date.asc.nullslast',
       limit: '100',

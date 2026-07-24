@@ -27,7 +27,11 @@ const testEnvironment = {
   COUNTY_HUNTER_TEST_ADMIN_B: '66666666-6666-4666-8666-666666666666',
 }
 
-function runRunner(arguments_: string[], psqlExitCode = 0) {
+function runRunner(
+  arguments_: string[],
+  psqlExitCode = 0,
+  environmentOverrides: Record<string, string> = {},
+) {
   const fakeBin = mkdtempSync(join(tmpdir(), 'county-hunter-runner-'))
   temporaryDirectories.push(fakeBin)
   const simulatedError =
@@ -63,6 +67,7 @@ function runRunner(arguments_: string[], psqlExitCode = 0) {
       encoding: 'utf8',
       env: {
         ...testEnvironment,
+        ...environmentOverrides,
         PATH: `${fakeBin};${process.env.PATH ?? ''}`,
       },
     },
@@ -132,6 +137,25 @@ describe.runIf(process.platform === 'win32')('County Hunter staging runner', () 
     expect(result.output).toContain('No implicit full mode is allowed.')
     expect(result.output).not.toContain('FAKE_PSQL')
     expect(result.output).not.toContain('Applying migration')
+    expect(result.output).not.toContain('synthetic-password')
+    expect(result.output).not.toContain('postgresql://')
+  })
+
+  it('rejects a Supabase API URL with a REST path before any remote command', () => {
+    const result = runRunner(
+      ['-PreflightOnly'],
+      0,
+      {
+        NEXT_PUBLIC_SUPABASE_URL:
+          'https://abcdefghijklmnopqrst.supabase.co/rest/v1/',
+      },
+    )
+
+    expect(result.status).not.toBe(0)
+    expect(result.output).toContain(
+      'NEXT_PUBLIC_SUPABASE_URL must be an HTTPS origin without a path, query, fragment, or credentials.',
+    )
+    expect(result.output).not.toContain('FAKE_PSQL')
     expect(result.output).not.toContain('synthetic-password')
     expect(result.output).not.toContain('postgresql://')
   })
