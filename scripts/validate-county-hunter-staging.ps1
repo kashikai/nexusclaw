@@ -2,6 +2,7 @@ param(
   [switch]$PreflightOnly,
   [switch]$TestConnectivity,
   [switch]$MigrationsOnly,
+  [switch]$RlsOnly,
   [string]$DatabaseUrl,
   [string]$ProjectRef,
   [string]$OrganizationA,
@@ -31,6 +32,39 @@ function Import-CountyHunterEnvFile {
   }
 }
 
+function Protect-CountyHunterRunnerOutput {
+  param([string]$Text)
+  if ($null -eq $Text) { return '' }
+
+  return $Text `
+    -replace 'postgres(?:ql)?://\S+', '[redacted-database-url]' `
+    -replace '(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b', '[redacted-uuid]' `
+    -replace '(?i)\b0x[0-9a-f]{40,}\b', '[redacted-wallet-or-key]' `
+    -replace '(?i)\b(?:eyJ|sb_(?:publishable|secret)_)[A-Za-z0-9._-]{12,}\b', '[redacted-token]'
+}
+
+function Invoke-CountyHunterPsql {
+  param(
+    [string]$Command,
+    [string[]]$Arguments
+  )
+
+  $previousErrorActionPreference = $ErrorActionPreference
+  try {
+    # Windows PowerShell promotes native stderr to ErrorRecord. Capture it first so
+    # every line passes through the same redaction boundary before it is displayed.
+    $ErrorActionPreference = 'Continue'
+    $commandOutput = & $Command @Arguments 2>&1
+    $commandExitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
+  foreach ($line in $commandOutput) {
+    Write-Host (Protect-CountyHunterRunnerOutput ([string]$line))
+  }
+  return $commandExitCode
+}
+
 Import-CountyHunterEnvFile (Join-Path $repositoryRoot '.env.staging.local')
 
 if (-not $DatabaseUrl) { $DatabaseUrl = $env:COUNTY_HUNTER_STAGING_DB_URL }
@@ -42,8 +76,15 @@ if (-not $ManagerA) { $ManagerA = $env:COUNTY_HUNTER_TEST_MANAGER_A }
 if (-not $AdminA) { $AdminA = $env:COUNTY_HUNTER_TEST_ADMIN_A }
 if (-not $AdminB) { $AdminB = $env:COUNTY_HUNTER_TEST_ADMIN_B }
 
+$selectedModes = @($PreflightOnly, $MigrationsOnly, $RlsOnly) | Where-Object { $_ }
+if ($selectedModes.Count -gt 1) {
+  throw 'Choose exactly one mode: -PreflightOnly, -MigrationsOnly, or -RlsOnly.'
+}
 if ($TestConnectivity -and -not $PreflightOnly) {
   throw '-TestConnectivity is allowed only with -PreflightOnly.'
+}
+if (-not $PreflightOnly -and -not $MigrationsOnly -and -not $RlsOnly) {
+  throw 'No implicit full mode is allowed. Run -MigrationsOnly and -RlsOnly as separate explicit steps.'
 }
 
 if ($PreflightOnly) {
@@ -56,6 +97,8 @@ if ($PreflightOnly) {
     COUNTY_HUNTER_AUTH_ORIGIN = $env:COUNTY_HUNTER_AUTH_ORIGIN
     COUNTY_HUNTER_STAGING_PROJECT_REF = $ProjectRef
     COUNTY_HUNTER_STAGING_CONFIRM = $env:COUNTY_HUNTER_STAGING_CONFIRM
+    COUNTY_HUNTER_TEST_ORG_A = $OrganizationA
+    COUNTY_HUNTER_TEST_ORG_B = $OrganizationB
     COUNTY_HUNTER_ENABLED = $env:COUNTY_HUNTER_ENABLED
     NEXT_PUBLIC_COUNTY_HUNTER_ENABLED = $env:NEXT_PUBLIC_COUNTY_HUNTER_ENABLED
   }
@@ -77,6 +120,26 @@ if ($PreflightOnly) {
   }
   if ($ProjectRef -and $ProjectRef -notmatch '^[a-z0-9]{20}$') {
     $issues.Add('COUNTY_HUNTER_STAGING_PROJECT_REF must be a 20-character project ref.')
+  }
+
+  $organizationAId = [guid]::Empty
+  $organizationBId = [guid]::Empty
+  $organizationAIsValid = $false
+  $organizationBIsValid = $false
+  if ($OrganizationA) {
+    $organizationAIsValid = [guid]::TryParse($OrganizationA, [ref]$organizationAId)
+    if (-not $organizationAIsValid) {
+      $issues.Add('COUNTY_HUNTER_TEST_ORG_A must be a valid UUID.')
+    }
+  }
+  if ($OrganizationB) {
+    $organizationBIsValid = [guid]::TryParse($OrganizationB, [ref]$organizationBId)
+    if (-not $organizationBIsValid) {
+      $issues.Add('COUNTY_HUNTER_TEST_ORG_B must be a valid UUID.')
+    }
+  }
+  if ($organizationAIsValid -and $organizationBIsValid -and $organizationAId -eq $organizationBId) {
+    $issues.Add('COUNTY_HUNTER_TEST_ORG_A and COUNTY_HUNTER_TEST_ORG_B must be distinct.')
   }
 
   $databaseUri = $null
@@ -247,7 +310,7 @@ if ($env:NEXT_PUBLIC_SUPABASE_URL) {
   }
 }
 
-if (-not $MigrationsOnly) {
+if ($RlsOnly) {
   $identifiers = @($OrganizationA, $OrganizationB, $ViewerA, $ManagerA, $AdminA, $AdminB)
   foreach ($identifier in $identifiers) {
     $parsed = [guid]::Empty
@@ -260,8 +323,6 @@ if (-not $MigrationsOnly) {
   if ($uniqueUsers.Count -ne 4) { throw 'The four staging users must be distinct.' }
 }
 
-$migrationDirectory = Join-Path $repositoryRoot 'supabase\migrations'
-$testScript = Join-Path $repositoryRoot 'supabase\tests\county_hunter_rls_test.sql'
 $previousPgEnvironment = @{}
 foreach ($name in @('PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'PGSSLMODE')) {
   $previousPgEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -275,29 +336,50 @@ try {
   $env:PGDATABASE = $databaseName
   $env:PGSSLMODE = 'require'
 
-  Get-ChildItem -LiteralPath $migrationDirectory -Filter '*.sql' |
-    Sort-Object Name |
-    ForEach-Object {
-      Write-Host "Applying migration $($_.Name) to the confirmed staging project $ProjectRef..."
-      & $psqlCommand -X -v ON_ERROR_STOP=1 -f $_.FullName
-      if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($_.Name)" }
-    }
-
   if ($MigrationsOnly) {
+    $migrationDirectory = Join-Path $repositoryRoot 'supabase\migrations'
+    Get-ChildItem -LiteralPath $migrationDirectory -Filter '*.sql' |
+      Sort-Object Name |
+      ForEach-Object {
+        Write-Host "Applying migration $($_.Name) to the confirmed staging project..."
+        $migrationExitCode = Invoke-CountyHunterPsql -Command $psqlCommand -Arguments @(
+          '-X',
+          '-q',
+          '-v', 'ON_ERROR_STOP=1',
+          '-v', 'VERBOSITY=terse',
+          '-f', $_.FullName
+        )
+        if ($migrationExitCode -ne 0) { throw "Migration failed: $($_.Name)" }
+      }
     Write-Host 'County Hunter staging migrations completed successfully; RLS fixtures were not requested.'
     return
   }
 
+  $testScript = Join-Path $repositoryRoot 'supabase\tests\county_hunter_rls_test.sql'
+  $testScriptContents = Get-Content -Raw -LiteralPath $testScript
+  if (
+    $testScriptContents -notmatch '(?im)^\s*begin\s*;' -or
+    $testScriptContents -notmatch '(?im)^\s*rollback\s*;' -or
+    $testScriptContents -match '(?im)^\s*commit\s*;'
+  ) {
+    throw 'The County Hunter RLS test must contain BEGIN and ROLLBACK and must not contain COMMIT.'
+  }
+
   Write-Host 'Running two-organization/four-user RLS validation in a rollback-only transaction...'
-  & $psqlCommand -X -v ON_ERROR_STOP=1 `
-    -v "org_a=$OrganizationA" `
-    -v "org_b=$OrganizationB" `
-    -v "viewer_a=$ViewerA" `
-    -v "manager_a=$ManagerA" `
-    -v "admin_a=$AdminA" `
-    -v "admin_b=$AdminB" `
-    -f $testScript
-  if ($LASTEXITCODE -ne 0) { throw 'County Hunter staging RLS validation failed.' }
+  $rlsExitCode = Invoke-CountyHunterPsql -Command $psqlCommand -Arguments @(
+    '-X',
+    '-q',
+    '-v', 'ON_ERROR_STOP=1',
+    '-v', 'VERBOSITY=terse',
+    '-v', "org_a=$OrganizationA",
+    '-v', "org_b=$OrganizationB",
+    '-v', "viewer_a=$ViewerA",
+    '-v', "manager_a=$ManagerA",
+    '-v', "admin_a=$AdminA",
+    '-v', "admin_b=$AdminB",
+    '-f', $testScript
+  )
+  if ($rlsExitCode -ne 0) { throw 'County Hunter staging RLS validation failed.' }
 } finally {
   foreach ($name in $previousPgEnvironment.Keys) {
     $value = $previousPgEnvironment[$name]
@@ -306,4 +388,4 @@ try {
   }
 }
 
-Write-Host 'County Hunter staging validation completed successfully.'
+Write-Host 'County Hunter staging RLS-only validation completed successfully.'

@@ -43,14 +43,37 @@ begin
 end;
 $$;
 
-insert into public.county_hunter_memberships (user_id, organization_id, permissions)
-select viewer_a, org_a, array['county_hunter.view'] from county_hunter_validation_context
+insert into public.county_hunter_memberships (
+  user_id,
+  organization_id,
+  permissions,
+  active
+)
+select viewer_a, org_a, array['county_hunter.view']::text[], true
+from county_hunter_validation_context
 union all
-select manager_a, org_a, array['county_hunter.view', 'county_hunter.manage'] from county_hunter_validation_context
+select manager_a, org_a, array['county_hunter.view', 'county_hunter.manage']::text[], true
+from county_hunter_validation_context
 union all
-select admin_a, org_a, array['county_hunter.admin'] from county_hunter_validation_context
+select
+  admin_a,
+  org_a,
+  array['county_hunter.view', 'county_hunter.manage', 'county_hunter.admin']::text[],
+  true
+from county_hunter_validation_context
 union all
-select admin_b, org_b, array['county_hunter.admin'] from county_hunter_validation_context;
+select
+  admin_b,
+  org_b,
+  array['county_hunter.view', 'county_hunter.manage', 'county_hunter.admin']::text[],
+  true
+from county_hunter_validation_context
+where true
+on conflict (user_id, organization_id)
+do update set
+  permissions = excluded.permissions,
+  active = excluded.active,
+  updated_at = now();
 
 -- Admin A bootstraps only A, gets 6 then 0, and records exact invocation audit.
 set local role authenticated;
@@ -383,5 +406,3 @@ $$;
 reset role;
 
 rollback;
-
-\echo 'County Hunter staging RLS validation passed (transaction rolled back).'

@@ -14,12 +14,14 @@ import {
   COUNTY_HUNTER_CHAIN_ID,
   COUNTY_HUNTER_CHALLENGE_TTL_MS,
   COUNTY_HUNTER_SIWE_STATEMENT,
+  readCountyHunterWalletAuthConfig,
   type CountyHunterWalletAuthConfig,
 } from '../../features/county-hunter/server/wallet-auth-config'
 
 const NOW = new Date('2026-07-23T00:00:00.000Z')
 const config: CountyHunterWalletAuthConfig = {
   origin: 'https://county-hunter-staging.example.invalid',
+  uri: 'https://county-hunter-staging.example.invalid/',
   domain: 'county-hunter-staging.example.invalid',
   chainId: COUNTY_HUNTER_CHAIN_ID,
   statement: COUNTY_HUNTER_SIWE_STATEMENT,
@@ -66,7 +68,7 @@ describe('County Hunter SIWE bridge', () => {
     expect(parsed.address).toBe(account.address)
     expect(parsed.chainId).toBe(8453)
     expect(parsed.domain).toBe(config.domain)
-    expect(parsed.uri).toBe(config.origin)
+    expect(parsed.uri).toBe(config.uri)
     expect(parsed.statement).toBe(COUNTY_HUNTER_SIWE_STATEMENT)
     expect(expiresAt).toBe(new Date(NOW.getTime() + COUNTY_HUNTER_CHALLENGE_TTL_MS).toISOString())
     expect(record.nonceHash).toMatch(/^[0-9a-f]{64}$/)
@@ -103,7 +105,7 @@ describe('County Hunter SIWE bridge', () => {
     const second = await signedChallenge()
     await expect(verifyAndConsumeCountyHunterChallenge(
       {
-        message: second.message.replace(`URI: ${config.origin}`, 'URI: https://attacker.invalid'),
+        message: second.message.replace(`URI: ${config.uri}`, 'URI: https://attacker.invalid/'),
         signature: second.signature,
       },
       config,
@@ -158,5 +160,37 @@ describe('County Hunter SIWE bridge', () => {
     })).toMatchObject({ httpOnly: true, sameSite: 'lax', secure: true, path: '/' })
     expect(isSupabaseAuthCookieName('sb-abcdefghijklmnopqrst-auth-token.0')).toBe(true)
     expect(isSupabaseAuthCookieName('unrelated-session')).toBe(false)
+  })
+
+  it('normalizes origins with and without a trailing slash to one exact SIWE URI', () => {
+    const withoutSlash = readCountyHunterWalletAuthConfig({
+      NODE_ENV: 'production',
+      COUNTY_HUNTER_AUTH_ORIGIN: 'https://localhost:3000',
+    })
+    const withSlash = readCountyHunterWalletAuthConfig({
+      NODE_ENV: 'production',
+      COUNTY_HUNTER_AUTH_ORIGIN: 'https://localhost:3000/',
+    })
+
+    expect(withoutSlash.origin).toBe('https://localhost:3000')
+    expect(withoutSlash.uri).toBe('https://localhost:3000/')
+    expect(withoutSlash.domain).toBe('localhost:3000')
+    expect(withSlash).toMatchObject({
+      origin: withoutSlash.origin,
+      uri: withoutSlash.uri,
+      domain: withoutSlash.domain,
+    })
+  })
+
+  it('rejects paths and duplicate trailing slashes in the SIWE origin', () => {
+    for (const configuredOrigin of [
+      'https://localhost:3000/county-hunter',
+      'https://localhost:3000//',
+    ]) {
+      expect(() => readCountyHunterWalletAuthConfig({
+        NODE_ENV: 'production',
+        COUNTY_HUNTER_AUTH_ORIGIN: configuredOrigin,
+      })).toThrowError(expect.objectContaining({ status: 503 }))
+    }
   })
 })

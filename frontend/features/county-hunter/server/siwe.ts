@@ -56,7 +56,7 @@ export async function issueCountyHunterChallenge(
     address,
     chainId: config.chainId,
     domain: config.domain,
-    uri: config.origin,
+    uri: config.uri,
     version: '1',
     nonce,
     issuedAt: now,
@@ -70,7 +70,7 @@ export async function issueCountyHunterChallenge(
     nonceHash: hashNonce(nonce),
     walletAddress: address.toLowerCase(),
     domain: config.domain,
-    uri: config.origin,
+    uri: config.uri,
     chainId: config.chainId,
     expiresAt: expirationTime.toISOString(),
     createdAt: now.toISOString(),
@@ -106,7 +106,7 @@ export async function verifyAndConsumeCountyHunterChallenge(
     !parsed.issuedAt ||
     !parsed.expirationTime ||
     parsed.domain !== config.domain ||
-    parsed.uri !== config.origin ||
+    parsed.uri !== config.uri ||
     parsed.chainId !== config.chainId ||
     parsed.version !== '1' ||
     parsed.statement !== config.statement ||
@@ -149,7 +149,7 @@ export async function verifyAndConsumeCountyHunterChallenge(
     nonceHash: hashNonce(parsed.nonce),
     walletAddress: address.toLowerCase(),
     domain: config.domain,
-    uri: config.origin,
+    uri: config.uri,
     chainId: config.chainId,
     now: now.toISOString(),
   })

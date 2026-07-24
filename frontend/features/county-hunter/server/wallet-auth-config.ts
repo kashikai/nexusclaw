@@ -1,4 +1,5 @@
 import { CountyHunterHttpError } from './http-error'
+import { normalizeCountyHunterSiweOrigin } from '../siwe-origin.mjs'
 
 export const COUNTY_HUNTER_CHAIN_ID = 8453
 export const COUNTY_HUNTER_SIWE_STATEMENT = 'Sign in to the NexusClaw County Hunter workspace.'
@@ -6,6 +7,7 @@ export const COUNTY_HUNTER_CHALLENGE_TTL_MS = 5 * 60 * 1000
 
 export type CountyHunterWalletAuthConfig = {
   origin: string
+  uri: string
   domain: string
   chainId: typeof COUNTY_HUNTER_CHAIN_ID
   statement: typeof COUNTY_HUNTER_SIWE_STATEMENT
@@ -21,28 +23,19 @@ export function readCountyHunterWalletAuthConfig(
     throw new CountyHunterHttpError('County Hunter wallet authentication is not configured.', 503)
   }
 
-  let url: URL
+  let normalizedOrigin: ReturnType<typeof normalizeCountyHunterSiweOrigin>
   try {
-    url = new URL(configuredOrigin)
+    normalizedOrigin = normalizeCountyHunterSiweOrigin(configuredOrigin, {
+      allowHttpLocalhost: environment.NODE_ENV !== 'production',
+    })
   } catch {
-    throw new CountyHunterHttpError('County Hunter wallet authentication is not configured.', 503)
-  }
-
-  const localDevelopment = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-  if (
-    url.username ||
-    url.password ||
-    url.pathname !== '/' ||
-    url.search ||
-    url.hash ||
-    (url.protocol !== 'https:' && !(environment.NODE_ENV !== 'production' && localDevelopment))
-  ) {
     throw new CountyHunterHttpError('County Hunter wallet authentication origin is invalid.', 503)
   }
 
   return {
-    origin: url.origin,
-    domain: url.host,
+    origin: normalizedOrigin.origin,
+    uri: normalizedOrigin.uri,
+    domain: normalizedOrigin.domain,
     chainId: COUNTY_HUNTER_CHAIN_ID,
     statement: COUNTY_HUNTER_SIWE_STATEMENT,
     challengeTtlMs: COUNTY_HUNTER_CHALLENGE_TTL_MS,
