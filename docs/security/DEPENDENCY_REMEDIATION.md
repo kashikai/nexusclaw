@@ -1,70 +1,270 @@
-# Dependency remediation report
+# Next.js and wallet stack dependency remediation
 
-Snapshot: 2026-07-23, clean local clone at `C:\dev\nexusclaw`, Node 24.11.1,
-npm 11.6.2, after a successful normal `npm ci` and its unchanged
-`postinstall: npm dedupe`.
+Snapshot: 2026-07-25, Node 24.11.1, npm 11.6.2.
 
-## Decision
+Base checkpoint: `15d33bfc9453dbd54b6ca6e1150ac7764c9975c4`.
 
-`npm audit --omit=dev --json` exited 1 and reported 27 package-level findings:
-4 critical, 4 high, 15 moderate and 4 low across 692 production dependencies.
-The direct production findings in Next.js and the wallet stack are reachable and
-have no approved mitigation in this branch. They block production and Phase 2.
+Isolated branch: `security/upgrade-next-wallet-stack`.
 
-No `npm audit fix`, forced resolution, transitive override or broad framework,
-wallet, Viem, RainbowKit or PostCSS upgrade was applied. Those changes require
-separate remediation branches and regression coverage for existing NexusClaw
-flows.
+## Current decision
 
-The enabled production build was also scanned: emitted server/browser JavaScript
-contains neither `shell-quote` nor `react-devtools-core`. The direct versions of
-Next, RainbowKit, Wagmi, connectors, Coinbase, MetaMask, WalletConnect and Viem
-are identical to `HEAD`. Adding the reviewed Supabase and local test tooling
-caused npm to re-resolve 26 existing compatible transitive package paths,
-including nested `ws` and `lru-cache` copies in the wallet graph. Three redundant
-paths were deduplicated. This is not a direct wallet/provider upgrade, but it
-still requires the wallet regression matrix before release.
+**PLAN READY — UPGRADE NOT YET AUTHORIZED.**
 
-## Critical and high triage
+No dependency, lockfile, application code, test, contract, chain, provider or
+Supabase version has been changed in this branch. The current dependency graph
+is a security **NO-GO**: `npm audit --omit=dev --json` exits 1 with 38
+package-level findings (4 critical, 16 high, 14 moderate and 4 low).
 
-| Affected package | Direct or transitive | Vulnerable code reachable? | Used by County Hunter? | Used in production? | Fixed version / resolution | Breaking change | Tests required | Decision |
-|---|---|---|---|---|---|---|---|---|
-| `next@14.2.3` | Direct | Yes. App Router, middleware, RSC responses and server routes are internet-facing. The current advisory set includes authorization, cache, SSRF and DoS classes. | Yes: separate pages, API routes and auth middleware. | Yes | Move to a supported patched line: `15.5.21` (Maintenance LTS) or `16.2.11` (Active LTS). The audit suggestion `14.2.35` does not cover the July 2026 advisory set. | Yes, major framework/React/runtime migration from 14.x. | Full app routes, middleware bypass cases, SSR cache headers, images, server actions, existing agents, wallet flows, County Hunter auth and build. | **Block; correct in a separate Next.js branch.** |
-| `shell-quote@1.8.3` | Transitive: Wagmi → connectors → MetaMask SDK → optional React Native → React DevTools | Not demonstrated in the web runtime; it belongs to the optional React Native development path. It remains installed in the production dependency tree. | No direct import. | Installed as production transitive dependency | `shell-quote@1.10.0` is current; remediate through the parent connector graph, not an unverified override. | Parent upgrade can change wallet connectors. | Prove absence from browser/server bundles, then test MetaMask injected/mobile connection and rejected signatures after parent upgrade. | Accept temporarily as unreachable optional code, but it does not override the wallet-stack blocker. |
-| `react-devtools-core@6.1.5` | Transitive through the same optional React Native path | Not demonstrated in the web bundle; vulnerability is inherited from `shell-quote`. | No direct import. | Installed as production transitive dependency | Select a MetaMask/Wagmi parent version whose production tree no longer contains the vulnerable chain. | Likely connector behavior changes. | Bundle inspection plus MetaMask and React hydration/build regression. | Accept temporarily as unreachable optional code; parent remediation remains required. |
-| `react-native@0.84.1` | Transitive/peer-optional under `@metamask/sdk@0.27.0` | React Native runtime is not used by this Next.js web application, but npm 11 installs it in the production tree. | No. | Installed but not intended to execute in the web deployment | Resolve through the connector upgrade and verify this peer-optional tree is absent or clean. | Likely parent connector changes. | Clean install, production bundle inspection, MetaMask desktop/mobile, lint/type/build. | Accept temporarily as non-web code; wallet parent remains blocked. |
-| `@coinbase/wallet-sdk@4.0.4` | Transitive through direct `wagmi@2.12.3` / `@wagmi/connectors@5.1.3` | Yes. Coinbase is explicitly registered in `frontend/config/wagmi.ts`. | Indirectly: County Hunter uses the shared wallet connection and signing UI. | Yes | `>=4.3.0`; registry current is `4.3.7`. Audit proposes parent `wagmi@2.19.5`. | Connector/provider behavior can change even without a semver-major Wagmi bump. | Coinbase extension/mobile, Base chain switching, reconnect, SIWE signature, existing staking/on-chain flows. | **Block; correct in a separate wallet branch.** |
-| `@wagmi/connectors@5.1.3` | Transitive child of direct Wagmi | Yes. MetaMask, Coinbase, Trust and WalletConnect are explicitly configured. | Yes, through shared wallet connect/sign. | Yes | Upgrade through a compatible Wagmi line; audit proposes `wagmi@2.19.5`. Current connector release must be selected and locked in the remediation branch. | High integration risk across connector SDKs. | Every configured wallet, Base switching, reconnect, message signing, smart wallet, staking and County Hunter SIWE. | **Block; separate wallet branch.** |
-| `wagmi@2.12.3` | Direct | Yes. It drives account state and `useSignMessage`; the affected connector graph is active. | Yes. | Yes | Audit proposes `2.19.5`; current latest is a major `3.7.4`, which is not suitable for an unreviewed upgrade. | Even the non-major target can change transitive connector behavior. | Existing wallet/on-chain regression plus County Hunter connect, sign, refresh and logout. | **Block; separate wallet branch.** |
-| `ws@8.17.1` | Transitive through direct `viem@2.15.1`; other `7.5.13` and `8.21.1` copies are not the reported vulnerable node | Potentially reachable when a WebSocket transport is selected. County Hunter currently constructs an HTTP Viem transport, but the shared production wallet graph includes Viem transports. | Installed for direct Viem; County Hunter uses Viem for SIWE verification but its route selects HTTP. | Yes | `ws>=8.21.0`; audit proposes `viem@2.55.8`, whose current resolved graph must be verified. | Viem upgrade can affect signatures, clients, chain types and contracts. | SIWE EOA/smart wallet verification, Base RPC, all contract calls, WebSocket reconnect and build. | **Block until a separate Viem/wallet branch clears the production audit.** |
+The audit's automatic suggestion of `next@14.2.35` is incomplete for the July
+2026 advisory set. Next.js officially identifies `15.5.21` as the Maintenance
+LTS security release. This application uses the App Router, so the upgrade must
+also account for React 19 and the async request APIs; React 18 compatibility in
+Next.js 15 is documented for the Pages Router, not this application.
 
-## Moderate and low findings
+## Commands and exact inventory
 
-The remaining 19 package-level findings are retained in the audit output and are
-not silently treated as fixed. They include PostCSS/Next and wallet-provider
-transitives. Their parent upgrades overlap the two blocking branches above.
-PostCSS must be upgraded only in its own reviewed build/styling change, with
-visual and production-build validation.
-
-## Required future remediation branch
-
-The recommended integration branch is:
+The following commands were run from `frontend` without modifying dependencies:
 
 ```text
-security/upgrade-next-wallet-stack
+npm audit --omit=dev --json
+npm outdated
+npm ls next wagmi viem @rainbow-me/rainbowkit @coinbase/wallet-sdk postcss @supabase/ssr @supabase/supabase-js
 ```
 
-Create it only after review of the County Hunter checkpoint and from the
-appropriate reviewed base. Do not create it as part of Phase 1.3A.
+| Package | Current | Latest reported | Role in this application |
+|---|---:|---:|---|
+| `next` | 14.2.3 | 16.2.11 | Direct; App Router, middleware, route handlers, images and SSR |
+| `@rainbow-me/rainbowkit` | 2.1.3 | 2.2.11 | Direct; wallet modal and connector UI |
+| `wagmi` | 2.12.3 | 3.7.4 | Direct; account, signing, chain switching and contract hooks |
+| `viem` | 2.15.1 | 2.55.8 | Direct; RPC, contracts, Base and SIWE |
+| `postcss` | 8.4.31 | 8.5.23 | Direct dev dependency and deduplicated production child of Next |
+| `@supabase/ssr` | 0.7.0 | 0.12.3 | Direct; browser/server cookies and middleware session refresh |
+| `@supabase/supabase-js` | 2.58.0 | 2.110.8 | Direct; Auth, staging provisioning and RLS-backed data |
+| `@coinbase/wallet-sdk` | 4.0.4 | 4.3.7 | Transitive through `wagmi` / `@wagmi/connectors` |
 
-Its planned scope includes Next.js, Wagmi, Viem, RainbowKit, Coinbase wallet
-dependencies and PostCSS. Keep framework, wallet and styling changes in
-reviewable commits within that branch. The required regression matrix includes
-all wallet connectors, SIWE, SSR/cache behavior, production build, existing
-contract reads and writes, staking, wallet reconnection and the complete
-NexusClaw application.
+`latest` is inventory, not the proposed upgrade target. The proposal deliberately
+avoids Next 16 and Wagmi 3.
 
-Every remediation branch must finish with a new clean `npm ci`,
-`npm audit --omit=dev --json`, tests, typecheck, lint and production build. No
-production activation is permitted while a direct reachable critical/high
-finding remains.
+### Installed vulnerable paths
+
+```text
+next@14.2.3 -> postcss@8.4.31
+wagmi@2.12.3 -> @wagmi/connectors@5.1.3
+  -> @coinbase/wallet-sdk@4.0.4
+  -> @metamask/sdk@0.27.0
+    -> @metamask/sdk-install-modal-web@0.26.5
+      -> react-native@0.84.1
+        -> react-devtools-core@6.1.5 -> shell-quote@1.8.3
+        -> React Native/Jest CLI tooling -> brace-expansion@1.1.16/2.1.2
+viem@2.15.1 -> ws@8.17.1
+@supabase/supabase-js@2.58.0
+  -> @supabase/realtime-js@2.15.5 -> ws@8.21.1 (not vulnerable)
+```
+
+The high/critical entries for Wagmi, connectors, React Native, React DevTools,
+Jest/Babel, glob, minimatch and rimraf are propagation from the five independent
+wallet-tree advisories documented below. They are not additional independent
+GHSAs in this audit.
+
+## Reachability in NexusClaw
+
+- Next.js is directly internet-facing. County Hunter depends on its scoped
+  middleware, App Router pages, dynamic route handlers and private/no-store
+  responses.
+- The Next 15 migration affects one synchronous `cookies()` call, seven dynamic
+  route-handler/page parameter contracts and two client dynamic pages. These
+  sites must be migrated manually and narrowly.
+- The repository has no Server Actions, custom Next server, `rewrites()`
+  configuration or Next i18n configuration. Advisories limited to those features
+  are presently not reachable, but the selected Next target fixes them anyway.
+- The shared wallet configuration explicitly registers MetaMask, Coinbase,
+  Trust and WalletConnect on Base (8453). Wagmi/Viem/RainbowKit are used by
+  staking, agents, leaderboard, wallet state, contract reads/writes and County
+  Hunter SIWE.
+- County Hunter and other current Viem clients use HTTP transports. The
+  vulnerable `ws` path is nevertheless installed in the production graph and is
+  available to shared Viem transports.
+- PostCSS runs during build and does not process user-supplied CSS at runtime.
+  Its current file-read/path-traversal paths therefore have low runtime
+  reachability here but remain a build/supply-chain and secret-disclosure risk.
+- The `shell-quote`/React Native/Jest chain is not imported by emitted NexusClaw
+  web code. It is installed under the production MetaMask connector graph, so it
+  must be removed through a parent upgrade rather than accepted or hidden.
+
+## Critical and high advisory register
+
+Risk notation: **W** wallet, **S** SSR/site, **C** County Hunter.
+
+| Advisory | Package / current / type | Reachable vulnerable surface | Fixed target and breaking changes | Risk and required tests |
+|---|---|---|---|---|
+| [GHSA-gp8f-8m3g-qvj9](https://github.com/advisories/GHSA-gp8f-8m3g-qvj9) HIGH | `next@14.2.3`, direct | Cache poisoning can affect internet-facing Next responses. | `next@15.5.21`; major upgrade, React 19, async request APIs and changed cache defaults. | W medium, S high, C high. Route/cache tests; all County Hunter no-store headers; navigation and build. |
+| [GHSA-7gfc-8cq8-jh5f](https://github.com/advisories/GHSA-7gfc-8cq8-jh5f) HIGH | `next@14.2.3`, direct | Authorization bypass class reaches protected framework routes. | `next@15.5.21`; same framework migration. | W medium, S high, C high. Anonymous/authenticated access, viewer/manager/admin, revocation and cross-tenant tests. |
+| [GHSA-mwv6-3258-q52c](https://github.com/advisories/GHSA-mwv6-3258-q52c) HIGH | `next@14.2.3`, direct | App Router/RSC is used on public pages. | `next@15.5.21`; same framework migration. | W low, S high, C medium. Audit/version assertion, App Router smoke tests and bounded malformed-request regression. |
+| [GHSA-5j59-xgg2-r9c4](https://github.com/advisories/GHSA-5j59-xgg2-r9c4) HIGH | `next@14.2.3`, direct | Incomplete RSC DoS fix; App Router is active. | `next@15.5.21`; 14.2.35 alone is insufficient for later advisories. | W low, S high, C medium. Same RSC and route-handler gates. |
+| [GHSA-h25m-26qc-wcjf](https://github.com/advisories/GHSA-h25m-26qc-wcjf) HIGH | `next@14.2.3`, direct | RSC request deserialization is internet-facing. | `next@15.5.21`; same framework migration. | W low, S high, C medium. Malformed request rejection, availability smoke and full build. |
+| [GHSA-f82v-jwr5-mffw](https://github.com/advisories/GHSA-f82v-jwr5-mffw) CRITICAL | `next@14.2.3`, direct | Directly relevant: County Hunter uses middleware for scoped auth refresh and no-store policy. RLS remains defense in depth, not a waiver. | `next@15.5.21`; middleware behavior must be revalidated. | W medium, S critical, C critical. Bypass probes, missing/inactive membership, roles, RLS isolation, cache headers and real SIWE E2E. |
+| [GHSA-q4gf-8mx6-v5v3](https://github.com/advisories/GHSA-q4gf-8mx6-v5v3) HIGH | `next@14.2.3`, direct | App Router/RSC is active. | `next@15.5.21`. | W low, S high, C medium. RSC/route smoke and audit. |
+| [GHSA-8h8q-6873-q5fj](https://github.com/advisories/GHSA-8h8q-6873-q5fj) HIGH | `next@14.2.3`, direct | App Router/RSC is active. | `next@15.5.21`. | W low, S high, C medium. RSC/route smoke and audit. |
+| [GHSA-c4j6-fc7j-m34r](https://github.com/advisories/GHSA-c4j6-fc7j-m34r) HIGH | `next@14.2.3`, direct | No custom WebSocket upgrade handler was found; currently not demonstrated reachable. | `next@15.5.21`. | W low, S medium, C low. Config inspection, normal WebSocket/wallet reconnect and audit. |
+| [GHSA-36qx-fr4f-26g5](https://github.com/advisories/GHSA-36qx-fr4f-26g5) HIGH | `next@14.2.3`, direct | Pages Router i18n condition is absent; currently not reachable. | `next@15.5.21`. | W low, S low, C low. Config assertion, routing smoke and audit. |
+| [GHSA-m99w-x7hq-7vfj](https://github.com/advisories/GHSA-m99w-x7hq-7vfj) HIGH | `next@14.2.3`, direct | No Server Actions were found; currently not reachable. | `next@15.5.21`. | W low, S medium, C low. Source assertion, route tests and audit. |
+| [GHSA-89xv-2m56-2m9x](https://github.com/advisories/GHSA-89xv-2m56-2m9x) HIGH | `next@14.2.3`, direct | Requires Server Actions on a custom server; neither was found. | `next@15.5.21`. | W low, S low, C low. Source/config assertion and audit. |
+| [GHSA-p9j2-gv94-2wf4](https://github.com/advisories/GHSA-p9j2-gv94-2wf4) HIGH | `next@14.2.3`, direct | No `rewrites()` configuration was found; currently not reachable. | `next@15.5.21`. | W low, S low, C low. Config assertion, redirect/navigation smoke and audit. |
+| [GHSA-6g55-p6wh-862q](https://github.com/advisories/GHSA-6g55-p6wh-862q) HIGH | `postcss@8.4.31`, direct dev plus production transitive | Build pipeline is reachable; untrusted runtime CSS processing was not found. | Minimum 8.5.12; proposed `8.5.23`. Same major, but Next 15.5.21 still pins 8.4.31, requiring an explicit verified npm override. | W low, S medium, C low. Clean CSS build, assets, responsive visual smoke, audit and lock-tree assertion that no vulnerable PostCSS remains. |
+| [GHSA-r28c-9q8g-f849](https://github.com/advisories/GHSA-r28c-9q8g-f849) HIGH | `postcss@8.4.31`, direct dev plus production transitive | Same build path; arbitrary `.map` disclosure is not accepted in the build graph. | Minimum 8.5.18; proposed `8.5.23` with the same reviewed override. | W low, S medium, C low. Source-map/build inspection, secret-scan, assets and audit. |
+| [GHSA-8rgj-285w-qcq4](https://github.com/advisories/GHSA-8rgj-285w-qcq4) HIGH | `@coinbase/wallet-sdk@4.0.4`, transitive | Reachable: Coinbase is explicitly registered in `config/wagmi.ts`. | Minimum 4.3.0; proposed parent `wagmi@2.19.5` -> connectors 6.2.0 -> Coinbase 4.3.6. Connector SDK behavior can change. | W high, S medium, C high. Coinbase extension/mobile, Base switch, reconnect, signing, SIWE and shared on-chain reads/writes. |
+| [GHSA-w7jw-789q-3m8p](https://github.com/advisories/GHSA-w7jw-789q-3m8p) CRITICAL | `shell-quote@1.8.3`, transitive through MetaMask optional React Native tooling | No web runtime import found; installed production tree is still unacceptable. | Minimum 1.8.4 for this advisory, but 1.8.4 has the next HIGH advisory. Do not override directly; remove the parent chain with connectors 6.2.0 / MetaMask 0.33.1. | W medium supply-chain, S low runtime, C low runtime. Clean tree, bundle absence, MetaMask desktop/mobile, install scripts and audit. |
+| [GHSA-395f-4hp3-45gv](https://github.com/advisories/GHSA-395f-4hp3-45gv) HIGH | `shell-quote@1.8.3`, same transitive path | Same optional production path; not demonstrated in emitted bundles. | Minimum `shell-quote@1.9.0`; proposed resolution is removal of the old parent path, not a leaf override. | W medium supply-chain, S low runtime, C low runtime. Same clean-tree/bundle/connectors gates. |
+| [GHSA-mh99-v99m-4gvg](https://github.com/advisories/GHSA-mh99-v99m-4gvg) HIGH | `brace-expansion@1.1.16/2.1.2`, transitive through installed React Native/Jest/glob paths | No attacker-controlled glob path found in runtime; vulnerable copies are installed in the production wallet graph. | Patched release is 5.0.8. Do not force a cross-major leaf override; remove the React Native/Jest parent chain, then inspect any remaining dev-only copies separately. | W medium supply-chain, S low runtime, C low runtime. `npm ls`, audit, clean install, bundle inspection and wallet connectors. |
+| [GHSA-96hv-2xvq-fx4p](https://github.com/advisories/GHSA-96hv-2xvq-fx4p) HIGH | `ws@8.17.1`, transitive through direct `viem@2.15.1` | HTTP is configured today, but Viem's production transport graph can reach WebSocket code. | Minimum 8.21.0; proposed `viem@2.55.8` installs 8.21.0. Viem remains on major 2 but types, clients and signing behavior may have changed. | W high, S low, C high. HTTP/WebSocket clients, Base, contracts, SIWE EOA/smart wallet and reconnect. |
+
+## Proposed smallest supported targets
+
+| Group | Proposed pins | Reason |
+|---|---|---|
+| Build CSS | `postcss@8.5.23` plus reviewed `overrides.postcss=8.5.23` | 8.5.18 is the minimum for both HIGH advisories; 8.5.23 is the current patched 8.x. The override is necessary because Next 15.5.21 declares exact `postcss@8.4.31`. |
+| Framework | `next@15.5.21`, `eslint-config-next@15.5.21` | Current Maintenance LTS security line; avoids the larger Next 16 migration. |
+| React required by App Router | `react@19.2.8`, `react-dom@19.2.8`, matching `@types` | Next 15 App Router is aligned to React 19. React 19.2.8 is the current patched 19.2 line. |
+| Wallet | `wagmi@2.19.5`, `viem@2.55.8` | Same major versions; audit-supported parent upgrades. They resolve connectors 6.2.0, Coinbase 4.3.6, MetaMask 0.33.1 and `ws` 8.21.0. |
+| RainbowKit | Keep `2.1.3` initially | Its peer ranges already support Wagmi 2.x, Viem 2.x and React >=18. No current critical/high advisory requires broadening this change. Consider 2.2.11 only if compatibility testing proves it necessary. |
+| Supabase | Keep `@supabase/ssr@0.7.0` and `@supabase/supabase-js@2.58.0` initially | Neither is in the high/critical audit path. The current Supabase Realtime `ws@8.21.1` is fixed. Only the local Next cookie call needs async adaptation unless a test proves a package upgrade is required. |
+
+Node 24.11.1 satisfies Next 15.5.21 (`^18.18 || ^19.8 || >=20`).
+Wagmi 2.19.5 and RainbowKit 2.1.3 accept React >=18, Viem 2.x and
+TanStack Query >=5. Current TypeScript 5.3.3 satisfies Wagmi/Viem >=5.0.4.
+
+## Authorized execution plan
+
+No stage below starts until the plan is explicitly authorized. Each stage is a
+separate review point; a failed gate stops the upgrade.
+
+### Stage 0 — baseline and lockfile guard
+
+1. Record package-lock hash and current `npm ls`.
+2. Run existing tests, typecheck, lint and production build.
+3. Confirm no secret or ignored staging credential is tracked.
+
+### Stage 1 — PostCSS only
+
+1. Pin PostCSS 8.5.23 and add the narrow documented npm override required to
+   replace Next's exact vulnerable transitive copy.
+2. Inspect the entire lockfile diff; reject unrelated dependency movement.
+3. Prove with `npm ls postcss` that no `<=8.5.17` copy remains.
+4. Run clean install, tests, typecheck, lint, build, audit, asset/responsiveness
+   smoke and wallet modal smoke.
+
+### Stage 2 — Next.js 15.5.21 and React 19
+
+1. Pin Next, eslint-config-next, React, React DOM and matching React types.
+2. Manually change only affected APIs: await `cookies()`, convert dynamic
+   route/page params to the Next 15 Promise contract, and unwrap client params
+   using the supported React 19 pattern.
+3. Preserve `force-dynamic`, the scoped middleware matcher and all County Hunter
+   `Cache-Control: private, no-store`, `Pragma: no-cache` and `Expires: 0`
+   behavior.
+4. Do not run a broad codemod. Keep the existing Webpack build and current
+   provider architecture.
+5. Run the complete stage gates, middleware bypass tests, route/cache tests,
+   site navigation/images/assets and a wallet lifecycle smoke.
+
+### Stage 3 — wallet stack
+
+1. Pin Wagmi 2.19.5 and Viem 2.55.8; keep RainbowKit 2.1.3 unless a demonstrated
+   compatibility failure requires 2.2.11.
+2. Confirm the lock resolves connectors 6.2.0, Coinbase >=4.3.0, MetaMask
+   0.33.1, WalletConnect 2.21.1 and `ws` >=8.21.0.
+3. Prove the old React Native/React DevTools/`shell-quote` production path is
+   absent. Do not hide it with audit exceptions.
+4. Preserve one WagmiProvider, one QueryClientProvider, one RainbowKitProvider,
+   Base 8453, the existing RPC, contract addresses, ABIs and UX.
+5. Run all wallet, contract-read, mocked/testnet-write, staking, leaderboard,
+   agents, SIWE and clean-tree gates.
+
+### Stage 4 — Supabase only if proven necessary
+
+Keep current Supabase packages if Next 15, async cookies, refresh, logout and
+SIWE pass. If a package-level incompatibility is demonstrated, stop, review the
+current Supabase changelog and SSR migration guidance, document a compatible
+pair and obtain a separate review before changing either package. Never use a
+service role in browser/runtime code.
+
+### Stage 5 — residual transitives
+
+Run a fresh production audit. Resolve remaining reachable high/critical findings
+through the nearest compatible parent. Use no blanket `npm audit fix --force`,
+no silent audit exclusion and no unreviewed cross-major override.
+
+## Gate after every dependency group
+
+```text
+npm ci
+npm test
+npm run typecheck
+npm run lint
+npm run build
+npm audit --omit=dev
+```
+
+Additionally:
+
+- open modal, connect, account switch, Base switch, disconnect, reconnect and
+  refresh;
+- inspect home, navigation, existing pages, responsive layout, images/assets;
+- exercise contract reads and mocked/testnet writes without real funds;
+- inspect `npm ls` for the exact target graph;
+- run secret scanning and review every lockfile change.
+
+## Final reproducibility and staging gates
+
+After all groups pass:
+
+1. Remove only `frontend/node_modules` and `frontend/.next`, verify the resolved
+   paths are inside the frontend workspace, run `npm cache verify`, then
+   `npm ci`.
+2. Hash `package-lock.json`, run `npm ci` a second time and require the same
+   hash and no Git diff.
+3. Run all 63+ tests, typecheck, lint, build, production audit, `git diff
+   --check`, status and stat.
+4. Repeat real staging E2E for Admin A, Viewer A, Manager A and Admin B:
+   login, SIWE signature, cookies SSR, refresh, logout, nonce/replay, revocation,
+   downgrade, cross-tenant isolation, both bootstrap 6 -> 0 paths and all
+   private/no-store headers.
+5. Do not access production, use real funds, change contracts/on-chain flows,
+   push, open a PR, merge or start Discovery/Phase 2.
+6. Only after every gate passes, create the requested local commit:
+   `security: upgrade Next.js and wallet dependencies`.
+
+## Approval criteria
+
+`SECURITY UPGRADE APPROVED` is permitted only after:
+
+- no reachable critical advisory remains;
+- every remaining high has a documented and verified mitigation;
+- the lockfile and two clean `npm ci` runs are reproducible;
+- site, wallet, contracts/staking, Supabase SSR and real staging SIWE pass;
+- County Hunter roles, revocation, cache policy and tenant isolation pass;
+- no secret is exposed; and
+- the final local commit is created without push/PR/merge.
+
+Until then the decision remains:
+
+**SECURITY UPGRADE NO-GO — awaiting authorization to execute the plan.**
+
+## Primary references
+
+- Next.js July 2026 security release and support policy:
+  <https://nextjs.org/blog> and <https://nextjs.org/support-policy>
+- Next.js 15 upgrade guide:
+  <https://nextjs.org/docs/app/guides/upgrading/version-15>
+- Next.js 15 App Router / React 19 and cache changes:
+  <https://nextjs.org/blog/next-15>
+- React 19 upgrade guide:
+  <https://react.dev/blog/2024/04/25/react-19-upgrade-guide>
+- RainbowKit migration and chain guidance:
+  <https://rainbowkit.com/docs/migration-guide> and
+  <https://rainbowkit.com/docs/chains>
+- Viem migration and supply-chain guidance:
+  <https://viem.sh/docs/migration-guide> and
+  <https://viem.sh/docs/installation>
+- Supabase current Next.js SSR guidance:
+  <https://supabase.com/docs/guides/getting-started/tutorials/with-nextjs>
