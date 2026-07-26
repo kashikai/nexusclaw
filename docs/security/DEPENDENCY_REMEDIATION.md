@@ -248,7 +248,39 @@ After all groups pass:
 
 Until then the decision remains:
 
-**SECURITY UPGRADE NO-GO — awaiting authorization to execute the plan.**
+**CONTROLLED WALLET STACK UPGRADE APPROVED — validated locally; no push, PR or
+merge performed.**
+
+## Controlled WalletConnect QR pin validation (2026-07-26)
+
+The scoped `cuer -> qr` override resolves `cuer 0.0.3` to `qr 0.5.5`.
+The package tarball matched the registry integrity, its isolated production
+audit reported zero findings, and the application production audit contains no
+finding attributed to `qr` or `cuer`. The application audit remains at the
+pre-pin baseline: 13 findings (10 moderate, 3 high, 0 critical).
+
+The three high findings remain unresolved:
+
+- `axios 1.16.0` is a runtime transitive reached through
+  `@wagmi/connectors -> @base-org/account -> @coinbase/cdp-sdk`. Application
+  source does not import the Axios library directly, but the optional Base
+  account connector keeps this path present in the wallet runtime. The
+  advisories target form serialization, proxy/config inheritance, streaming
+  upload and prototype-pollution behavior. The repository does not directly
+  invoke those APIs, but that observation is not treated as a remediation.
+- `sharp 0.34.5` is an optional runtime dependency of Next.js and is reachable
+  through the server-side image optimizer because the application uses
+  `next/image`. The advisory concerns inherited libvips vulnerabilities. The
+  current optimized image is a trusted local asset, which reduces exposure to
+  attacker-controlled image input but does not resolve the package finding.
+- `next 15.5.21` is marked high by npm because its dependency graph includes
+  the affected `sharp` range; this is not a separate application-level finding
+  in the current audit payload. Its reachability and residual risk follow the
+  `sharp` path above. The audit-proposed Next downgrade is not an acceptable
+  automatic fix.
+
+No audit exception, forced fix or claim of resolution has been added for these
+findings.
 
 ## Primary references
 

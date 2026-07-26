@@ -10,7 +10,7 @@ import { COUNTY_HUNTER_AUCTION_WITH_COUNTY_SELECT } from '@/features/county-hunt
 
 export const dynamic = 'force-dynamic'
 
-type RouteContext = { params: { auctionId: string } }
+type RouteContext = { params: Promise<{ auctionId: string }> }
 
 function filters(organizationId: string, auctionId: string) {
   if (!isUuid(auctionId)) throw new CountyHunterValidationError('auctionId is invalid.')
@@ -24,10 +24,11 @@ function filters(organizationId: string, auctionId: string) {
 export async function GET(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
+    const { auctionId } = await params
     const rows = await countyHunterRest<CountyHunterAuction[]>(
       context,
       'county_hunter_auctions',
-      filters(context.organizationId, params.auctionId),
+      filters(context.organizationId, auctionId),
     )
     return NextResponse.json(requireCountyHunterResource(rows, 'Auction'))
   } catch (error) {
@@ -38,11 +39,12 @@ export async function GET(request: Request, { params }: RouteContext) {
 export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.manage')
+    const { auctionId } = await params
     const payload = parseAuctionPatch(await request.json())
     const rows = await countyHunterRest<CountyHunterAuction[]>(
       context,
       'county_hunter_auctions',
-      filters(context.organizationId, params.auctionId),
+      filters(context.organizationId, auctionId),
       { method: 'PATCH', body: JSON.stringify(payload), prefer: 'return=representation' },
     )
     return NextResponse.json(requireCountyHunterResource(rows, 'Auction'))

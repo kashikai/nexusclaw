@@ -9,7 +9,7 @@ import { requireCountyHunterResource } from '@/features/county-hunter/server/res
 
 export const dynamic = 'force-dynamic'
 
-type RouteContext = { params: { sourceId: string } }
+type RouteContext = { params: Promise<{ sourceId: string }> }
 
 function filters(organizationId: string, sourceId: string) {
   if (!isUuid(sourceId)) throw new CountyHunterValidationError('sourceId is invalid.')
@@ -19,11 +19,12 @@ function filters(organizationId: string, sourceId: string) {
 export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.manage')
+    const { sourceId } = await params
     const payload = parseSourcePatch(await request.json())
     const rows = await countyHunterRest<CountyHunterSource[]>(
       context,
       'county_hunter_sources',
-      filters(context.organizationId, params.sourceId),
+      filters(context.organizationId, sourceId),
       { method: 'PATCH', body: JSON.stringify(payload), prefer: 'return=representation' },
     )
     return NextResponse.json(requireCountyHunterResource(rows, 'Source'))
@@ -35,10 +36,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.admin')
+    const { sourceId } = await params
     await countyHunterRest(
       context,
       'county_hunter_sources',
-      filters(context.organizationId, params.sourceId),
+      filters(context.organizationId, sourceId),
       { method: 'DELETE', prefer: 'return=minimal' },
     )
     return new NextResponse(null, { status: 204 })

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import ClientProviders from './ClientProviders'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -29,12 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body className="bg-[#0a0a0a] text-white antialiased">
-        <Providers>{children}</Providers>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   )
 }
-
-import dynamic from 'next/dynamic'
-
-const Providers = dynamic(() => import('./Providers'), { ssr: false })

@@ -1,11 +1,13 @@
 'use client'
 
+import { use } from 'react'
 import type { CountyHunterProperty } from '@/features/county-hunter/types'
 import { Badge, Card, ErrorState, LoadingState, PageHeader, formatDate, formatMoney } from '@/features/county-hunter/components/ui'
 import { useCountyHunterData } from '@/features/county-hunter/components/useCountyHunterData'
 
-export default function PropertyDetailPage({ params }: { params: { propertyId: string } }) {
-  const { data, loading, error } = useCountyHunterData<CountyHunterProperty>(`/properties/${params.propertyId}`)
+export default function PropertyDetailPage({ params }: { params: Promise<{ propertyId: string }> }) {
+  const { propertyId } = use(params)
+  const { data, loading, error } = useCountyHunterData<CountyHunterProperty>(`/properties/${propertyId}`)
   if (loading) return <LoadingState />
   if (error) return <ErrorState message={error} />
   if (!data) return null

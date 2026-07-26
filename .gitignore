@@ -6,5 +6,7 @@
 /.env
 **/.env.local
 **/.env.staging.local
+**/.env.development.local
+frontend/certificates/
 /cache/
 /broadcast/

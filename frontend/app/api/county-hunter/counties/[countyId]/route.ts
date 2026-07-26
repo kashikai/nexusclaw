@@ -10,7 +10,7 @@ import { COUNTY_HUNTER_COUNTY_WITH_STATE_SELECT } from '@/features/county-hunter
 
 export const dynamic = 'force-dynamic'
 
-type RouteContext = { params: { countyId: string } }
+type RouteContext = { params: Promise<{ countyId: string }> }
 
 function filters(context: { organizationId: string }, countyId: string) {
   if (!isUuid(countyId)) throw new CountyHunterValidationError('countyId is invalid.')
@@ -24,10 +24,11 @@ function filters(context: { organizationId: string }, countyId: string) {
 export async function GET(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
+    const { countyId } = await params
     const rows = await countyHunterRest<CountyHunterCounty[]>(
       context,
       'county_hunter_counties',
-      filters(context, params.countyId),
+      filters(context, countyId),
     )
     return NextResponse.json(requireCountyHunterResource(rows, 'County'))
   } catch (error) {
@@ -38,11 +39,12 @@ export async function GET(request: Request, { params }: RouteContext) {
 export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.manage')
+    const { countyId } = await params
     const payload = parseCountyPatch(await request.json())
     const rows = await countyHunterRest<CountyHunterCounty[]>(
       context,
       'county_hunter_counties',
-      filters(context, params.countyId),
+      filters(context, countyId),
       { method: 'PATCH', body: JSON.stringify(payload), prefer: 'return=representation' },
     )
     return NextResponse.json(requireCountyHunterResource(rows, 'County'))

@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { use, useEffect, useState, type FormEvent } from 'react'
 import type { CountyHunterCounty, CountyHunterSource } from '@/features/county-hunter/types'
 import { SOURCE_STATUS_LABELS } from '@/features/county-hunter/types'
 import { countyHunterApi } from '@/features/county-hunter/client/api'
 import { Badge, Button, Card, ErrorState, Field, Input, LoadingState, PageHeader, SecondaryButton, Select, Textarea } from '@/features/county-hunter/components/ui'
 import { useCountyHunterData } from '@/features/county-hunter/components/useCountyHunterData'
 
-type Props = { params: { countyId: string } }
+type Props = { params: Promise<{ countyId: string }> }
 
 export default function CountyDetailPage({ params }: Props) {
-  const countyState = useCountyHunterData<CountyHunterCounty>(`/counties/${params.countyId}`)
-  const sourcesState = useCountyHunterData<CountyHunterSource[]>(`/counties/${params.countyId}/sources`)
+  const { countyId } = use(params)
+  const countyState = useCountyHunterData<CountyHunterCounty>(`/counties/${countyId}`)
+  const sourcesState = useCountyHunterData<CountyHunterSource[]>(`/counties/${countyId}/sources`)
   const [form, setForm] = useState<Record<string, string | boolean>>({})
   const [notice, setNotice] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -42,7 +43,7 @@ export default function CountyDetailPage({ params }: Props) {
     event.preventDefault()
     setSaving(true); setNotice(null)
     try {
-      const updated = await countyHunterApi<CountyHunterCounty>(`/counties/${params.countyId}`, { method: 'PATCH', body: JSON.stringify(form) })
+      const updated = await countyHunterApi<CountyHunterCounty>(`/counties/${countyId}`, { method: 'PATCH', body: JSON.stringify(form) })
       countyState.setData(updated)
       setNotice('County configuration saved and audited.')
     } catch (error) {
@@ -54,7 +55,7 @@ export default function CountyDetailPage({ params }: Props) {
     event.preventDefault()
     setSaving(true); setNotice(null)
     try {
-      await countyHunterApi(`/counties/${params.countyId}/sources`, { method: 'POST', body: JSON.stringify(sourceForm) })
+      await countyHunterApi(`/counties/${countyId}/sources`, { method: 'POST', body: JSON.stringify(sourceForm) })
       setSourceForm({ name: '', source_type: 'tax_sale', url: '', is_official: true })
       await sourcesState.reload()
       setNotice('Source added. Automation has not been enabled.')

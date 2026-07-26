@@ -29,7 +29,7 @@ export async function readTrustedCountyHunterIdentity(): Promise<TrustedCountyHu
     throw new CountyHunterHttpError('The shared Supabase project is not configured.', 503)
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(supabaseUrl, publishableKey, {
     cookieOptions: countyHunterCookieOptions(),
     cookies: {

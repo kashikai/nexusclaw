@@ -8,14 +8,15 @@ import { CountyHunterValidationError, isUuid } from '@/features/county-hunter/va
 
 export const dynamic = 'force-dynamic'
 
-type RouteContext = { params: { countyId: string } }
+type RouteContext = { params: Promise<{ countyId: string }> }
 
 export async function GET(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
-    if (!isUuid(params.countyId)) throw new CountyHunterValidationError('countyId is invalid.')
+    const { countyId } = await params
+    if (!isUuid(countyId)) throw new CountyHunterValidationError('countyId is invalid.')
     const query = new URLSearchParams({
-      county_id: `eq.${params.countyId}`,
+      county_id: `eq.${countyId}`,
       organization_id: `eq.${context.organizationId}`,
       order: 'name.asc',
     })
@@ -29,7 +30,8 @@ export async function GET(request: Request, { params }: RouteContext) {
 export async function POST(request: Request, { params }: RouteContext) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.manage')
-    const payload = parseSourceCreate(await request.json(), params.countyId)
+    const { countyId } = await params
+    const payload = parseSourceCreate(await request.json(), countyId)
     const rows = await countyHunterRest<CountyHunterSource[]>(context, 'county_hunter_sources', '', {
       method: 'POST',
       body: JSON.stringify({
