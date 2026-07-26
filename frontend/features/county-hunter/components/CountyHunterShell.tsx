@@ -12,6 +12,7 @@ const NAVIGATION = [
   { href: '/county-hunter/auctions', label: 'Auctions', icon: 'gavel' },
   { href: '/county-hunter/properties', label: 'Properties', icon: 'domain' },
   { href: '/county-hunter/review-queue', label: 'Review Queue', icon: 'fact_check' },
+  { href: '/county-hunter/discovery', label: 'Discovery', icon: 'travel_explore' },
   { href: '/county-hunter/settings', label: 'Settings', icon: 'tune' },
 ]
 
