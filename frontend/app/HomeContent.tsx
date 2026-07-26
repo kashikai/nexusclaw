@@ -20,37 +20,83 @@ const stakingAbi = [
   ], stateMutability: 'view', type: 'function' },
 ] as const;
 
-const client = createPublicClient({ chain: base, transport: http('https://mainnet.base.org') });
+const baseRpcUrl = process.env.NEXT_PUBLIC_BASE_RPC_URL?.trim() || 'https://mainnet.base.org';
+const client = createPublicClient({ chain: base, transport: http(baseRpcUrl) });
+
+type HomeStats = {
+  totalStakers: string | null;
+  totalStaked: string | null;
+  cycles: string | null;
+  agentStaked: string | null;
+  agentPending: string | null;
+};
+
+const temporarilyUnavailable = 'Temporarily unavailable';
+
+function safeRpcError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return { name: 'UnknownError', message: 'RPC read failed' };
+  }
+
+  return {
+    name: error.name,
+    message: error.message.split('\n')[0].slice(0, 160),
+  };
+}
 
 export default function HomeContent() {
-  const [stats, setStats] = useState({
-    totalStakers: '2',
-    totalStaked: '2,982',
-    cycles: '194',
-    agentStaked: '982',
-    agentPending: '0.25',
+  const [stats, setStats] = useState<HomeStats>({
+    totalStakers: null,
+    totalStaked: null,
+    cycles: null,
+    agentStaked: null,
+    agentPending: null,
   });
 
   useEffect(() => {
     async function fetchStats() {
-      try {
-        const [stakers, staked, agentInfo] = await Promise.all([
-          client.readContract({ address: STAKING_ADDRESS, abi: stakingAbi, functionName: 'totalStakers' }),
-          client.readContract({ address: STAKING_ADDRESS, abi: stakingAbi, functionName: 'totalStaked' }),
-          client.readContract({ address: STAKING_ADDRESS, abi: stakingAbi, functionName: 'getUserInfo', args: [AGENT_ADDRESS] }),
-        ]);
-        const stakedAt = Number(agentInfo[2]);
-        const cycles = stakedAt > 0 ? Math.floor((Date.now() / 1000 - stakedAt) / 300) : 0;
-        setStats({
-          totalStakers: stakers.toString(),
-          totalStaked: parseFloat(formatUnits(staked, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 }),
-          cycles: cycles.toLocaleString(),
-          agentStaked: parseFloat(formatUnits(agentInfo[0], 18)).toFixed(2),
-          agentPending: parseFloat(formatUnits(agentInfo[1], 18)).toFixed(4),
+      const results = await Promise.allSettled([
+        client.readContract({ address: STAKING_ADDRESS, abi: stakingAbi, functionName: 'totalStakers' }),
+        client.readContract({ address: STAKING_ADDRESS, abi: stakingAbi, functionName: 'totalStaked' }),
+        client.readContract({ address: STAKING_ADDRESS, abi: stakingAbi, functionName: 'getUserInfo', args: [AGENT_ADDRESS] }),
+      ]);
+      const [stakersResult, stakedResult, agentInfoResult] = results;
+
+      if (process.env.NODE_ENV === 'development') {
+        const functionNames = ['totalStakers', 'totalStaked', 'getUserInfo'];
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.warn('Home stat temporarily unavailable', {
+              functionName: functionNames[index],
+              ...safeRpcError(result.reason),
+            });
+          }
         });
-      } catch(e) {
-        console.error('Stats fetch error:', e);
       }
+
+      const agentInfo = agentInfoResult.status === 'fulfilled' ? agentInfoResult.value : null;
+      const stakedAt = agentInfo ? Number(agentInfo[2]) : 0;
+      const cycles = agentInfo && stakedAt > 0
+        ? Math.floor((Date.now() / 1000 - stakedAt) / 300).toLocaleString()
+        : agentInfo
+          ? '0'
+          : null;
+
+      setStats({
+        totalStakers: stakersResult.status === 'fulfilled'
+          ? stakersResult.value.toString()
+          : null,
+        totalStaked: stakedResult.status === 'fulfilled'
+          ? parseFloat(formatUnits(stakedResult.value, 18)).toLocaleString('en-US', { maximumFractionDigits: 0 })
+          : null,
+        cycles,
+        agentStaked: agentInfo
+          ? parseFloat(formatUnits(agentInfo[0], 18)).toFixed(2)
+          : null,
+        agentPending: agentInfo
+          ? parseFloat(formatUnits(agentInfo[1], 18)).toFixed(4)
+          : null,
+      });
     }
     fetchStats();
     const interval = setInterval(fetchStats, 60000);
@@ -179,7 +225,7 @@ export default function HomeContent() {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { icon: '🤖', label: 'Agent V1 Online', value: '24/7 Active', color: 'text-green-400' },
-                { icon: '🔄', label: 'Compound Cycles', value: stats.cycles, color: 'text-cyan-400' },
+                { icon: '🔄', label: 'Compound Cycles', value: stats.cycles ?? temporarilyUnavailable, color: 'text-cyan-400' },
                 { icon: '⛽', label: 'Gas Avg. per Tx', value: '< $0.01', color: 'text-cyan-400' },
                 { icon: '✅', label: 'Verified', value: 'On-Chain', color: 'text-cyan-400' },
               ].map(stat => (
@@ -199,10 +245,10 @@ export default function HomeContent() {
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'Total Staked', value: `${stats.agentStaked} $NEXUSCLAW` },
-                  { label: 'Pending Rewards', value: `+${stats.agentPending} $NEXUSCLAW` },
-                  { label: 'Active Stakers', value: stats.totalStakers },
-                  { label: 'Total TVL', value: `${stats.totalStaked} $NEXUSCLAW` },
+                  { label: 'Total Staked', value: stats.agentStaked === null ? temporarilyUnavailable : `${stats.agentStaked} $NEXUSCLAW` },
+                  { label: 'Pending Rewards', value: stats.agentPending === null ? temporarilyUnavailable : `+${stats.agentPending} $NEXUSCLAW` },
+                  { label: 'Active Stakers', value: stats.totalStakers ?? temporarilyUnavailable },
+                  { label: 'Total TVL', value: stats.totalStaked === null ? temporarilyUnavailable : `${stats.totalStaked} $NEXUSCLAW` },
                 ].map(item => (
                   <div key={item.label} className="flex justify-between border-b border-[#1f2937] pb-2">
                     <span className="text-xs text-gray-500">{item.label}</span>
