@@ -25,8 +25,16 @@ export async function countyHunterRest<T>(
     const error = (await response.json().catch(() => ({}))) as { message?: string; details?: string }
     throw new CountyHunterHttpError(error.message ?? error.details ?? 'Database operation failed.', response.status)
   }
-  if (response.status === 204 || init.method === 'HEAD') return undefined as T
-  return response.json() as Promise<T>
+  if (
+    response.status === 204 ||
+    init.method === 'HEAD' ||
+    prefer?.split(',').some((value) => value.trim() === 'return=minimal')
+  ) {
+    return undefined as T
+  }
+  const responseBody = await response.text()
+  if (!responseBody) return undefined as T
+  return JSON.parse(responseBody) as T
 }
 
 export async function countyHunterCount(

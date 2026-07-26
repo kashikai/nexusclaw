@@ -37,4 +37,14 @@ describe('County Hunter PostgREST boundary', () => {
   it('builds the tenant filter only from the trusted context value', () => {
     expect(organizationFilter(context.organizationId)).toBe(`organization_id=eq.${context.organizationId}`)
   })
+
+  it('accepts PostgREST return=minimal responses with an empty body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 201 })))
+    await expect(countyHunterRest(
+      context,
+      'county_hunter_discovery_snapshots',
+      '',
+      { method: 'POST', body: '{}', prefer: 'return=minimal' },
+    )).resolves.toBeUndefined()
+  })
 })

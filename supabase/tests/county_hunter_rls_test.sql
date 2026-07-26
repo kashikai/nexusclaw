@@ -88,13 +88,24 @@ select set_config(
 );
 do $$
 declare
+  initial_count integer;
+  initial_audit_count integer;
   first_count integer;
   second_count integer;
 begin
+  select count(*) into initial_count from public.county_hunter_counties;
+  select count(*) into initial_audit_count
+  from public.county_hunter_audit_logs
+  where action = 'bootstrap'
+    and entity_type = 'county_hunter_seed_georgia'
+    and actor_user_id = (select admin_a from county_hunter_validation_context)
+    and organization_id = (select org_a from county_hunter_validation_context);
   select counties_created into first_count from public.county_hunter_seed_georgia();
   select counties_created into second_count from public.county_hunter_seed_georgia();
-  if first_count <> 6 or second_count <> 0 then
-    raise exception 'organization A bootstrap is not idempotent: first %, second %', first_count, second_count;
+  if initial_count not in (0, 6)
+     or first_count <> (case when initial_count = 0 then 6 else 0 end)
+     or second_count <> 0 then
+    raise exception 'organization A bootstrap is not idempotent from baseline %: first %, second %', initial_count, first_count, second_count;
   end if;
   if (select count(*) from public.county_hunter_counties) <> 6 then
     raise exception 'organization A did not receive exactly six counties';
@@ -107,7 +118,7 @@ begin
       and organization_id = (select org_a from county_hunter_validation_context)
       and created_at is not null
       and coalesce(current_data::text, '') !~* '(service_role|password|secret|access_token|refresh_token)'
-  ) <> 2 then
+  ) <> initial_audit_count + 2 then
     raise exception 'organization A bootstrap audit fields are incorrect';
   end if;
 end;
@@ -127,16 +138,23 @@ select set_config(
 );
 do $$
 declare
+  initial_count integer;
+  initial_audit_count integer;
   first_count integer;
   second_count integer;
 begin
-  if (select count(*) from public.county_hunter_counties) <> 0 then
-    raise exception 'admin B saw organization A counties before its own bootstrap';
-  end if;
+  select count(*) into initial_count from public.county_hunter_counties;
+  select count(*) into initial_audit_count
+  from public.county_hunter_audit_logs
+  where action = 'bootstrap'
+    and actor_user_id = (select admin_b from county_hunter_validation_context)
+    and organization_id = (select org_b from county_hunter_validation_context);
   select counties_created into first_count from public.county_hunter_seed_georgia();
   select counties_created into second_count from public.county_hunter_seed_georgia();
-  if first_count <> 6 or second_count <> 0 then
-    raise exception 'organization B bootstrap is not idempotent: first %, second %', first_count, second_count;
+  if initial_count not in (0, 6)
+     or first_count <> (case when initial_count = 0 then 6 else 0 end)
+     or second_count <> 0 then
+    raise exception 'organization B bootstrap is not idempotent from baseline %: first %, second %', initial_count, first_count, second_count;
   end if;
   if (select count(*) from public.county_hunter_counties) <> 6 then
     raise exception 'organization B did not receive exactly six isolated counties';
@@ -147,7 +165,7 @@ begin
       and actor_user_id = (select admin_b from county_hunter_validation_context)
       and organization_id = (select org_b from county_hunter_validation_context)
       and created_at is not null
-  ) <> 2 then
+  ) <> initial_audit_count + 2 then
     raise exception 'organization B bootstrap audit fields are incorrect';
   end if;
 end;
@@ -290,7 +308,15 @@ do $$
 declare
   source_id uuid;
   affected integer;
+  initial_audit_count integer;
 begin
+  select count(*) into initial_audit_count
+  from public.county_hunter_audit_logs
+  where actor_user_id = (select manager_a from county_hunter_validation_context)
+    and organization_id = (select org_a from county_hunter_validation_context)
+    and entity_type = 'county_hunter_sources'
+    and action in ('insert', 'update');
+
   insert into public.county_hunter_sources (organization_id, county_id, name, source_type)
   select
     (select org_a from county_hunter_validation_context),
@@ -358,7 +384,7 @@ begin
       and created_at is not null
       and coalesce(previous_data::text, '') !~* '(service_role|password|secret|access_token|refresh_token)'
       and coalesce(current_data::text, '') !~* '(service_role|password|secret|access_token|refresh_token)'
-  ) <> 2 then
+  ) <> initial_audit_count + 2 then
     raise exception 'manager source audit actor, tenant, action, timestamp or redaction is incorrect';
   end if;
 end;
@@ -400,6 +426,294 @@ begin
     where organization_id = (select org_b from county_hunter_validation_context)
   ) then
     raise exception 'admin A read organization B audit records';
+  end if;
+end;
+$$;
+reset role;
+
+-- Phase 2 discovery tables remain tenant-scoped, viewer-readable and admin-writable.
+create temporary table county_hunter_discovery_validation (
+  org_a_county uuid not null,
+  org_a_source uuid not null,
+  org_a_run uuid not null
+) on commit drop;
+grant select, insert on county_hunter_discovery_validation to authenticated;
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  json_build_object(
+    'sub', (select admin_a from county_hunter_validation_context),
+    'role', 'authenticated',
+    'app_metadata', json_build_object('organization_id', (select org_a from county_hunter_validation_context))
+  )::text,
+  true
+);
+do $$
+declare
+  configured_county uuid;
+  configured_source uuid;
+  discovery_run uuid;
+  lock_released boolean;
+begin
+  select county_id, source_id
+  into configured_county, configured_source
+  from public.county_hunter_configure_gwinnett_discovery();
+
+  if configured_county is null or configured_source is null then
+    raise exception 'admin A could not configure the approved Gwinnett source';
+  end if;
+  if (
+    select count(*)
+    from public.county_hunter_sources source
+    where source.id = configured_source
+      and source.organization_id = (select org_a from county_hunter_validation_context)
+      and source.managed_by_adapter
+      and source.adapter_key = 'gwinnett-tax-sales'
+      and source.official_hostnames = '["www.gwinnetttaxcommissioner.com"]'::jsonb
+  ) <> 1 then
+    raise exception 'Gwinnett source configuration is not exact or tenant-scoped';
+  end if;
+
+  discovery_run := public.county_hunter_begin_discovery(configured_source, '1.0.0', 300);
+  begin
+    perform public.county_hunter_begin_discovery(configured_source, '1.0.0', 300);
+    raise exception 'a concurrent discovery run acquired the same source lock';
+  exception when lock_not_available then
+    null;
+  end;
+
+  insert into public.county_hunter_discovery_snapshots (
+    organization_id,
+    run_id,
+    source_id,
+    snapshot_kind,
+    original_url,
+    final_url,
+    content_hash,
+    content_type,
+    content_length,
+    response_headers,
+    content_base64,
+    fetched_at
+  ) values (
+    (select org_a from county_hunter_validation_context),
+    discovery_run,
+    configured_source,
+    'landing_page',
+    'https://www.gwinnetttaxcommissioner.com/property-tax/delinquent_tax/tax-liens-tax-sales',
+    'https://www.gwinnetttaxcommissioner.com/property-tax/delinquent_tax/tax-liens-tax-sales',
+    repeat('a', 64),
+    'text/html',
+    11,
+    '{"content-type":"text/html"}'::jsonb,
+    'PHNhbml0aXplZD4=',
+    now()
+  );
+
+  insert into public.county_hunter_discovery_records (
+    organization_id,
+    run_id,
+    source_id,
+    source_order,
+    page_number,
+    source_record_key,
+    raw_text,
+    parcel_number_original,
+    parcel_number_normalized,
+    owner_name,
+    property_address,
+    amount_due,
+    sale_date,
+    normalized_hash
+  ) values (
+    (select org_a from county_hunter_validation_context),
+    discovery_run,
+    configured_source,
+    0,
+    1,
+    'RTEST0001',
+    'RTEST 0001 FIXTURE OWNER 100 FIXTURE WAY $1.00',
+    'RTEST 0001',
+    'RTEST0001',
+    'FIXTURE OWNER',
+    '100 FIXTURE WAY',
+    1.00,
+    current_date + 7,
+    repeat('b', 64)
+  );
+
+  insert into public.county_hunter_discovery_changes (
+    organization_id,
+    run_id,
+    source_id,
+    source_record_key,
+    change_type,
+    current_hash
+  ) values (
+    (select org_a from county_hunter_validation_context),
+    discovery_run,
+    configured_source,
+    'RTEST0001',
+    'added',
+    repeat('b', 64)
+  );
+
+  lock_released := public.county_hunter_release_discovery_lock(discovery_run);
+  if not lock_released then
+    raise exception 'admin A could not release the discovery source lock';
+  end if;
+
+  update public.county_hunter_discovery_runs
+  set
+    status = 'completed',
+    finished_at = now(),
+    added_count = 1,
+    properties_found = 1
+  where id = discovery_run;
+
+  insert into county_hunter_discovery_validation values (
+    configured_county,
+    configured_source,
+    discovery_run
+  );
+
+  if not exists (
+    select 1
+    from public.county_hunter_audit_logs
+    where organization_id = (select org_a from county_hunter_validation_context)
+      and actor_user_id = (select admin_a from county_hunter_validation_context)
+      and entity_type = 'county_hunter_discovery_runs'
+      and action in ('insert', 'update')
+      and created_at is not null
+  ) then
+    raise exception 'discovery audit actor, tenant or action is incorrect';
+  end if;
+end;
+$$;
+reset role;
+
+-- Viewer A can see normalized discovery metadata but cannot execute or write.
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  json_build_object(
+    'sub', (select viewer_a from county_hunter_validation_context),
+    'role', 'authenticated',
+    'app_metadata', json_build_object('organization_id', (select org_a from county_hunter_validation_context))
+  )::text,
+  true
+);
+do $$
+begin
+  if (select count(*) from public.county_hunter_discovery_records) <> 1 then
+    raise exception 'viewer A could not read its discovery record';
+  end if;
+  if (select count(*) from public.county_hunter_discovery_changes) <> 1 then
+    raise exception 'viewer A could not read its discovery diff';
+  end if;
+  begin
+    perform public.county_hunter_begin_discovery(
+      (select org_a_source from county_hunter_discovery_validation),
+      '1.0.0',
+      300
+    );
+    raise exception 'viewer unexpectedly executed discovery';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    insert into public.county_hunter_discovery_changes (
+      organization_id, run_id, source_id, source_record_key, change_type
+    ) values (
+      (select org_a from county_hunter_validation_context),
+      (select org_a_run from county_hunter_discovery_validation),
+      (select org_a_source from county_hunter_discovery_validation),
+      'FORBIDDEN',
+      'added'
+    );
+    raise exception 'viewer unexpectedly wrote discovery data';
+  exception when insufficient_privilege then
+    null;
+  end;
+end;
+$$;
+reset role;
+
+-- Manager A keeps manual-source permissions but cannot alter the managed adapter or run it.
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  json_build_object(
+    'sub', (select manager_a from county_hunter_validation_context),
+    'role', 'authenticated',
+    'app_metadata', json_build_object('organization_id', (select org_a from county_hunter_validation_context))
+  )::text,
+  true
+);
+do $$
+declare
+  affected integer;
+begin
+  update public.county_hunter_sources
+  set adapter_version = 'forbidden'
+  where id = (select org_a_source from county_hunter_discovery_validation);
+  get diagnostics affected = row_count;
+  if affected <> 0 then
+    raise exception 'manager altered the adapter-managed Gwinnett source';
+  end if;
+
+  begin
+    perform public.county_hunter_begin_discovery(
+      (select org_a_source from county_hunter_discovery_validation),
+      '1.0.0',
+      300
+    );
+    raise exception 'manager unexpectedly executed discovery';
+  exception when insufficient_privilege then
+    null;
+  end;
+end;
+$$;
+reset role;
+
+-- Admin B can configure only B and cannot see or mutate A discovery objects.
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  json_build_object(
+    'sub', (select admin_b from county_hunter_validation_context),
+    'role', 'authenticated',
+    'app_metadata', json_build_object('organization_id', (select org_b from county_hunter_validation_context))
+  )::text,
+  true
+);
+do $$
+declare
+  configured_county uuid;
+  configured_source uuid;
+  affected integer;
+begin
+  if (select count(*) from public.county_hunter_discovery_runs) <> 0 then
+    raise exception 'admin B saw organization A discovery runs';
+  end if;
+  if (select count(*) from public.county_hunter_discovery_snapshots) <> 0 then
+    raise exception 'admin B saw organization A snapshots';
+  end if;
+
+  select county_id, source_id
+  into configured_county, configured_source
+  from public.county_hunter_configure_gwinnett_discovery();
+  if configured_county is null or configured_source is null then
+    raise exception 'admin B could not configure its own isolated Gwinnett source';
+  end if;
+
+  update public.county_hunter_discovery_runs
+  set status = 'failed'
+  where id = (select org_a_run from county_hunter_discovery_validation);
+  get diagnostics affected = row_count;
+  if affected <> 0 then
+    raise exception 'admin B updated organization A discovery run';
   end if;
 end;
 $$;

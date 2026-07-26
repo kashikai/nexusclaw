@@ -1,0 +1,19 @@
+{
+  "pageNumber": 1,
+  "items": [
+    { "text": "Tuesday, August 4, 2026", "x": 180, "y": 760, "width": 180 },
+    { "text": "Gwinnett County Tax Commissioner", "x": 160, "y": 744, "width": 210 },
+    { "text": "PIN", "x": 52, "y": 710, "width": 26 },
+    { "text": "OwnerName", "x": 145, "y": 710, "width": 72 },
+    { "text": "Situs", "x": 330, "y": 710, "width": 42 },
+    { "text": "Amount Due", "x": 500, "y": 710, "width": 72 },
+    { "text": "R1001 001", "x": 52, "y": 692, "width": 68 },
+    { "text": "SAMPLE OWNER ONE LLC", "x": 145, "y": 692, "width": 145 },
+    { "text": "100 EXAMPLE WAY", "x": 330, "y": 692, "width": 120 },
+    { "text": "$12,345.67", "x": 500, "y": 692, "width": 75 },
+    { "text": "R1001 002", "x": 52, "y": 676, "width": 68 },
+    { "text": "SAMPLE OWNER TWO", "x": 145, "y": 676, "width": 132 },
+    { "text": "200 FIXTURE COURT", "x": 330, "y": 676, "width": 130 },
+    { "text": "$8,765.43", "x": 500, "y": 676, "width": 70 }
+  ]
+}

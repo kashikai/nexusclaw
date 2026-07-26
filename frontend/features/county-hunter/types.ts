@@ -55,8 +55,70 @@ export type CountyHunterSource = {
   failure_reason: string | null
   human_intervention_required: boolean
   notes: string | null
+  adapter_key: string | null
+  adapter_version: string | null
+  official_hostnames: string[]
+  managed_by_adapter: boolean
+  last_success_at: string | null
+  last_document_url: string | null
+  last_document_hash: string | null
+  last_sale_date: string | null
+  last_run_id: string | null
   created_at: string
   updated_at: string
+}
+
+export type CountyHunterDiscoveryRun = {
+  id: string
+  organization_id: string
+  county_id: string
+  source_id: string
+  status:
+    | 'queued'
+    | 'fetching_source'
+    | 'fetching_document'
+    | 'parsing'
+    | 'normalizing'
+    | 'comparing'
+    | 'completed'
+    | 'review_required'
+    | 'failed'
+  adapter_version: string
+  sale_date: string | null
+  document_url: string | null
+  document_final_url: string | null
+  document_hash: string | null
+  properties_found: number
+  added_count: number
+  changed_count: number
+  unchanged_count: number
+  removed_count: number
+  duplicate_count: number
+  review_required: boolean
+  reason_codes: string[]
+  started_at: string | null
+  finished_at: string | null
+  created_at: string
+}
+
+export type CountyHunterDiscoverySnapshotMetadata = {
+  id: string
+  snapshot_kind: 'landing_page' | 'official_document'
+  original_url: string
+  final_url: string
+  content_hash: string
+  content_type: string
+  content_length: number
+  fetched_at: string
+  source_last_modified: string | null
+}
+
+export type CountyHunterDiscoveryOverview = {
+  county: CountyHunterCounty | null
+  source: CountyHunterSource | null
+  latestRun: CountyHunterDiscoveryRun | null
+  snapshots: CountyHunterDiscoverySnapshotMetadata[]
+  canRun: boolean
 }
 
 export type CountyHunterAuction = {

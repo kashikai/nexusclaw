@@ -71,6 +71,40 @@ describe('County Hunter additive migrations', () => {
     expect(sql).toContain('rollback;')
   })
 
+  it('adds tenant-scoped Gwinnett discovery storage, locks and admin-only execution', () => {
+    const sql = migration('20260726153642_county_hunter_gwinnett_discovery.sql')
+    for (const table of [
+      'county_hunter_discovery_snapshots',
+      'county_hunter_discovery_records',
+      'county_hunter_discovery_changes',
+      'county_hunter_discovery_locks',
+    ]) {
+      expect(sql).toContain(`create table public.${table}`)
+      expect(sql).toContain(`alter table public.%I enable row level security`)
+      expect(sql).toContain(`'${table}'`)
+    }
+    expect(sql).toContain('foreign key (organization_id, source_id)')
+    expect(sql).toContain('foreign key (organization_id, run_id)')
+    expect(sql).toContain('county_hunter_has_permission(\'county_hunter.admin\')')
+    expect(sql).toContain('county_hunter_configure_gwinnett_discovery()')
+    expect(sql).toContain('county_hunter_begin_discovery')
+    expect(sql).toContain('county_hunter_release_discovery_lock')
+    expect(sql).toContain('A discovery run already holds the source lock')
+    expect(sql).toContain('Gwinnett County Tax Commissioner')
+    expect(sql).not.toContain('evil-gwinnetttaxcommissioner.com')
+    expect(sql).not.toContain('service_role')
+  })
+
+  it('reconciles the Gwinnett source through the existing logical source constraint', () => {
+    const sql = migration('20260726160827_county_hunter_gwinnett_discovery_rpc_fix.sql')
+    expect(sql).toContain(
+      'on conflict on constraint county_hunter_sources_organization_id_county_id_name_key',
+    )
+    expect(sql).toContain('county_hunter_configure_gwinnett_discovery()')
+    expect(sql).not.toContain('drop table')
+    expect(sql).not.toContain('service_role')
+  })
+
   it('can apply guarded staging migrations before disposable wallet provisioning', () => {
     const script = stagingRunner()
     expect(script).toContain('[switch]$MigrationsOnly')
