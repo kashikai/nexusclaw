@@ -63,15 +63,20 @@ export async function GET(request: Request) {
       latestRun = runs[0] ?? null
     }
     if (latestRun) {
+      const snapshotQuery = new URLSearchParams({
+        select: 'id,snapshot_kind,original_url,final_url,content_hash,content_type,content_length,fetched_at,source_last_modified',
+        organization_id: `eq.${context.organizationId}`,
+        order: 'created_at.asc',
+      })
+      if (latestRun.run_type === 'snapshot_replay') {
+        snapshotQuery.set('id', `eq.${latestRun.document_snapshot_id}`)
+      } else {
+        snapshotQuery.set('run_id', `eq.${latestRun.id}`)
+      }
       snapshots = await countyHunterRest<CountyHunterDiscoverySnapshotMetadata[]>(
         context,
         'county_hunter_discovery_snapshots',
-        new URLSearchParams({
-          select: 'id,snapshot_kind,original_url,final_url,content_hash,content_type,content_length,fetched_at,source_last_modified',
-          organization_id: `eq.${context.organizationId}`,
-          run_id: `eq.${latestRun.id}`,
-          order: 'created_at.asc',
-        }).toString(),
+        snapshotQuery.toString(),
       )
     }
 

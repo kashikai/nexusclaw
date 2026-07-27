@@ -73,6 +73,8 @@ export type CountyHunterDiscoveryRun = {
   organization_id: string
   county_id: string
   source_id: string
+  run_type: 'official_fetch' | 'snapshot_replay'
+  source_run_id: string | null
   status:
     | 'queued'
     | 'fetching_source'
@@ -84,6 +86,7 @@ export type CountyHunterDiscoveryRun = {
     | 'review_required'
     | 'failed'
   adapter_version: string
+  document_snapshot_id: string | null
   sale_date: string | null
   document_url: string | null
   document_final_url: string | null

@@ -55,12 +55,34 @@ export default function DiscoveryPage() {
     }
   }
 
+  async function replaySnapshot(snapshotId: string) {
+    setRunning(true)
+    setNotice(null)
+    try {
+      const result = await countyHunterApi<RunResponse>('/discovery/replay', {
+        method: 'POST',
+        body: JSON.stringify({ snapshotId }),
+      })
+      setNotice(
+        `Snapshot replay ${result.status}. ${result.records} record(s): ${result.added} added, ${result.changed} changed, ${result.unchanged} unchanged and ${result.removed} absent from the preserved source.`,
+      )
+      await overview.reload()
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Snapshot replay failed.')
+    } finally {
+      setRunning(false)
+    }
+  }
+
   if (overview.loading) return <LoadingState />
   if (overview.error) return <ErrorState message={overview.error} />
   const data = overview.data
   if (!data) return null
   const run = data.latestRun
   const source = data.source
+  const documentSnapshot = data.snapshots.find(
+    (snapshot) => snapshot.snapshot_kind === 'official_document',
+  )
 
   return (
     <>
@@ -119,6 +141,11 @@ export default function DiscoveryPage() {
         <Card>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#747c89]">Latest run</p>
           <div className="mt-3"><Badge tone={statusTone(run?.status)}>{run?.status ?? 'Not run'}</Badge></div>
+          {run && (
+            <p className="mt-3 text-xs uppercase tracking-[0.14em] text-[#747c89]">
+              {run.run_type === 'snapshot_replay' ? 'Stored snapshot replay' : 'Official source collection'}
+            </p>
+          )}
           <p className="mt-5 text-4xl font-bold text-[#f0f1f4]">{run?.properties_found ?? 0}</p>
           <p className="mt-1 text-sm text-[#8b919f]">normalized source records</p>
           {run?.review_required && (
@@ -163,6 +190,19 @@ export default function DiscoveryPage() {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+        {data.canRun && documentSnapshot && (
+          <div className="mt-5 border-t border-[#2c3442] pt-5">
+            <Button
+              onClick={() => void replaySnapshot(documentSnapshot.id)}
+              disabled={running}
+            >
+              {running ? 'Processing…' : 'Replay Stored Document'}
+            </Button>
+            <p className="mt-2 text-xs leading-5 text-[#78818e]">
+              Reprocesses the preserved PDF without contacting the official source or changing the snapshot.
+            </p>
           </div>
         )}
       </Card>
