@@ -208,3 +208,45 @@ adapter, safe-fetch hostname review, deterministic parser, reason codes,
 snapshot/diff/replay compatibility, tenant/RLS tests, staging validation and a
 county-specific rollback impact review. No automatic fallback county is
 permitted.
+
+## Production security and rollback gate update (2026-07-27)
+
+This update supersedes the earlier production blockers in this document while
+preserving them as historical release-gate evidence.
+
+- The reachable Sharp path is patched to 0.35.3 only under Next 15.5.21.
+  Sharp 0.35.3/libvips 8.18.3 passed build, `next start` and real local
+  `next/image` optimization.
+- The Coinbase/CDP Axios path is patched to 1.18.1 only under
+  `@coinbase/cdp-sdk`. No vulnerable Axios copy remains.
+- The production audit now reports 0 critical, 0 high and 9 moderate
+  package-level findings.
+- A real destructive rollback was completed on a loopback-only PostgreSQL
+  17.10 disposable database. It included a verified logical backup, Discovery
+  25, replay 25 unchanged, complete RLS/cross-tenant checks, destructive
+  rollback, Phase 1 preservation checks, Phase 2 reapply and repetition of all
+  checks.
+- The disposable database was removed after the successful rehearsal. No
+  staging or production project was contacted.
+
+The destructive rollback deletes Phase 2 runs, snapshots, raw records, diffs,
+locks, managed sources and provenance fields. It preserves Phase 1 tables,
+memberships, RLS, bootstrap, Auth challenges, audit logs and the county
+registry.
+
+Implementation and evidence:
+
+- `scripts/validate-county-hunter-phase2-rollback.ps1`;
+- `supabase/tests/county_hunter_disposable_*.sql`;
+- `docs/security/PHASE2_PRODUCTION_GATE.md`.
+
+The final human wallet/SIWE and County Hunter smoke for this exact dependency
+tree passed on 2026-07-28. It covered the WalletConnect QR, MetaMask lifecycle,
+Base 8453, Admin A SIWE, Discovery 25, repeated Discovery 25 unchanged, replay
+25 unchanged, viewer/manager permissions, Admin B tenant isolation, logout,
+session reauthentication, valid RPC behavior and controlled unavailable-RPC
+resilience.
+
+Production remains disabled until a separate deployment authorization is
+issued. This gate does not authorize production deployment, a second county,
+push, pull request or merge.

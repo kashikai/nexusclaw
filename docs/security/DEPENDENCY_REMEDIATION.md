@@ -379,3 +379,31 @@ confirms the Axios path is patched or still demonstrably unreachable.
   <https://viem.sh/docs/installation>
 - Supabase current Next.js SSR guidance:
   <https://supabase.com/docs/guides/getting-started/tutorials/with-nextjs>
+
+## Production security-gate remediation (2026-07-27)
+
+This section supersedes the unresolved Phase 2 reassessment above for the
+current `security/county-hunter-production-gate` branch.
+
+- `next@15.5.21 -> sharp@0.34.5` is now resolved through the strict
+  `overrides.next.sharp=0.35.3` edge. The installed runtime is Sharp 0.35.3
+  with libvips 8.18.3. Build, `next start`, Home and a real local
+  `/_next/image` optimization request passed.
+- `@coinbase/cdp-sdk@1.54.0 -> axios@1.16.0` is now resolved through the
+  strict `overrides["@coinbase/cdp-sdk"].axios=1.18.1` edge. No Axios
+  1.16.0 copy remains, and Axios Retry deduplicates to 1.18.1.
+- Next, React, RainbowKit, Wagmi, Viem, WalletConnect and the `cuer -> qr`
+  pin were not changed.
+- The production audit moved from 0 critical / 3 high / 10 moderate to
+  0 critical / 0 high / 9 moderate.
+- No audit exception, global override, forced install, legacy peer mode,
+  canary, beta or RC package was used.
+- Two clean npm 10.9.4 installs reproduced the same lockfile, and the final
+  dependency tree contained no invalid or extraneous package.
+- The final staging wallet, SIWE, tenant-isolation, valid-RPC and controlled
+  unavailable-RPC smokes passed on 2026-07-28 without a funded wallet or
+  transaction.
+
+The complete advisory register, reachability proof, rollback rehearsal and
+dependency-recovery procedure are in
+`docs/security/PHASE2_PRODUCTION_GATE.md`.
