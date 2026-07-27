@@ -282,6 +282,85 @@ The three high findings remain unresolved:
 No audit exception, forced fix or claim of resolution has been added for these
 findings.
 
+## Phase 2 release-gate reassessment (2026-07-27)
+
+`npm audit --omit=dev --json` still reports 13 production findings: 0 critical,
+3 high and 10 moderate. No dependency was changed during this reassessment.
+
+### Axios / Coinbase wallet path
+
+- Advisory: `GHSA-gcfj-64vw-6mp9`, Axios Node HTTP adapter inherited proxy.
+- Installed: `axios@1.16.0`.
+- Complete installed path:
+  `wagmi@2.19.5 -> @wagmi/connectors@6.2.0 ->
+  @base-org/account@2.4.0 -> @coinbase/cdp-sdk@1.54.0 ->
+  axios@1.16.0`.
+- Direct NexusClaw dependency responsible: `wagmi@2.19.5`.
+- Patched Axios: `1.18.0`; current stable checked: `1.18.1`.
+- Upstream constraint: the latest published `@coinbase/cdp-sdk@1.54.0` still
+  pins Axios exactly to `1.16.0`. Updating `@base-org/account` does not remove
+  that current CDP pin.
+- NexusClaw reachability: `config/wagmi.ts` explicitly registers the Coinbase
+  connector. The path is loaded in the client wallet runtime; NexusClaw does
+  not import Axios, create Axios interceptors or execute its Node HTTP adapter.
+- Plausible exploitation: the high advisory requires Node HTTP-adapter use,
+  prototype pollution and a request interceptor that returns a regular cloned
+  config. That combination is not present in the web connector path. Browser
+  impact is not established by the advisory.
+- Existing mitigation: browser-only connector use, HTTPS wallet services, no
+  NexusClaw-controlled Axios requests/configuration and no wallet secrets in
+  server Axios calls.
+- Smallest safe update: an upstream CDP release that declares Axios `>=1.18.0`,
+  followed by a compatible parent wallet patch. A global or scoped leaf
+  override is not accepted while CDP intentionally pins an exact older version.
+
+### Sharp / Next image path
+
+- Advisory: `GHSA-f88m-g3jw-g9cj`, vulnerable libvips inherited by Sharp.
+- Installed: `sharp@0.34.5`.
+- Complete installed path: `next@15.5.21 -> sharp@0.34.5` (optional runtime
+  dependency).
+- Direct NexusClaw dependency responsible: `next@15.5.21`.
+- Patched Sharp: `0.35.0`; current stable checked: `0.35.3`.
+- Patch compatibility: `next@15.5.22` is published and remains React 19
+  compatible, but still declares `sharp@^0.34.3`; it does not remediate the
+  advisory. Forcing Sharp 0.35 across this incompatible declared range was not
+  accepted.
+- NexusClaw reachability: `app/HomeContent.tsx` and
+  `features/county-hunter/components/CountyHunterShell.tsx` use `next/image`.
+  Sharp can therefore be loaded by the server-side image optimizer and during
+  production image handling.
+- Plausible exploitation: the advisory affects decoding untrusted image input.
+  NexusClaw has no remote image patterns and the current `next/image` inputs are
+  trusted files under `public/`, which materially reduces exposure. The package
+  remains reachable and the finding is not considered resolved.
+- Existing mitigation: no remote image allowlist, no user upload/image
+  transformation endpoint and fixed local image sources.
+- Smallest safe update: a stable Next release within an approved framework
+  migration that officially supports Sharp `>=0.35.0`. No compatible Next 15
+  patch was published at the time of this review.
+
+### Next propagation
+
+- Installed: `next@15.5.21`, direct.
+- `npm audit` marks Next high because it effects/contains the vulnerable Sharp
+  path. The current payload does not identify a separate new Next vulnerability.
+- Runtime and reachability follow the server/build-time image optimizer
+  analysis above.
+- `npm audit` suggests `next@14.2.35`, a semver-major downgrade from the
+  installed line that would undo the approved Next 15/React 19 migration and
+  does not provide an acceptable remediation for the current Sharp requirement.
+
+### Release decision for these residual highs
+
+The Axios high is installed but its vulnerable Node-only path is not reached by
+NexusClaw. The Sharp/Next high is reachable with trusted local inputs and has no
+compatible stable patch in the approved Next 15 line. These classifications
+permit continued development and staging validation but do **not** authorize
+production. Production remains blocked until the reachable Sharp path is
+removed or upgraded through a supported Next release and a fresh wallet audit
+confirms the Axios path is patched or still demonstrably unreachable.
+
 ## Primary references
 
 - Next.js July 2026 security release and support policy:
