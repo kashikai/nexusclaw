@@ -24,6 +24,12 @@ describe('County Hunter discovery staging E2E harness', () => {
     expect(script).toContain('VIEWER_DISCOVERY_NOT_BLOCKED')
     expect(script).toContain('MANAGER_DISCOVERY_NOT_BLOCKED')
     expect(script).toContain('ADMIN_B_RUN_ISOLATION_INVALID')
+    expect(script).toContain('SNAPSHOT_REPLAY_NOT_IDEMPOTENT')
+    expect(script).toContain('SNAPSHOT_REPLAY_MUTATED_SOURCE')
+    expect(script).toContain('MISSING_SNAPSHOT_REPLAY_NOT_BLOCKED')
+    expect(script).toContain('VIEWER_REPLAY_NOT_BLOCKED')
+    expect(script).toContain('MANAGER_REPLAY_NOT_BLOCKED')
+    expect(script).toContain('ADMIN_B_REPLAY_CROSS_TENANT_NOT_BLOCKED')
     expect(script).toContain('COUNTY HUNTER DISCOVERY STAGING E2E PASSED')
   })
 

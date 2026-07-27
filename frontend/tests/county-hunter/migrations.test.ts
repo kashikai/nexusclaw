@@ -105,6 +105,19 @@ describe('County Hunter additive migrations', () => {
     expect(sql).not.toContain('service_role')
   })
 
+  it('adds replay lineage and a tenant-safe snapshot retrieval RPC', () => {
+    const sql = migration('20260726174825_county_hunter_snapshot_replay.sql')
+    expect(sql).toContain("run_type in ('official_fetch', 'snapshot_replay')")
+    expect(sql).toContain('foreign key (organization_id, source_run_id)')
+    expect(sql).toContain('county_hunter_begin_snapshot_replay')
+    expect(sql).toContain('snapshot.organization_id = calling_organization')
+    expect(sql).toContain("'county_hunter.admin' = any(membership.permissions)")
+    expect(sql).toContain('selected_snapshot.content_base64')
+    expect(sql).toContain('revoke all on function public.county_hunter_begin_snapshot_replay')
+    expect(sql).toContain('grant execute on function public.county_hunter_begin_snapshot_replay')
+    expect(sql).not.toContain('service_role')
+  })
+
   it('can apply guarded staging migrations before disposable wallet provisioning', () => {
     const script = stagingRunner()
     expect(script).toContain('[switch]$MigrationsOnly')

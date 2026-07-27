@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildDiscoveryDiff, describeSnapshotChange } from '../../features/county-hunter/discovery/diff'
+import {
+  buildDiscoveryDiff,
+  buildSnapshotReplayDiff,
+  describeSnapshotChange,
+} from '../../features/county-hunter/discovery/diff'
 import type { ParsedDiscoveryRecord } from '../../features/county-hunter/discovery/types'
 
 function record(key: string, hash: string): ParsedDiscoveryRecord {
@@ -63,5 +67,35 @@ describe('County Hunter discovery diff', () => {
       { url: 'https://official/old', hash: 'same' },
       { url: 'https://official/new', hash: 'same' },
     )).toEqual({ urlChanged: true, contentChanged: false, preserveSnapshot: true })
+  })
+
+  it('compares a replay with its source-run records without mutating canonical properties', () => {
+    const changes = buildSnapshotReplayDiff(
+      [
+        { property_id: 'p1', source_record_key: '1', normalized_hash: 'same' },
+        { property_id: 'p2', source_record_key: '2', normalized_hash: 'old' },
+        { property_id: null, source_record_key: '3', normalized_hash: 'removed' },
+      ],
+      [record('1', 'same'), record('2', 'new'), record('4', 'added')],
+    )
+    expect(changes.map((change) => [
+      change.sourceRecordKey,
+      change.changeType,
+      change.propertyId,
+    ])).toEqual([
+      ['1', 'unchanged', 'p1'],
+      ['2', 'changed', 'p2'],
+      ['4', 'added', null],
+      ['3', 'removed_from_current_source', null],
+    ])
+  })
+
+  it('makes repeated replay of the same parser output idempotent', () => {
+    const changes = buildSnapshotReplayDiff(
+      [{ property_id: 'p1', source_record_key: '1', normalized_hash: 'same' }],
+      [record('1', 'same')],
+    )
+    expect(changes).toHaveLength(1)
+    expect(changes[0].changeType).toBe('unchanged')
   })
 })

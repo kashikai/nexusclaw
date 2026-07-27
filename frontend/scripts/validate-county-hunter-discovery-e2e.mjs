@@ -225,6 +225,18 @@ async function runDiscovery(session) {
   return response.json
 }
 
+async function replaySnapshot(session, snapshotId) {
+  const response = await request(session, '/api/county-hunter/discovery/replay', {
+    method: 'POST',
+    body: { snapshotId },
+  })
+  assert(response.status === 200 && response.json, 'SNAPSHOT_REPLAY_FAILED', response.status)
+  assert(response.json.runType === 'snapshot_replay', 'SNAPSHOT_REPLAY_TYPE_INVALID')
+  assert(response.json.snapshotId === snapshotId, 'SNAPSHOT_REPLAY_LINEAGE_INVALID')
+  assert(response.json.records > 0, 'SNAPSHOT_REPLAY_RECORDS_EMPTY')
+  return response.json
+}
+
 async function main() {
   try {
     const environment = {
@@ -251,6 +263,53 @@ async function main() {
     assert(adminOverview.snapshots?.length === 2, 'ADMIN_A_SNAPSHOTS_INVALID')
     assert(adminOverview.snapshots.every((snapshot) => !('content_base64' in snapshot)), 'SNAPSHOT_BODY_EXPOSED')
     report('admin-a snapshot provenance')
+    const adminASnapshot = adminOverview.snapshots.find(
+      (snapshot) => snapshot.snapshot_kind === 'official_document',
+    )
+    assert(adminASnapshot, 'ADMIN_A_DOCUMENT_SNAPSHOT_MISSING')
+    const originalSnapshotHash = adminASnapshot.content_hash
+
+    stage = 'admin-a.snapshot-replay.first'
+    const firstReplay = await replaySnapshot(adminA, adminASnapshot.id)
+    assert(firstReplay.sourceRunId === second.runId, 'SNAPSHOT_REPLAY_SOURCE_RUN_INVALID')
+    assert(
+      firstReplay.records === second.records &&
+        firstReplay.added === 0 &&
+        firstReplay.changed === 0 &&
+        firstReplay.removed === 0 &&
+        firstReplay.unchanged === firstReplay.records,
+      'SNAPSHOT_REPLAY_DIFF_INVALID',
+    )
+    const replayOverview = await overview(adminA)
+    assert(replayOverview.latestRun?.id === firstReplay.runId, 'SNAPSHOT_REPLAY_LATEST_RUN_INVALID')
+    assert(replayOverview.latestRun?.run_type === 'snapshot_replay', 'SNAPSHOT_REPLAY_METADATA_INVALID')
+    assert(replayOverview.snapshots?.length === 1, 'SNAPSHOT_REPLAY_PROVENANCE_INVALID')
+    assert(
+      replayOverview.snapshots[0].id === adminASnapshot.id &&
+        replayOverview.snapshots[0].content_hash === originalSnapshotHash &&
+        !('content_base64' in replayOverview.snapshots[0]),
+      'SNAPSHOT_REPLAY_MUTATED_SOURCE',
+    )
+    stage = 'admin-a.snapshot-replay.idempotent'
+    const secondReplay = await replaySnapshot(adminA, adminASnapshot.id)
+    assert(
+      secondReplay.records === firstReplay.records &&
+        secondReplay.added === 0 &&
+        secondReplay.changed === 0 &&
+        secondReplay.removed === 0 &&
+        secondReplay.unchanged === secondReplay.records,
+      'SNAPSHOT_REPLAY_NOT_IDEMPOTENT',
+    )
+    const missingReplay = await request(adminA, '/api/county-hunter/discovery/replay', {
+      method: 'POST',
+      body: { snapshotId: '00000000-0000-4000-8000-000000000000' },
+    })
+    assert(
+      missingReplay.status >= 400 && missingReplay.status < 500,
+      'MISSING_SNAPSHOT_REPLAY_NOT_BLOCKED',
+      missingReplay.status,
+    )
+    report(`admin-a snapshot replay unchanged=${secondReplay.unchanged}`)
 
     const viewer = await login(users.viewerA)
     const viewerOverview = await overview(viewer)
@@ -258,6 +317,11 @@ async function main() {
     assert(viewerOverview.source?.organization_id === users.viewerA.organizationId, 'VIEWER_TENANT_INVALID')
     const viewerRun = await request(viewer, '/api/county-hunter/discovery', { method: 'POST' })
     assert(viewerRun.status === 403, 'VIEWER_DISCOVERY_NOT_BLOCKED', viewerRun.status)
+    const viewerReplay = await request(viewer, '/api/county-hunter/discovery/replay', {
+      method: 'POST',
+      body: { snapshotId: adminASnapshot.id },
+    })
+    assert(viewerReplay.status === 403, 'VIEWER_REPLAY_NOT_BLOCKED', viewerReplay.status)
     report('viewer read-only discovery')
 
     const manager = await login(users.managerA)
@@ -265,6 +329,11 @@ async function main() {
     assert(managerOverview.canRun === false, 'MANAGER_RUN_PERMISSION_EXPOSED')
     const managerRun = await request(manager, '/api/county-hunter/discovery', { method: 'POST' })
     assert(managerRun.status === 403, 'MANAGER_DISCOVERY_NOT_BLOCKED', managerRun.status)
+    const managerReplay = await request(manager, '/api/county-hunter/discovery/replay', {
+      method: 'POST',
+      body: { snapshotId: adminASnapshot.id },
+    })
+    assert(managerReplay.status === 403, 'MANAGER_REPLAY_NOT_BLOCKED', managerReplay.status)
     report('manager discovery execution blocked')
 
     const adminB = await login(users.adminB)
@@ -274,6 +343,21 @@ async function main() {
     const afterB = await overview(adminB)
     assert(afterB.source?.organization_id === users.adminB.organizationId, 'ADMIN_B_SOURCE_TENANT_INVALID')
     assert(afterB.latestRun?.id === runB.runId && runB.runId !== second.runId, 'ADMIN_B_RUN_ISOLATION_INVALID')
+    const adminBSnapshot = afterB.snapshots.find(
+      (snapshot) => snapshot.snapshot_kind === 'official_document',
+    )
+    assert(adminBSnapshot, 'ADMIN_B_DOCUMENT_SNAPSHOT_MISSING')
+    const replayB = await replaySnapshot(adminB, adminBSnapshot.id)
+    assert(replayB.sourceRunId === runB.runId, 'ADMIN_B_REPLAY_SOURCE_INVALID')
+    const crossTenantReplay = await request(adminB, '/api/county-hunter/discovery/replay', {
+      method: 'POST',
+      body: { snapshotId: adminASnapshot.id },
+    })
+    assert(
+      crossTenantReplay.status >= 400 && crossTenantReplay.status < 500,
+      'ADMIN_B_REPLAY_CROSS_TENANT_NOT_BLOCKED',
+      crossTenantReplay.status,
+    )
     report('admin-b isolated discovery')
 
     const refreshed = await request(adminA, '/api/county-hunter/auth/session')

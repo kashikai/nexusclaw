@@ -102,13 +102,14 @@ begin
     and organization_id = (select org_a from county_hunter_validation_context);
   select counties_created into first_count from public.county_hunter_seed_georgia();
   select counties_created into second_count from public.county_hunter_seed_georgia();
-  if initial_count not in (0, 6)
+  if initial_count not in (0, 6, 7)
      or first_count <> (case when initial_count = 0 then 6 else 0 end)
      or second_count <> 0 then
     raise exception 'organization A bootstrap is not idempotent from baseline %: first %, second %', initial_count, first_count, second_count;
   end if;
-  if (select count(*) from public.county_hunter_counties) <> 6 then
-    raise exception 'organization A did not receive exactly six counties';
+  if (select count(*) from public.county_hunter_counties) <>
+     (case when initial_count = 0 then 6 else initial_count end) then
+    raise exception 'organization A did not preserve its six approved counties and optional Gwinnett registry';
   end if;
   if (
     select count(*) from public.county_hunter_audit_logs
@@ -151,13 +152,14 @@ begin
     and organization_id = (select org_b from county_hunter_validation_context);
   select counties_created into first_count from public.county_hunter_seed_georgia();
   select counties_created into second_count from public.county_hunter_seed_georgia();
-  if initial_count not in (0, 6)
+  if initial_count not in (0, 6, 7)
      or first_count <> (case when initial_count = 0 then 6 else 0 end)
      or second_count <> 0 then
     raise exception 'organization B bootstrap is not idempotent from baseline %: first %, second %', initial_count, first_count, second_count;
   end if;
-  if (select count(*) from public.county_hunter_counties) <> 6 then
-    raise exception 'organization B did not receive exactly six isolated counties';
+  if (select count(*) from public.county_hunter_counties) <>
+     (case when initial_count = 0 then 6 else initial_count end) then
+    raise exception 'organization B did not preserve its six isolated counties and optional Gwinnett registry';
   end if;
   if (
     select count(*) from public.county_hunter_audit_logs
@@ -193,8 +195,8 @@ do $$
 declare
   affected integer;
 begin
-  if (select count(*) from public.county_hunter_counties) <> 6 then
-    raise exception 'viewer A did not see exactly its own tenant counties';
+  if (select count(*) from public.county_hunter_counties) not in (6, 7) then
+    raise exception 'viewer A did not see its six tenant counties and optional Gwinnett registry';
   end if;
   if exists (
     select 1 from public.county_hunter_counties
@@ -435,7 +437,9 @@ reset role;
 create temporary table county_hunter_discovery_validation (
   org_a_county uuid not null,
   org_a_source uuid not null,
-  org_a_run uuid not null
+  org_a_run uuid not null,
+  org_a_snapshot uuid not null,
+  org_a_replay_run uuid not null
 ) on commit drop;
 grant select, insert on county_hunter_discovery_validation to authenticated;
 
@@ -454,6 +458,12 @@ declare
   configured_county uuid;
   configured_source uuid;
   discovery_run uuid;
+  document_snapshot uuid := gen_random_uuid();
+  replay_run uuid;
+  replay_snapshot uuid;
+  replay_source_run uuid;
+  replay_content text;
+  snapshot_content_before text := 'JVBERi0xLjQKJXNhbml0aXplZA==';
   lock_released boolean;
 begin
   select county_id, source_id
@@ -508,6 +518,36 @@ begin
     11,
     '{"content-type":"text/html"}'::jsonb,
     'PHNhbml0aXplZD4=',
+    now()
+  );
+
+  insert into public.county_hunter_discovery_snapshots (
+    id,
+    organization_id,
+    run_id,
+    source_id,
+    snapshot_kind,
+    original_url,
+    final_url,
+    content_hash,
+    content_type,
+    content_length,
+    response_headers,
+    content_base64,
+    fetched_at
+  ) values (
+    document_snapshot,
+    (select org_a from county_hunter_validation_context),
+    discovery_run,
+    configured_source,
+    'official_document',
+    'https://www.gwinnetttaxcommissioner.com/documents/d/egov/sanitized-fixture',
+    'https://www.gwinnetttaxcommissioner.com/documents/d/egov/sanitized-fixture',
+    repeat('c', 64),
+    'application/pdf',
+    18,
+    '{"content-type":"application/pdf"}'::jsonb,
+    'JVBERi0xLjQKJXNhbml0aXplZA==',
     now()
   );
 
@@ -569,13 +609,71 @@ begin
     status = 'completed',
     finished_at = now(),
     added_count = 1,
-    properties_found = 1
+    properties_found = 1,
+    document_snapshot_id = document_snapshot,
+    document_url = 'https://www.gwinnetttaxcommissioner.com/documents/d/egov/sanitized-fixture',
+    document_final_url = 'https://www.gwinnetttaxcommissioner.com/documents/d/egov/sanitized-fixture',
+    document_hash = repeat('c', 64),
+    document_content_type = 'application/pdf',
+    document_size = 18,
+    sale_date = current_date + 7
   where id = discovery_run;
+
+  select
+    replay.run_id,
+    replay.snapshot_id,
+    replay.source_run_id,
+    replay.snapshot_content_base64
+  into replay_run, replay_snapshot, replay_source_run, replay_content
+  from public.county_hunter_begin_snapshot_replay(
+    document_snapshot,
+    '1.1.0',
+    300
+  ) replay;
+
+  if replay_snapshot <> document_snapshot
+     or replay_source_run <> discovery_run
+     or replay_content <> snapshot_content_before then
+    raise exception 'snapshot replay lineage or preserved content is incorrect';
+  end if;
+  if not exists (
+    select 1
+    from public.county_hunter_discovery_runs replay
+    where replay.id = replay_run
+      and replay.organization_id = (select org_a from county_hunter_validation_context)
+      and replay.run_type = 'snapshot_replay'
+      and replay.source_run_id = discovery_run
+      and replay.adapter_version = '1.1.0'
+      and replay.document_snapshot_id = document_snapshot
+  ) then
+    raise exception 'snapshot replay run metadata is incorrect';
+  end if;
+
+  lock_released := public.county_hunter_release_discovery_lock(replay_run);
+  if not lock_released then
+    raise exception 'admin A could not release the snapshot replay lock';
+  end if;
+  update public.county_hunter_discovery_runs
+  set status = 'completed', finished_at = now(), unchanged_count = 1
+  where id = replay_run;
+
+  if not exists (
+    select 1
+    from public.county_hunter_discovery_snapshots
+    where id = document_snapshot
+      and content_hash = repeat('c', 64)
+      and content_length = 18
+      and content_type = 'application/pdf'
+  ) then
+    raise exception 'snapshot replay mutated the original snapshot';
+  end if;
 
   insert into county_hunter_discovery_validation values (
     configured_county,
     configured_source,
-    discovery_run
+    discovery_run,
+    document_snapshot,
+    replay_run
   );
 
   if not exists (
@@ -588,6 +686,18 @@ begin
       and created_at is not null
   ) then
     raise exception 'discovery audit actor, tenant or action is incorrect';
+  end if;
+  if not exists (
+    select 1
+    from public.county_hunter_audit_logs
+    where organization_id = (select org_a from county_hunter_validation_context)
+      and actor_user_id = (select admin_a from county_hunter_validation_context)
+      and entity_type = 'county_hunter_discovery_runs'
+      and entity_id = replay_run
+      and action = 'insert'
+      and current_data ->> 'run_type' = 'snapshot_replay'
+  ) then
+    raise exception 'snapshot replay audit actor, tenant or action is incorrect';
   end if;
 end;
 $$;
@@ -606,10 +716,21 @@ select set_config(
 );
 do $$
 begin
-  if (select count(*) from public.county_hunter_discovery_records) <> 1 then
+  if not exists (
+    select 1
+    from public.county_hunter_discovery_records
+    where run_id = (select org_a_run from county_hunter_discovery_validation)
+      and source_record_key = 'RTEST0001'
+  ) then
     raise exception 'viewer A could not read its discovery record';
   end if;
-  if (select count(*) from public.county_hunter_discovery_changes) <> 1 then
+  if not exists (
+    select 1
+    from public.county_hunter_discovery_changes
+    where run_id = (select org_a_run from county_hunter_discovery_validation)
+      and source_record_key = 'RTEST0001'
+      and change_type = 'added'
+  ) then
     raise exception 'viewer A could not read its discovery diff';
   end if;
   begin
@@ -619,6 +740,16 @@ begin
       300
     );
     raise exception 'viewer unexpectedly executed discovery';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    perform public.county_hunter_begin_snapshot_replay(
+      (select org_a_snapshot from county_hunter_discovery_validation),
+      '1.0.0',
+      300
+    );
+    raise exception 'viewer unexpectedly initiated snapshot replay';
   exception when insufficient_privilege then
     null;
   end;
@@ -673,6 +804,16 @@ begin
   exception when insufficient_privilege then
     null;
   end;
+  begin
+    perform public.county_hunter_begin_snapshot_replay(
+      (select org_a_snapshot from county_hunter_discovery_validation),
+      '1.0.0',
+      300
+    );
+    raise exception 'manager unexpectedly initiated snapshot replay';
+  exception when insufficient_privilege then
+    null;
+  end;
 end;
 $$;
 reset role;
@@ -694,10 +835,18 @@ declare
   configured_source uuid;
   affected integer;
 begin
-  if (select count(*) from public.county_hunter_discovery_runs) <> 0 then
+  if exists (
+    select 1
+    from public.county_hunter_discovery_runs
+    where id = (select org_a_run from county_hunter_discovery_validation)
+  ) then
     raise exception 'admin B saw organization A discovery runs';
   end if;
-  if (select count(*) from public.county_hunter_discovery_snapshots) <> 0 then
+  if exists (
+    select 1
+    from public.county_hunter_discovery_snapshots
+    where id = (select org_a_snapshot from county_hunter_discovery_validation)
+  ) then
     raise exception 'admin B saw organization A snapshots';
   end if;
 
@@ -715,6 +864,16 @@ begin
   if affected <> 0 then
     raise exception 'admin B updated organization A discovery run';
   end if;
+  begin
+    perform public.county_hunter_begin_snapshot_replay(
+      (select org_a_snapshot from county_hunter_discovery_validation),
+      '1.0.0',
+      300
+    );
+    raise exception 'admin B replayed organization A snapshot';
+  exception when no_data_found then
+    null;
+  end;
 end;
 $$;
 reset role;
