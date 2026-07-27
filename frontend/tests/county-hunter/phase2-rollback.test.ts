@@ -12,6 +12,35 @@ const rollback = readFileSync(
   ),
   'utf8',
 )
+const runner = readFileSync(
+  resolve(
+    process.cwd(),
+    '..',
+    'scripts',
+    'validate-county-hunter-phase2-rollback.ps1',
+  ),
+  'utf8',
+)
+const disposableFixture = readFileSync(
+  resolve(
+    process.cwd(),
+    '..',
+    'supabase',
+    'tests',
+    'county_hunter_disposable_phase2_fixture.sql',
+  ),
+  'utf8',
+)
+const postRollback = readFileSync(
+  resolve(
+    process.cwd(),
+    '..',
+    'supabase',
+    'tests',
+    'county_hunter_disposable_post_rollback.sql',
+  ),
+  'utf8',
+)
 
 function position(fragment: string) {
   const index = rollback.indexOf(fragment)
@@ -58,5 +87,55 @@ describe('County Hunter Phase 2 destructive rollback', () => {
     expect(rollback).not.toContain('drop table public.county_hunter_counties')
     expect(rollback).not.toContain('drop table public.county_hunter_memberships')
     expect(rollback).not.toContain(' cascade;')
+  })
+
+  it('runs only against a named loopback disposable database', () => {
+    expect(runner).toContain(
+      "$DatabaseHost -notin @('127.0.0.1', 'localhost')",
+    )
+    expect(runner).toContain(
+      "'^county_hunter_disposable_[a-z0-9_]+$'",
+    )
+    expect(runner).toContain(
+      "current_database() !~ '^county_hunter_disposable_'",
+    )
+    expect(runner).not.toMatch(
+      /COUNTY_HUNTER_STAGING|SUPABASE_SERVICE_ROLE|DATABASE_URL/,
+    )
+  })
+
+  it('backs up, rolls back, reapplies and removes the disposable database', () => {
+    expect(runner).toContain('--format custom')
+    expect(runner).toContain('& $tools.pg_restore --list')
+    expect(runner).toContain(
+      "set county_hunter.allow_destructive_phase2_rollback = 'YES'",
+    )
+    expect(runner).toContain('Reapplying Phase 2 migration')
+    expect(runner).toContain('Repeating the complete RLS matrix after reapply')
+    expect(runner).toContain('& $tools.dropdb')
+  })
+
+  it('persists a 25-record discovery and 25-unchanged replay fixture', () => {
+    expect(disposableFixture).toContain('from generate_series(1, 25)')
+    expect(disposableFixture).toContain('properties_found = 25')
+    expect(disposableFixture).toContain("change_type = 'unchanged'")
+    expect(disposableFixture).toContain(
+      'Disposable replay did not persist 25 unchanged records',
+    )
+  })
+
+  it('verifies Phase 2 removal and Phase 1 preservation after rollback', () => {
+    expect(postRollback).toContain(
+      "to_regclass('public.county_hunter_discovery_snapshots') is not null",
+    )
+    expect(postRollback).toContain(
+      "to_regprocedure('public.county_hunter_seed_georgia()') is null",
+    )
+    expect(postRollback).toContain(
+      'Permanent disposable memberships were not preserved',
+    )
+    expect(postRollback).toContain(
+      'Phase 1 cross-tenant SELECT failed after rollback',
+    )
   })
 })
