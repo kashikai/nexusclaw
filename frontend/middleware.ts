@@ -5,9 +5,10 @@ import {
   COUNTY_HUNTER_NO_STORE_HEADERS,
 } from '@/features/county-hunter/server/cache-control'
 import { countyHunterCookieOptions } from '@/features/county-hunter/server/cookie-options'
+import { isCountyHunterServerEnabled } from '@/features/county-hunter/server/feature-flags'
 
 export async function middleware(request: NextRequest) {
-  if (process.env.COUNTY_HUNTER_ENABLED !== 'true') {
+  if (!isCountyHunterServerEnabled()) {
     return new NextResponse(null, { status: 404, headers: COUNTY_HUNTER_NO_STORE_HEADERS })
   }
 

@@ -113,6 +113,15 @@ export function formatDate(value: string | null | undefined): string {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(value))
 }
 
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return 'Not confirmed'
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(value))
+}
+
 export function formatMoney(value: number | null | undefined): string {
   if (value === null || value === undefined) return 'Not confirmed'
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)

@@ -13,4 +13,4 @@ export const COUNTY_HUNTER_DISCOVERY_LIMITS = {
 } as const
 
 export const COUNTY_HUNTER_DISCOVERY_USER_AGENT =
-  'NexusClaw-CountyHunter/1.0 (official-source discovery; staging contact via NexusClaw administrator)'
+  'NexusClaw-CountyHunter/1.0 (official-source discovery; contact via NexusClaw administrator)'

@@ -11,6 +11,7 @@ import {
   LoadingState,
   PageHeader,
   formatDate,
+  formatDateTime,
 } from '@/features/county-hunter/components/ui'
 import { useCountyHunterData } from '@/features/county-hunter/components/useCountyHunterData'
 
@@ -100,6 +101,62 @@ export default function DiscoveryPage() {
       />
 
       {notice && <Card className="mb-5"><p className="text-sm leading-6 text-[#c4c7cf]">{notice}</p></Card>}
+
+      {!data.collectionEnabled && (
+        <Card className="mb-5 border-[#f5c542]/30">
+          <Badge tone="warning">Collection disabled</Badge>
+          <p className="mt-3 text-sm leading-6 text-[#c8c9ce]">
+            Manual Discovery and replay are disabled by the operator. Existing
+            records and snapshots remain available for authorized read-only
+            review.
+          </p>
+        </Card>
+      )}
+
+      <Card className="mb-5 border-[#abc7ff]/25">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#abc7ff]">
+          Public-source notice
+        </p>
+        <div className="mt-3 grid gap-4 text-sm leading-6 text-[#aeb4bf] lg:grid-cols-2">
+          <div>
+            <p>
+              These records are obtained from an official public county source
+              and may change without notice. Always confirm the current record
+              directly with Gwinnett County.
+            </p>
+            <p className="mt-2">
+              <code>removed_from_current_source</code> does not mean sold,
+              cancelled or otherwise resolved.
+            </p>
+          </div>
+          <div>
+            <p>
+              Amounts are not market valuations. Nothing here is a title
+              analysis, a guarantee that property is free of liens, or legal or
+              financial advice.
+            </p>
+            <p className="mt-2">
+              Last collection: {formatDateTime(source?.last_success_at)} ·
+              Adapter: {source?.adapter_version ?? 'Not confirmed'} · Review:{' '}
+              {run?.review_required ? 'required' : 'not currently required'}
+            </p>
+          </div>
+        </div>
+        {source?.url ? (
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-block text-sm font-semibold text-[#abc7ff] hover:underline"
+          >
+            Confirm with the official county source
+          </a>
+        ) : (
+          <p className="mt-4 text-sm text-[#f5c542]">
+            Official source link is not configured.
+          </p>
+        )}
+      </Card>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <Card className="xl:col-span-2">

@@ -9,6 +9,8 @@ import { createConfig, http } from 'wagmi'
 import { base } from 'wagmi/chains'
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo'
+const baseRpcUrl =
+  process.env.NEXT_PUBLIC_BASE_RPC_URL?.trim() || 'https://mainnet.base.org'
 
 const connectors = connectorsForWallets(
   [
@@ -27,7 +29,7 @@ export const config = createConfig({
   connectors,
   chains: [base],
   transports: {
-    [base.id]: http('https://mainnet.base.org'),
+    [base.id]: http(baseRpcUrl),
   },
   ssr: true,
 })

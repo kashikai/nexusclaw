@@ -9,6 +9,19 @@ import type {
 import { runGwinnettDiscovery } from '@/features/county-hunter/discovery/run'
 import { requireCountyHunterPermission } from '@/features/county-hunter/server/auth'
 import { applyCountyHunterNoStore } from '@/features/county-hunter/server/cache-control'
+import { requireCountyHunterDiscoveryEnabled } from '@/features/county-hunter/server/discovery-kill-switch'
+import {
+  isCountyHunterDiscoveryEnabled,
+} from '@/features/county-hunter/server/feature-flags'
+import {
+  countyHunterOpaqueRef,
+  logCountyHunterEvent,
+} from '@/features/county-hunter/server/operational-logging'
+import {
+  COUNTY_HUNTER_RATE_LIMITS,
+  countyHunterIdentityRateLimitKey,
+  enforceCountyHunterRateLimit,
+} from '@/features/county-hunter/server/rate-limit'
 import { countyHunterRest } from '@/features/county-hunter/server/rest'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
 import { COUNTY_HUNTER_COUNTY_WITH_STATE_SELECT } from '@/features/county-hunter/server/selects'
@@ -19,6 +32,14 @@ export const runtime = 'nodejs'
 export async function GET(request: Request) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
+    enforceCountyHunterRateLimit(
+      countyHunterIdentityRateLimitKey(
+        'discovery-read',
+        context.userId,
+        context.organizationId,
+      ),
+      COUNTY_HUNTER_RATE_LIMITS.discoveryRead,
+    )
     const counties = await countyHunterRest<CountyHunterCounty[]>(
       context,
       'county_hunter_counties',
@@ -80,12 +101,16 @@ export async function GET(request: Request) {
       )
     }
 
+    const collectionEnabled = isCountyHunterDiscoveryEnabled()
     const overview: CountyHunterDiscoveryOverview = {
       county,
       source,
       latestRun,
       snapshots,
-      canRun: context.permissions.includes('county_hunter.admin'),
+      collectionEnabled,
+      canRun:
+        collectionEnabled &&
+        context.permissions.includes('county_hunter.admin'),
     }
     return applyCountyHunterNoStore(NextResponse.json(overview))
   } catch (error) {
@@ -94,11 +119,50 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now()
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.admin')
+    requireCountyHunterDiscoveryEnabled()
+    enforceCountyHunterRateLimit(
+      countyHunterIdentityRateLimitKey(
+        'discovery-run',
+        context.userId,
+        context.organizationId,
+      ),
+      COUNTY_HUNTER_RATE_LIMITS.discoveryRun,
+    )
+    const logRefs = {
+      actorRef: countyHunterOpaqueRef(context.userId),
+      tenantRef: countyHunterOpaqueRef(context.organizationId),
+    }
+    logCountyHunterEvent('discovery_started', {
+      operation: 'discovery',
+      outcome: 'started',
+      ...logRefs,
+    })
     const result = await runGwinnettDiscovery(context)
+    logCountyHunterEvent('discovery_completed', {
+      operation: 'discovery',
+      outcome: result.status,
+      ...logRefs,
+      records: result.records,
+      added: result.added,
+      changed: result.changed,
+      unchanged: result.unchanged,
+      removed: result.removed,
+      durationMs: Date.now() - startedAt,
+    })
     return applyCountyHunterNoStore(NextResponse.json(result))
   } catch (error) {
+    logCountyHunterEvent('discovery_failed', {
+      operation: 'discovery',
+      outcome: 'failed',
+      reasonCode:
+        error instanceof Error && 'reasonCode' in error
+          ? String(error.reasonCode)
+          : 'REQUEST_REJECTED',
+      durationMs: Date.now() - startedAt,
+    }, 'error')
     return countyHunterErrorResponse(error)
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
+import { logCountyHunterEvent } from '@/features/county-hunter/server/operational-logging'
 import {
   clearCountyHunterSupabaseCookies,
   createCountyHunterRouteSupabaseClient,
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
       { authenticated: false },
     )
     response = routeClient.applyCookies(response)
+    logCountyHunterEvent('siwe_logout', {
+      operation: 'siwe_logout',
+      outcome: 'completed',
+    })
     return clearCountyHunterSupabaseCookies(request, response)
   } catch (error) {
     return countyHunterErrorResponse(error)

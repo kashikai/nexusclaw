@@ -121,6 +121,7 @@ export type CountyHunterDiscoveryOverview = {
   source: CountyHunterSource | null
   latestRun: CountyHunterDiscoveryRun | null
   snapshots: CountyHunterDiscoverySnapshotMetadata[]
+  collectionEnabled: boolean
   canRun: boolean
 }
 

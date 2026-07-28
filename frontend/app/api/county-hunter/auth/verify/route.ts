@@ -5,6 +5,12 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createCountyHunterChallengeRepository } from '@/features/county-hunter/server/challenge-store'
 import { isCountyHunterServerEnabled } from '@/features/county-hunter/server/feature-flags'
 import { CountyHunterHttpError } from '@/features/county-hunter/server/http-error'
+import { logCountyHunterEvent } from '@/features/county-hunter/server/operational-logging'
+import {
+  COUNTY_HUNTER_RATE_LIMITS,
+  countyHunterRequestRateLimitKey,
+  enforceCountyHunterRateLimit,
+} from '@/features/county-hunter/server/rate-limit'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
 import { createCountyHunterRouteSupabaseClient } from '@/features/county-hunter/server/route-supabase'
 import { verifyAndConsumeCountyHunterChallenge } from '@/features/county-hunter/server/siwe'
@@ -28,6 +34,11 @@ export async function POST(request: NextRequest) {
     ) {
       throw new CountyHunterHttpError('The wallet authentication proof is invalid.', 400)
     }
+
+    enforceCountyHunterRateLimit(
+      countyHunterRequestRateLimitKey(request, 'siwe-verify'),
+      COUNTY_HUNTER_RATE_LIMITS.siweVerify,
+    )
 
     const config = readCountyHunterWalletAuthConfig()
     const publicClient = createPublicClient({
@@ -56,8 +67,20 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       { authenticated: true },
     )
+    logCountyHunterEvent('siwe_login_succeeded', {
+      operation: 'siwe_login',
+      outcome: 'authenticated',
+    })
     return routeClient.applyCookies(response)
   } catch (error) {
+    logCountyHunterEvent('siwe_login_failed', {
+      operation: 'siwe_login',
+      outcome: 'failed',
+      reasonCode:
+        error instanceof CountyHunterHttpError
+          ? `HTTP_${error.status}`
+          : 'VERIFICATION_FAILED',
+    }, 'error')
     return countyHunterErrorResponse(error)
   }
 }
