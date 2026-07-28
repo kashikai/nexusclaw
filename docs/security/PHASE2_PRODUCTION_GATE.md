@@ -135,6 +135,39 @@ Wagmi/connector/MetaMask `uuid` chain. npm proposes Wagmi 3.7.4, a major
 wallet-stack migration outside this gate. No critical or high advisory remains
 installed or reachable, and no advisory is suppressed.
 
+### Moderate advisory register for pilot preparation
+
+The 2026-07-28 pilot-preparation audit still reports one underlying moderate
+advisory, propagated as nine package-level entries:
+
+| Package-level entry | Relationship to the finding |
+|---|---|
+| `uuid` | Direct affected transitive package |
+| `@metamask/utils` | Depends on the affected UUID path |
+| `@metamask/rpc-errors` | Propagates through MetaMask utilities |
+| `@metamask/sdk-communication-layer` | Propagates through MetaMask utilities |
+| `@metamask/sdk` | Installed connector parent |
+| `@gemini-wallet/core` | Installed wallet connector path |
+| `@wagmi/connectors` | Connector parent containing the wallet paths |
+| `wagmi` | Direct NexusClaw wallet dependency |
+| `@rainbow-me/rainbowkit` | Direct modal dependency over Wagmi |
+
+The underlying entry is
+[`GHSA-w5hq-g745-h8pq`](https://github.com/advisories/GHSA-w5hq-g745-h8pq):
+UUID v3/v5/v6 lacks a buffer-bound check when a caller supplies `buf`. NexusClaw
+does not directly call those UUID APIs with a caller-provided buffer. This
+reachability observation is not a suppression or a claim that the installed
+package is fixed.
+
+The npm-proposed automatic resolution upgrades Wagmi to 3.7.4, a major wallet
+architecture change. It must not be applied with `npm audit fix --force`, a
+leaf override, or an audit exclusion. Remediation requires a separately
+approved parent wallet-stack upgrade, followed by MetaMask, Gemini,
+WalletConnect, Coinbase, SIWE, Base 8453, React-provider, build, clean-install,
+and manual connector smokes. Until then the nine moderate package entries are
+accepted only as a documented residual for preparation; they do not authorize
+production enablement.
+
 ## Destructive rollback rehearsal
 
 The real rehearsal used official PostgreSQL 17.10 portable binaries with the
