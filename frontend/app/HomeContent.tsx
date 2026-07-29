@@ -88,6 +88,11 @@ export default function HomeContent() {
               <span className="text-cyan-400">Results</span>
             </h1>
 
+            {/* Tagline */}
+            <p className="text-xl font-mono text-cyan-400 italic max-w-2xl mb-8">
+              An agent running on NexusClaw doesn&apos;t ask for a budget. It earns one.
+            </p>
+
             {/* Subheadline */}
             <p className="text-gray-400 text-lg mb-8 leading-relaxed">
               NexusClaw builds agents that trade, stake, compound, and operate within predefined rules, with activity available for verification.
