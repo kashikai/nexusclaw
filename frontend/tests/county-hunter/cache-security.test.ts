@@ -84,24 +84,41 @@ describe('County Hunter authenticated cache isolation', () => {
     expect(errors).toContain('COUNTY_HUNTER_NO_STORE_HEADERS')
 
     ;[challenge, login, refresh, logout].forEach((source) => {
-      expect(source).not.toMatch(/access_token|refresh_token|SUPABASE_SERVICE_ROLE_KEY/i)
+      expect(source).not.toMatch(
+        /access_token|refresh_token|SUPABASE_(?:SERVICE_ROLE|SECRET)_KEY/i,
+      )
     })
   })
 
-  it('keeps the service role out of every deployed County Hunter source', () => {
-    const deployedSources = [
+  it('keeps every administrative key out of browser-reachable County Hunter sources', () => {
+    const browserSources = [
       ...sourceFiles(join(root, 'app', 'api', 'county-hunter')),
       ...sourceFiles(join(root, 'app', 'county-hunter')),
-      ...sourceFiles(join(root, 'features', 'county-hunter')),
+      ...sourceFiles(join(root, 'features', 'county-hunter', 'client')),
       join(root, 'middleware.ts'),
     ]
 
-    deployedSources.forEach((file) => {
+    browserSources.forEach((file) => {
       expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
+      expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SECRET_KEY')
     })
 
-    expect(readSource('scripts', 'provision-county-hunter-staging.mjs')).toContain(
+    const serverSources = sourceFiles(join(root, 'features', 'county-hunter', 'server'))
+    serverSources.forEach((file) => {
+      expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
+      if (!file.endsWith('admin-supabase.ts')) {
+        expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SECRET_KEY')
+      }
+    })
+
+    expect(readSource('scripts', 'lib', 'supabase-admin-key.mjs')).toContain(
       'SUPABASE_SERVICE_ROLE_KEY',
+    )
+    expect(readSource('scripts', 'lib', 'supabase-admin-key.mjs')).toContain(
+      'SUPABASE_SECRET_KEY',
+    )
+    expect(readSource('features', 'county-hunter', 'server', 'admin-supabase.ts')).toContain(
+      "import 'server-only'",
     )
   })
 })

@@ -28,7 +28,10 @@ copy a production environment.
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+# Legacy/deprecated fallback only; not recommended.
 SUPABASE_SERVICE_ROLE_KEY=
+COUNTY_HUNTER_STRICT_ADMIN_KEY=false
 COUNTY_HUNTER_STAGING_DB_URL=
 COUNTY_HUNTER_AUTH_ORIGIN=
 COUNTY_HUNTER_ENABLED=true
@@ -49,9 +52,11 @@ them only in this ignored file. It never prints them. Generated wallet addresses
 and Supabase user UUIDs are non-secret and are also saved locally for the SQL and
 browser matrix.
 
-`SUPABASE_SERVICE_ROLE_KEY` is read only by
-`frontend/scripts/provision-county-hunter-staging.mjs`. Deployed pages, API
-routes, middleware and runtime server modules do not reference it.
+`SUPABASE_SECRET_KEY` is preferred by
+`frontend/scripts/provision-county-hunter-staging.mjs`.
+`SUPABASE_SERVICE_ROLE_KEY` remains only as a deprecated, sanitized fallback.
+Deployed pages, API routes, middleware, runtime server modules, and user-session
+E2E scripts use neither administrative key.
 
 ## Required Supabase dashboard checks
 
@@ -90,19 +95,23 @@ is forbidden by tests. Auth responses return only booleans or the public SIWE
 challenge. They do not serialize access tokens, refresh tokens, cookies or the
 service-role key.
 
-## Runtime service-role removal
+## Server-only SIWE administrative boundary
 
 The nonce table keeps forced RLS and no table grants to `anon` or
-`authenticated`. Runtime challenge access now uses two narrow functions:
+`authenticated`. Runtime challenge access uses two narrow functions through
+Route Handlers and a `server-only` Supabase client configured exclusively with
+`SUPABASE_SECRET_KEY`:
 
-- `county_hunter_issue_auth_challenge(...)`: anonymous execute only, database-time
+- `county_hunter_issue_auth_challenge(...)`: `service_role` execute only, database-time
   window validation, five challenges per wallet per five minutes, advisory-lock
   serialization and one-hour expired-hash cleanup;
-- `county_hunter_consume_auth_challenge(...)`: anonymous execute only, exact
+- `county_hunter_consume_auth_challenge(...)`: `service_role` execute only, exact
   ID/hash/wallet/domain/URI/chain matching and atomic delete of an unexpired row.
 
 Both are `SECURITY DEFINER` with `search_path = pg_catalog, public`. They return
-no challenge row, nonce, cookie, token or service credential.
+no challenge row, nonce, cookie, token or administrative credential. Direct
+execution by `PUBLIC`, `anon` and `authenticated` is revoked. The browser keeps
+using only `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the user session.
 
 ## Disposable staging wallets
 

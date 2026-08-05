@@ -1,5 +1,5 @@
 import 'server-only'
-import { createClient } from '@supabase/supabase-js'
+import { createCountyHunterServerAdminClient } from './admin-supabase'
 import { CountyHunterHttpError } from './http-error'
 import type {
   CountyHunterChallengeRecord,
@@ -7,23 +7,11 @@ import type {
 } from './siwe'
 
 export function createCountyHunterChallengeRepository(): CountyHunterChallengeRepository {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  if (!supabaseUrl || !publishableKey) {
-    throw new CountyHunterHttpError('County Hunter wallet authentication is not configured.', 503)
-  }
-
-  const preAuthClient = createClient(supabaseUrl, publishableKey, {
-    auth: {
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-      persistSession: false,
-    },
-  })
+  const adminClient = createCountyHunterServerAdminClient()
 
   return {
     async create(record: CountyHunterChallengeRecord) {
-      const { error } = await preAuthClient.rpc('county_hunter_issue_auth_challenge', {
+      const { error } = await adminClient.rpc('county_hunter_issue_auth_challenge', {
         p_id: record.id,
         p_nonce_hash: record.nonceHash,
         p_wallet_address: record.walletAddress,
@@ -42,7 +30,7 @@ export function createCountyHunterChallengeRepository(): CountyHunterChallengeRe
     },
 
     async consume(match) {
-      const { data, error } = await preAuthClient.rpc('county_hunter_consume_auth_challenge', {
+      const { data, error } = await adminClient.rpc('county_hunter_consume_auth_challenge', {
         p_id: match.id,
         p_nonce_hash: match.nonceHash,
         p_wallet_address: match.walletAddress,
