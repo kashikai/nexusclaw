@@ -131,26 +131,35 @@ The remediated production audit reports:
 ```
 
 The nine package-level moderate findings are within the existing
-Wagmi/connector/MetaMask `uuid` chain. npm proposes Wagmi 3.7.4, a major
+Wagmi/connector/MetaMask `uuid` chain. npm proposes Wagmi 3.7.6, a major
 wallet-stack migration outside this gate. No critical or high advisory remains
 installed or reachable, and no advisory is suppressed.
 
 ### Moderate advisory register for pilot preparation
 
-The 2026-07-28 pilot-preparation audit still reports one underlying moderate
-advisory, propagated as nine package-level entries:
+The 2026-08-05 release-gate audit initially reported ten package-level moderate
+findings. One was the independently remediable Hono CORS ReDoS advisory
+[`GHSA-8j4g-w8fx-2239`](https://github.com/advisories/GHSA-8j4g-w8fx-2239),
+introduced by `wagmi -> @wagmi/connectors -> porto -> hono`. The installed
+`hono@4.12.32` was not imported by NexusClaw or present in the production build,
+but it was upgraded to the published `4.12.34` fix through a `porto`-scoped
+override. This was a non-breaking change within Porto's declared `^4.10.3`
+range and is classified `FIX_NOW`.
 
-| Package-level entry | Relationship to the finding |
-|---|---|
-| `uuid` | Direct affected transitive package |
-| `@metamask/utils` | Depends on the affected UUID path |
-| `@metamask/rpc-errors` | Propagates through MetaMask utilities |
-| `@metamask/sdk-communication-layer` | Propagates through MetaMask utilities |
-| `@metamask/sdk` | Installed connector parent |
-| `@gemini-wallet/core` | Installed wallet connector path |
-| `@wagmi/connectors` | Connector parent containing the wallet paths |
-| `wagmi` | Direct NexusClaw wallet dependency |
-| `@rainbow-me/rainbowkit` | Direct modal dependency over Wagmi |
+The remaining underlying moderate advisory is propagated as nine package-level
+entries:
+
+| Package-level entry | Direct | Runtime path | Classification |
+|---|---:|---|---|
+| `uuid` | No | Installed under MetaMask utilities/SDK; vulnerable v3/v5/v6 buffer API is not called by NexusClaw | `NO_SAFE_FIX_AVAILABLE` |
+| `@metamask/utils` | No | MetaMask connector parent of the affected UUID path | `ACCEPT_FOR_PILOT` |
+| `@metamask/rpc-errors` | No | Gemini connector path through MetaMask utilities | `ACCEPT_FOR_PILOT` |
+| `@metamask/sdk-communication-layer` | No | MetaMask connector path using UUID 8 | `ACCEPT_FOR_PILOT` |
+| `@metamask/sdk` | No | Runtime MetaMask connector; vulnerable UUID API is not called by NexusClaw | `ACCEPT_FOR_PILOT` |
+| `@gemini-wallet/core` | No | Installed connector path, not configured by NexusClaw | `NOT_RUNTIME_REACHABLE` |
+| `@wagmi/connectors` | No | Runtime connector parent | `ACCEPT_FOR_PILOT` |
+| `wagmi` | Yes | Runtime wallet dependency | `ACCEPT_FOR_PILOT` |
+| `@rainbow-me/rainbowkit` | Yes | Runtime wallet modal over Wagmi | `ACCEPT_FOR_PILOT` |
 
 The underlying entry is
 [`GHSA-w5hq-g745-h8pq`](https://github.com/advisories/GHSA-w5hq-g745-h8pq):
@@ -159,7 +168,7 @@ does not directly call those UUID APIs with a caller-provided buffer. This
 reachability observation is not a suppression or a claim that the installed
 package is fixed.
 
-The npm-proposed automatic resolution upgrades Wagmi to 3.7.4, a major wallet
+The npm-proposed automatic resolution upgrades Wagmi to 3.7.6, a major wallet
 architecture change. It must not be applied with `npm audit fix --force`, a
 leaf override, or an audit exclusion. Remediation requires a separately
 approved parent wallet-stack upgrade, followed by MetaMask, Gemini,
