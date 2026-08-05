@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.admin')
     requireCountyHunterDiscoveryEnabled()
-    enforceCountyHunterRateLimit(
+    await enforceCountyHunterRateLimit(
       countyHunterIdentityRateLimitKey(
         'snapshot-replay',
         context.userId,

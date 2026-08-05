@@ -184,17 +184,17 @@ describe('County Hunter production pilot safety controls', () => {
     ).toThrow(/disabled by the operator/)
   })
 
-  it('enforces server-side fixed-window limits', () => {
+  it('enforces server-side fixed-window limits', async () => {
     const key = 'production-safety-test-rate-limit'
     const policy = { limit: 2, windowMs: 1_000 }
-    enforceCountyHunterRateLimit(key, policy, 10_000)
-    enforceCountyHunterRateLimit(key, policy, 10_000)
-    expect(() =>
+    await enforceCountyHunterRateLimit(key, policy, 10_000)
+    await enforceCountyHunterRateLimit(key, policy, 10_000)
+    await expect(
       enforceCountyHunterRateLimit(key, policy, 10_000),
-    ).toThrow(/Too many County Hunter requests/)
-    expect(() =>
+    ).rejects.toThrow(/Too many County Hunter requests/)
+    await expect(
       enforceCountyHunterRateLimit(key, policy, 11_001),
-    ).not.toThrow()
+    ).resolves.toBeUndefined()
   })
 
   it('emits structured logs with only allowlisted sanitized fields', () => {

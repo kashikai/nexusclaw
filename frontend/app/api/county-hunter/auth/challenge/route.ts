@@ -11,6 +11,11 @@ import {
 } from '@/features/county-hunter/server/rate-limit'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
 import { issueCountyHunterChallenge } from '@/features/county-hunter/server/siwe'
+import {
+  assertCountyHunterSiweOrigin,
+  COUNTY_HUNTER_CHALLENGE_BODY_LIMIT,
+  readCountyHunterSiweJson,
+} from '@/features/county-hunter/server/siwe-request'
 import { readCountyHunterWalletAuthConfig } from '@/features/county-hunter/server/wallet-auth-config'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +27,12 @@ export async function POST(request: NextRequest) {
       throw new CountyHunterHttpError('County Hunter is disabled.', 404)
     }
 
-    const body = await request.json().catch(() => null)
+    const config = readCountyHunterWalletAuthConfig()
+    assertCountyHunterSiweOrigin(request, config.origin)
+    const body = await readCountyHunterSiweJson(
+      request,
+      COUNTY_HUNTER_CHALLENGE_BODY_LIMIT,
+    )
     if (
       !body ||
       typeof body !== 'object' ||
@@ -34,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const address = (body as { address: string }).address
-    enforceCountyHunterRateLimit(
+    await enforceCountyHunterRateLimit(
       countyHunterRequestRateLimitKey(
         request,
         'siwe-challenge',
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const result = await issueCountyHunterChallenge(
       address,
-      readCountyHunterWalletAuthConfig(),
+      config,
       createCountyHunterChallengeRepository(),
     )
     logCountyHunterEvent('siwe_challenge_issued', {

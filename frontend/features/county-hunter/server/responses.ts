@@ -18,7 +18,13 @@ export function countyHunterErrorResponse(error: unknown): NextResponse {
   if (error instanceof CountyHunterHttpError) {
     return NextResponse.json(
       { error: error.message },
-      { status: error.status, headers: COUNTY_HUNTER_NO_STORE_HEADERS },
+      {
+        status: error.status,
+        headers: {
+          ...COUNTY_HUNTER_NO_STORE_HEADERS,
+          ...error.headers,
+        },
+      },
     )
   }
   if (error instanceof CountyHunterValidationError) {

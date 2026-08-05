@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: Request) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.admin')
-    enforceCountyHunterRateLimit(
+    await enforceCountyHunterRateLimit(
       countyHunterIdentityRateLimitKey(
         'bootstrap',
         context.userId,

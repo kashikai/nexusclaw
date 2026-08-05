@@ -32,7 +32,7 @@ export const runtime = 'nodejs'
 export async function GET(request: Request) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.view')
-    enforceCountyHunterRateLimit(
+    await enforceCountyHunterRateLimit(
       countyHunterIdentityRateLimitKey(
         'discovery-read',
         context.userId,
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
   try {
     const context = await requireCountyHunterPermission(request, 'county_hunter.admin')
     requireCountyHunterDiscoveryEnabled()
-    enforceCountyHunterRateLimit(
+    await enforceCountyHunterRateLimit(
       countyHunterIdentityRateLimitKey(
         'discovery-run',
         context.userId,

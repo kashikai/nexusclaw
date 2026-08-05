@@ -223,6 +223,22 @@ gateway/WAF limits for SIWE challenge and verification, Discovery reads,
 Discovery execution, replay, bootstrap, and administrative endpoints. Keep
 Discovery at one manual run per source/lock window.
 
+### Rate-limit topology gate
+
+The planned Vercel deployment is classified as
+`DISTRIBUTED_BACKEND_REQUIRED`: separate serverless instances do not share
+process memory. The application exposes a server-only asynchronous rate-limit
+backend interface so an approved shared implementation can replace the local
+fixed-window backend without changing authorization routes. No shared vendor
+or paid service is selected by this preparation.
+
+The in-memory backend remains useful for local validation and defense in depth
+within one instance, but it is not the production enforcement boundary.
+Production County Hunter flags must remain off until an approved distributed
+backend or deployment gateway atomically enforces the documented global and
+per-identity limits across all instances. This is a production-ON condition,
+not a staging bypass.
+
 ## User notices
 
 The Discovery UI must continue to state that:

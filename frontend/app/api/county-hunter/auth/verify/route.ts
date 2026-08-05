@@ -6,14 +6,15 @@ import { createCountyHunterChallengeRepository } from '@/features/county-hunter/
 import { isCountyHunterServerEnabled } from '@/features/county-hunter/server/feature-flags'
 import { CountyHunterHttpError } from '@/features/county-hunter/server/http-error'
 import { logCountyHunterEvent } from '@/features/county-hunter/server/operational-logging'
-import {
-  COUNTY_HUNTER_RATE_LIMITS,
-  countyHunterRequestRateLimitKey,
-  enforceCountyHunterRateLimit,
-} from '@/features/county-hunter/server/rate-limit'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
 import { createCountyHunterRouteSupabaseClient } from '@/features/county-hunter/server/route-supabase'
 import { verifyAndConsumeCountyHunterChallenge } from '@/features/county-hunter/server/siwe'
+import { enforceCountyHunterSiweVerifyRateLimit } from '@/features/county-hunter/server/siwe-rate-limit'
+import {
+  assertCountyHunterSiweOrigin,
+  COUNTY_HUNTER_VERIFY_BODY_LIMIT,
+  readCountyHunterSiweJson,
+} from '@/features/county-hunter/server/siwe-request'
 import { readCountyHunterWalletAuthConfig } from '@/features/county-hunter/server/wallet-auth-config'
 
 export const dynamic = 'force-dynamic'
@@ -25,27 +26,36 @@ export async function POST(request: NextRequest) {
       throw new CountyHunterHttpError('County Hunter is disabled.', 404)
     }
 
-    const body = await request.json().catch(() => null)
+    const config = readCountyHunterWalletAuthConfig()
+    assertCountyHunterSiweOrigin(request, config.origin)
+    let body: unknown
+    try {
+      body = await readCountyHunterSiweJson(
+        request,
+        COUNTY_HUNTER_VERIFY_BODY_LIMIT,
+      )
+    } catch (error) {
+      await enforceCountyHunterSiweVerifyRateLimit(request, null)
+      throw new CountyHunterHttpError(
+        'The wallet authentication proof is invalid.',
+        error instanceof CountyHunterHttpError && error.status === 413 ? 413 : 400,
+      )
+    }
+    const candidate = body && typeof body === 'object' && !Array.isArray(body)
+      ? body as Record<string, unknown>
+      : null
+    await enforceCountyHunterSiweVerifyRateLimit(request, candidate?.message)
     if (
-      !body ||
-      typeof body !== 'object' ||
-      Array.isArray(body) ||
-      Object.keys(body).some((key) => key !== 'message' && key !== 'signature')
+      !candidate ||
+      Object.keys(candidate).some((key) => key !== 'message' && key !== 'signature')
     ) {
       throw new CountyHunterHttpError('The wallet authentication proof is invalid.', 400)
     }
 
-    enforceCountyHunterRateLimit(
-      countyHunterRequestRateLimitKey(request, 'siwe-verify'),
-      COUNTY_HUNTER_RATE_LIMITS.siweVerify,
-    )
-
-    const config = readCountyHunterWalletAuthConfig()
     const publicClient = createPublicClient({
       chain: base,
       transport: http(config.baseRpcUrl),
     })
-    const candidate = body as Record<string, unknown>
     const proof = await verifyAndConsumeCountyHunterChallenge(
       { message: candidate.message, signature: candidate.signature },
       config,
