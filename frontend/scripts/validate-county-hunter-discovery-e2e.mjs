@@ -88,6 +88,7 @@ function fixture(environment, variable, label, organizationId) {
 
 function validateConfiguration(environment) {
   assert(process.env.SUPABASE_SERVICE_ROLE_KEY === undefined, 'SERVICE_ROLE_PRESENT_IN_E2E_RUNTIME')
+  assert(process.env.SUPABASE_SECRET_KEY === undefined, 'SECRET_KEY_PRESENT_IN_E2E_RUNTIME')
   assert(environment.COUNTY_HUNTER_STAGING_CONFIRM === 'STAGING_ONLY', 'STAGING_CONFIRMATION_REQUIRED')
   const ref = environment.COUNTY_HUNTER_STAGING_PROJECT_REF
   assert(/^[a-z0-9]{20}$/.test(ref ?? ''), 'STAGING_PROJECT_REF_INVALID')

@@ -8,14 +8,17 @@ const script = readFileSync(
 )
 
 describe('County Hunter discovery staging E2E harness', () => {
-  it('uses all four real Web3 profiles and never reads the service role', () => {
+  it('uses all four real Web3 profiles and rejects administrative keys', () => {
     for (const profile of ['VIEWER_A', 'MANAGER_A', 'ADMIN_A', 'ADMIN_B']) {
       expect(script).toContain(`COUNTY_HUNTER_TEST_${profile}_PRIVATE_KEY`)
       expect(script).toContain(`COUNTY_HUNTER_TEST_${profile}_ADDRESS`)
     }
     expect(script).toContain("process.env.SUPABASE_SERVICE_ROLE_KEY === undefined")
+    expect(script).toContain("process.env.SUPABASE_SECRET_KEY === undefined")
     expect(script).not.toMatch(/environment\.SUPABASE_SERVICE_ROLE_KEY/)
+    expect(script).not.toMatch(/environment\.SUPABASE_SECRET_KEY/)
     expect(script).not.toContain('SUPABASE_SERVICE_ROLE_KEY,')
+    expect(script).not.toContain('SUPABASE_SECRET_KEY,')
   })
 
   it('checks idempotency, snapshots, role boundaries and tenant isolation', () => {

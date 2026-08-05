@@ -29,6 +29,8 @@ describe('County Hunter real staging SIWE E2E harness', () => {
     }
     expect(source).not.toContain('generatePrivateKey')
     expect(source).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
+    expect(source).not.toContain('SUPABASE_SECRET_KEY')
+    expect(source).toContain('Origin: APP_ORIGIN')
     expect(source).not.toMatch(/console\.(?:log|error)\([^)]*(?:privateKey|signature|message|cookie|userId|organizationId)/)
   })
 
@@ -55,5 +57,14 @@ describe('County Hunter real staging SIWE E2E harness', () => {
     ]) {
       expect(source).toContain(evidence)
     }
+  })
+
+  it('compares application counties with the authorized admin scope instead of a number literal', () => {
+    const source = script()
+    expect(source).toContain('validateApplicationCountiesAgainstAdmin')
+    expect(source).toContain('adminACounties')
+    expect(source).toContain('fixtures.organizationB')
+    expect(source).not.toContain('COUNTY_COUNT_UNEXPECTED')
+    expect(source).not.toMatch(/getCounties\([\s\S]{0,120},\s*6,/)
   })
 })

@@ -4,6 +4,7 @@ import https from 'node:https'
 import { getAddress, isAddress, verifyMessage } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { parseSiweMessage } from 'viem/siwe'
+import { validateApplicationCountiesAgainstAdmin } from './lib/county-hunter-staging-counties.mjs'
 
 const APP_ORIGIN = 'https://localhost:3000'
 const EXPECTED_CHAIN_ID = 8453
@@ -157,6 +158,7 @@ async function request(jar, path, options = {}) {
   const body = options.body === undefined ? null : JSON.stringify(options.body)
   const headers = {
     Accept: 'application/json',
+    Origin: APP_ORIGIN,
     ...(body ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } : {}),
   }
   const cookie = jar.header()
@@ -378,18 +380,37 @@ async function viewerFailureMatrixAndLogin(viewer, otherFixture) {
   return session
 }
 
-async function getCounties(session, expectedOrganization, expectedCount, label) {
+async function getCounties(session, label) {
   currentStage = `${label}.read-counties`
   const response = await request(session, '/api/county-hunter/counties')
   expectStatus(response, 200, 'COUNTY_READ_FAILED')
   assert(Array.isArray(response.json), 'COUNTY_RESPONSE_INVALID')
-  assert(response.json.length === expectedCount, 'COUNTY_COUNT_UNEXPECTED')
-  assert(
-    response.json.every((row) => row?.organization_id === expectedOrganization),
-    'COUNTY_TENANT_MISMATCH',
-  )
-  report(`${label} reads own tenant`)
   return response.json
+}
+
+function validateCountyAccess(
+  applicationRows,
+  adminRows,
+  expectedOrganizationId,
+  forbiddenOrganizationId,
+  label,
+) {
+  currentStage = `${label}.validate-counties`
+  let result
+  try {
+    result = validateApplicationCountiesAgainstAdmin({
+      applicationRows,
+      adminRows,
+      expectedOrganizationId,
+      forbiddenOrganizationId,
+    })
+  } catch (error) {
+    fail(typeof error?.code === 'string' ? error.code : 'COUNTY_DATASET_VALIDATION_FAILED')
+  }
+  report(
+    `${label} reads authorized counties application=${result.applicationCount} admin-scoped=${result.adminCount}`,
+  )
+  return result
 }
 
 async function expectBlocked(session, path, method, body, expectedStatus, label) {
@@ -416,12 +437,29 @@ async function main() {
   report('staging configuration and disposable fixtures')
 
   const viewerSession = await viewerFailureMatrixAndLogin(fixtures.viewerA, fixtures.managerA)
-  const tenantACounties = await getCounties(
-    viewerSession,
+  const tenantACounties = await getCounties(viewerSession, 'viewer-a')
+
+  managerSession = await login(fixtures.managerA)
+  const managerCounties = await getCounties(managerSession, 'manager-a')
+
+  adminASession = await login(fixtures.adminA)
+  const adminACounties = await getCounties(adminASession, 'admin-a')
+
+  validateCountyAccess(
+    tenantACounties,
+    adminACounties,
     fixtures.organizationA,
-    6,
+    fixtures.organizationB,
     'viewer-a',
   )
+  validateCountyAccess(
+    managerCounties,
+    adminACounties,
+    fixtures.organizationA,
+    fixtures.organizationB,
+    'manager-a',
+  )
+
   const tenantACounty = tenantACounties[0]
   assert(isUuid(tenantACounty?.id), 'TENANT_A_COUNTY_ID_INVALID')
 
@@ -450,20 +488,11 @@ async function main() {
     'viewer-a bootstrap blocked',
   )
 
-  managerSession = await login(fixtures.managerA)
-  const managerCounties = await getCounties(
-    managerSession,
-    fixtures.organizationA,
-    6,
-    'manager-a',
-  )
   assert(
     managerCounties.map((row) => row.id).sort().join(',') ===
       tenantACounties.map((row) => row.id).sort().join(','),
     'TENANT_A_ROLE_DATA_MISMATCH',
   )
-
-  adminASession = await login(fixtures.adminA)
 
   currentStage = 'manager-a.create-source'
   const sourceName = `Phase 1.4 temporary source ${randomUUID()}`
@@ -527,10 +556,12 @@ async function main() {
   assert(secondBootstrap.json?.counties_created === 0, 'ADMIN_B_BOOTSTRAP_NOT_IDEMPOTENT')
   report(`admin-b bootstrap ${firstBootstrapCount} -> 0`)
 
-  const tenantBCounties = await getCounties(
-    adminBSession,
+  const tenantBCounties = await getCounties(adminBSession, 'admin-b')
+  validateCountyAccess(
+    tenantBCounties,
+    tenantBCounties,
     fixtures.organizationB,
-    6,
+    fixtures.organizationA,
     'admin-b',
   )
   const tenantBCounty = tenantBCounties[0]

@@ -17,8 +17,15 @@ const testEnvironment = {
   COUNTY_HUNTER_STAGING_CONFIRM: 'STAGING_ONLY',
   COUNTY_HUNTER_STAGING_PROJECT_REF: 'abcdefghijklmnopqrst',
   COUNTY_HUNTER_STAGING_DB_URL:
-    'postgresql://postgres.abcdefghijklmnopqrst:synthetic-password@aws-0-test.pooler.supabase.com:6543/postgres',
+    'postgresql://postgres:synthetic-password@db.abcdefghijklmnopqrst.supabase.co:5432/postgres',
   NEXT_PUBLIC_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    'sb_publishable_synthetic-public-key',
+  SUPABASE_SECRET_KEY: 'sb_secret_synthetic-admin-key',
+  SUPABASE_SERVICE_ROLE_KEY: '',
+  COUNTY_HUNTER_AUTH_ORIGIN: 'https://localhost:3000',
+  COUNTY_HUNTER_ENABLED: 'true',
+  NEXT_PUBLIC_COUNTY_HUNTER_ENABLED: 'true',
   COUNTY_HUNTER_TEST_ORG_A: '11111111-1111-4111-8111-111111111111',
   COUNTY_HUNTER_TEST_ORG_B: '22222222-2222-4222-8222-222222222222',
   COUNTY_HUNTER_TEST_VIEWER_A: '33333333-3333-4333-8333-333333333333',
@@ -86,6 +93,15 @@ afterEach(() => {
 })
 
 describe.runIf(process.platform === 'win32')('County Hunter staging runner', () => {
+  it('excludes the legacy variable from strict validation processes', () => {
+    expect(runnerSource).toContain(
+      "if ($strictAdminKeyRequested) { @('SUPABASE_SERVICE_ROLE_KEY') } else { @() }",
+    )
+    expect(runnerSource).toContain(
+      '-ExcludedNames $excludedEnvironmentNames',
+    )
+  })
+
   it('runs only the rollback-only RLS SQL in -RlsOnly mode', () => {
     const migrationBranch = runnerSource.indexOf('if ($MigrationsOnly) {')
     const migrationRead = runnerSource.indexOf('Get-ChildItem -LiteralPath $migrationDirectory')
@@ -158,6 +174,94 @@ describe.runIf(process.platform === 'win32')('County Hunter staging runner', () 
     expect(result.output).not.toContain('FAKE_PSQL')
     expect(result.output).not.toContain('synthetic-password')
     expect(result.output).not.toContain('postgresql://')
+  })
+
+  it('rejects pooler endpoints before any remote command', () => {
+    const result = runRunner(
+      ['-PreflightOnly'],
+      0,
+      {
+        COUNTY_HUNTER_STAGING_DB_URL:
+          'postgresql://postgres.abcdefghijklmnopqrst:synthetic-password@aws-0-test.pooler.supabase.com:5432/postgres',
+      },
+    )
+
+    expect(result.status).not.toBe(0)
+    expect(result.output).toContain(
+      'COUNTY_HUNTER_STAGING_DB_URL must use the Direct Connection on port 5432.',
+    )
+    expect(result.output).not.toContain('FAKE_PSQL')
+    expect(result.output).not.toContain('synthetic-password')
+    expect(result.output).not.toContain('postgresql://')
+  })
+
+  it('accepts the preferred secret key in strict preflight mode', () => {
+    const secret = 'sb_secret_strict-synthetic-admin-key'
+    const result = runRunner(
+      ['-PreflightOnly', '-StrictAdminKey'],
+      0,
+      {
+        SUPABASE_SECRET_KEY: secret,
+        SUPABASE_SERVICE_ROLE_KEY: ' ',
+      },
+    )
+
+    expect(result.status).toBe(0)
+    expect(result.output).toContain('READY FOR STAGING VALIDATION')
+    expect(result.output).not.toContain(secret)
+    expect(result.output).not.toContain('deprecated')
+  })
+
+  it('uses the deprecated fallback with a sanitized warning', () => {
+    const legacy = 'synthetic-legacy-admin-key'
+    const result = runRunner(
+      ['-PreflightOnly'],
+      0,
+      {
+        SUPABASE_SECRET_KEY: ' ',
+        SUPABASE_SERVICE_ROLE_KEY: legacy,
+      },
+    )
+
+    expect(result.status).toBe(0)
+    expect(result.output).toContain('SUPABASE_SERVICE_ROLE_KEY is deprecated')
+    expect(result.output).not.toContain(legacy)
+  })
+
+  it('rejects the legacy variable in strict preflight mode', () => {
+    const legacy = 'synthetic-legacy-admin-key'
+    const result = runRunner(
+      ['-PreflightOnly', '-StrictAdminKey'],
+      0,
+      {
+        SUPABASE_SECRET_KEY: ' ',
+        SUPABASE_SERVICE_ROLE_KEY: legacy,
+      },
+    )
+
+    expect(result.status).not.toBe(0)
+    expect(result.output).toContain(
+      'SUPABASE_SERVICE_ROLE_KEY is rejected in strict admin-key mode.',
+    )
+    expect(result.output).not.toContain(legacy)
+    expect(result.output).not.toContain('READY FOR STAGING VALIDATION')
+  })
+
+  it('fails safely when no administrative key is configured', () => {
+    const result = runRunner(
+      ['-PreflightOnly'],
+      0,
+      {
+        SUPABASE_SECRET_KEY: ' ',
+        SUPABASE_SERVICE_ROLE_KEY: ' ',
+      },
+    )
+
+    expect(result.status).not.toBe(0)
+    expect(result.output).toContain(
+      'SUPABASE_SECRET_KEY is missing; the deprecated legacy fallback is not configured.',
+    )
+    expect(result.output).not.toContain('READY FOR STAGING VALIDATION')
   })
 })
 
