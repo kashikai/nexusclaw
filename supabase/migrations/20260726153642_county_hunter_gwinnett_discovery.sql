@@ -2,84 +2,130 @@
 -- Additive only: preserves the approved Phase 1 tables, data, contracts and flows.
 
 alter table public.county_hunter_sources
-  add column adapter_key text,
-  add column adapter_version text,
-  add column official_hostnames jsonb not null default '[]'::jsonb,
-  add column managed_by_adapter boolean not null default false,
-  add column last_success_at timestamptz,
-  add column last_document_url text,
-  add column last_document_hash text,
-  add column last_sale_date date,
-  add column last_run_id uuid;
+  add column if not exists adapter_key text,
+  add column if not exists adapter_version text,
+  add column if not exists official_hostnames jsonb not null default '[]'::jsonb,
+  add column if not exists managed_by_adapter boolean not null default false,
+  add column if not exists last_success_at timestamptz,
+  add column if not exists last_document_url text,
+  add column if not exists last_document_hash text,
+  add column if not exists last_sale_date date,
+  add column if not exists last_run_id uuid;
 
 alter table public.county_hunter_auctions
-  add column source_id uuid,
-  add column document_url text,
-  add column document_hash text;
+  add column if not exists source_id uuid,
+  add column if not exists document_url text,
+  add column if not exists document_hash text;
 
 alter table public.county_hunter_properties
-  add column source_id uuid,
-  add column source_record_key text,
-  add column parcel_number_original text,
-  add column amount_due numeric(16,2) check (amount_due is null or amount_due >= 0),
-  add column source_record_hash text,
-  add column source_record_status text not null default 'current'
+  add column if not exists source_id uuid,
+  add column if not exists source_record_key text,
+  add column if not exists parcel_number_original text,
+  add column if not exists amount_due numeric(16,2) check (amount_due is null or amount_due >= 0),
+  add column if not exists source_record_hash text,
+  add column if not exists source_record_status text not null default 'current'
     check (source_record_status in ('current', 'removed_from_current_source')),
-  add column first_seen_run_id uuid,
-  add column last_seen_run_id uuid,
-  add column removed_at timestamptz,
-  add column official_notes text;
+  add column if not exists first_seen_run_id uuid,
+  add column if not exists last_seen_run_id uuid,
+  add column if not exists removed_at timestamptz,
+  add column if not exists official_notes text;
 
 alter table public.county_hunter_discovery_runs
-  add column source_id uuid,
-  add column adapter_version text,
-  add column landing_snapshot_id uuid,
-  add column document_snapshot_id uuid,
-  add column landing_url text,
-  add column landing_final_url text,
-  add column document_url text,
-  add column document_final_url text,
-  add column landing_hash text,
-  add column document_hash text,
-  add column landing_content_type text,
-  add column document_content_type text,
-  add column landing_size bigint check (landing_size is null or landing_size >= 0),
-  add column document_size bigint check (document_size is null or document_size >= 0),
-  add column sale_date date,
-  add column document_published_at timestamptz,
-  add column source_last_modified timestamptz,
-  add column reason_codes text[] not null default '{}'::text[],
-  add column candidate_documents jsonb not null default '[]'::jsonb
+  add column if not exists source_id uuid,
+  add column if not exists adapter_version text,
+  add column if not exists landing_snapshot_id uuid,
+  add column if not exists document_snapshot_id uuid,
+  add column if not exists landing_url text,
+  add column if not exists landing_final_url text,
+  add column if not exists document_url text,
+  add column if not exists document_final_url text,
+  add column if not exists landing_hash text,
+  add column if not exists document_hash text,
+  add column if not exists landing_content_type text,
+  add column if not exists document_content_type text,
+  add column if not exists landing_size bigint check (landing_size is null or landing_size >= 0),
+  add column if not exists document_size bigint check (document_size is null or document_size >= 0),
+  add column if not exists sale_date date,
+  add column if not exists document_published_at timestamptz,
+  add column if not exists source_last_modified timestamptz,
+  add column if not exists reason_codes text[] not null default '{}'::text[],
+  add column if not exists candidate_documents jsonb not null default '[]'::jsonb
     check (jsonb_typeof(candidate_documents) = 'array'),
-  add column added_count integer not null default 0 check (added_count >= 0),
-  add column changed_count integer not null default 0 check (changed_count >= 0),
-  add column unchanged_count integer not null default 0 check (unchanged_count >= 0),
-  add column removed_count integer not null default 0 check (removed_count >= 0),
-  add column duplicate_count integer not null default 0 check (duplicate_count >= 0),
-  add column review_required boolean not null default false;
+  add column if not exists added_count integer not null default 0 check (added_count >= 0),
+  add column if not exists changed_count integer not null default 0 check (changed_count >= 0),
+  add column if not exists unchanged_count integer not null default 0 check (unchanged_count >= 0),
+  add column if not exists removed_count integer not null default 0 check (removed_count >= 0),
+  add column if not exists duplicate_count integer not null default 0 check (duplicate_count >= 0),
+  add column if not exists review_required boolean not null default false;
 
-alter table public.county_hunter_discovery_runs
-  drop constraint county_hunter_discovery_runs_status_check;
+-- PostgreSQL has no ADD CONSTRAINT IF NOT EXISTS. This session-local helper
+-- creates a missing constraint, accepts only the expected canonical definition,
+-- and fails closed for a same-named but different object.
+create or replace function pg_temp.county_hunter_ensure_constraint(
+  p_table regclass,
+  p_constraint_name text,
+  p_expected_definition text,
+  p_ddl text
+)
+returns void
+language plpgsql
+as $$
+declare
+  constraint_oid oid;
+  actual_definition text;
+begin
+  select constraint_row.oid
+    into constraint_oid
+  from pg_catalog.pg_constraint constraint_row
+  where constraint_row.conrelid = p_table
+    and constraint_row.conname = p_constraint_name;
 
-alter table public.county_hunter_discovery_runs
-  add constraint county_hunter_discovery_runs_status_check check (
-    status in (
-      'queued',
-      'fetching_source',
-      'fetching_document',
-      'parsing',
-      'normalizing',
-      'comparing',
-      'completed',
-      'review_required',
-      'failed'
-    )
+  if constraint_oid is null then
+    if exists (
+      select 1
+      from pg_catalog.pg_class relation
+      join pg_catalog.pg_namespace namespace on namespace.oid = relation.relnamespace
+      where namespace.nspname = 'public'
+        and relation.relname = p_constraint_name
+    ) then
+      raise exception 'County Hunter migration conflict for constraint %: a same-named relation already exists', p_constraint_name;
+    end if;
+    execute p_ddl;
+    select constraint_row.oid
+      into constraint_oid
+    from pg_catalog.pg_constraint constraint_row
+    where constraint_row.conrelid = p_table
+      and constraint_row.conname = p_constraint_name;
+  end if;
+
+  actual_definition := lower(regexp_replace(
+    replace(pg_catalog.pg_get_constraintdef(constraint_oid, true), 'public.', ''),
+    '\s+', '', 'g'
+  ));
+  if actual_definition <> lower(regexp_replace(p_expected_definition, '\s+', '', 'g')) then
+    raise exception 'County Hunter migration conflict for constraint %: definition differs', p_constraint_name;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  perform pg_temp.county_hunter_ensure_constraint(
+    'public.county_hunter_discovery_runs'::regclass,
+    'county_hunter_discovery_runs_status_check',
+    $definition$CHECK (status = ANY (ARRAY['queued'::text, 'fetching_source'::text, 'fetching_document'::text, 'parsing'::text, 'normalizing'::text, 'comparing'::text, 'completed'::text, 'review_required'::text, 'failed'::text]))$definition$,
+    $ddl$alter table public.county_hunter_discovery_runs add constraint county_hunter_discovery_runs_status_check check (status in ('queued', 'fetching_source', 'fetching_document', 'parsing', 'normalizing', 'comparing', 'completed', 'review_required', 'failed'))$ddl$
   );
+  perform pg_temp.county_hunter_ensure_constraint(
+    'public.county_hunter_discovery_runs'::regclass,
+    'county_hunter_discovery_runs_org_id_unique',
+    'UNIQUE (organization_id, id)',
+    'alter table public.county_hunter_discovery_runs add constraint county_hunter_discovery_runs_org_id_unique unique (organization_id, id)'
+  );
+end;
+$$;
 
-alter table public.county_hunter_discovery_runs
-  add constraint county_hunter_discovery_runs_org_id_unique unique (organization_id, id);
-
-create table public.county_hunter_discovery_snapshots (
+create table if not exists public.county_hunter_discovery_snapshots (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
   run_id uuid not null,
@@ -100,7 +146,7 @@ create table public.county_hunter_discovery_snapshots (
   unique (organization_id, id)
 );
 
-create table public.county_hunter_discovery_records (
+create table if not exists public.county_hunter_discovery_records (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
   run_id uuid not null,
@@ -129,7 +175,7 @@ create table public.county_hunter_discovery_records (
   unique (organization_id, id)
 );
 
-create table public.county_hunter_discovery_changes (
+create table if not exists public.county_hunter_discovery_changes (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
   run_id uuid not null,
@@ -146,7 +192,7 @@ create table public.county_hunter_discovery_changes (
   unique (organization_id, id)
 );
 
-create table public.county_hunter_discovery_locks (
+create table if not exists public.county_hunter_discovery_locks (
   source_id uuid primary key,
   organization_id uuid not null,
   run_id uuid not null unique,
@@ -156,97 +202,93 @@ create table public.county_hunter_discovery_locks (
   unique (organization_id, source_id)
 );
 
-alter table public.county_hunter_discovery_runs
-  add constraint county_hunter_runs_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete restrict;
+do $$
+declare
+  expected record;
+begin
+  for expected in
+    select * from (values
+      ('public.county_hunter_discovery_runs', 'county_hunter_runs_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_runs add constraint county_hunter_runs_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_snapshots', 'county_hunter_snapshots_tenant_run_fk', 'FOREIGN KEY (organization_id, run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_snapshots add constraint county_hunter_snapshots_tenant_run_fk foreign key (organization_id, run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_snapshots', 'county_hunter_snapshots_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_snapshots add constraint county_hunter_snapshots_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_records', 'county_hunter_records_tenant_run_fk', 'FOREIGN KEY (organization_id, run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_records add constraint county_hunter_records_tenant_run_fk foreign key (organization_id, run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_records', 'county_hunter_records_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_records add constraint county_hunter_records_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_records', 'county_hunter_records_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_records add constraint county_hunter_records_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_records', 'county_hunter_records_tenant_duplicate_fk', 'FOREIGN KEY (organization_id, duplicate_of_record_id) REFERENCES county_hunter_discovery_records(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_records add constraint county_hunter_records_tenant_duplicate_fk foreign key (organization_id, duplicate_of_record_id) references public.county_hunter_discovery_records(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_changes', 'county_hunter_changes_tenant_run_fk', 'FOREIGN KEY (organization_id, run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_changes add constraint county_hunter_changes_tenant_run_fk foreign key (organization_id, run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_changes', 'county_hunter_changes_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_changes add constraint county_hunter_changes_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_changes', 'county_hunter_changes_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_changes add constraint county_hunter_changes_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_locks', 'county_hunter_locks_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE CASCADE', 'alter table public.county_hunter_discovery_locks add constraint county_hunter_locks_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete cascade'),
+      ('public.county_hunter_discovery_locks', 'county_hunter_locks_tenant_run_fk', 'FOREIGN KEY (organization_id, run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE CASCADE', 'alter table public.county_hunter_discovery_locks add constraint county_hunter_locks_tenant_run_fk foreign key (organization_id, run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete cascade'),
+      ('public.county_hunter_auctions', 'county_hunter_auctions_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_auctions add constraint county_hunter_auctions_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete restrict'),
+      ('public.county_hunter_properties', 'county_hunter_properties_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_properties add constraint county_hunter_properties_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id) on delete restrict'),
+      ('public.county_hunter_properties', 'county_hunter_properties_first_run_fk', 'FOREIGN KEY (organization_id, first_seen_run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_properties add constraint county_hunter_properties_first_run_fk foreign key (organization_id, first_seen_run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'),
+      ('public.county_hunter_properties', 'county_hunter_properties_last_run_fk', 'FOREIGN KEY (organization_id, last_seen_run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_properties add constraint county_hunter_properties_last_run_fk foreign key (organization_id, last_seen_run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'),
+      ('public.county_hunter_sources', 'county_hunter_sources_last_run_fk', 'FOREIGN KEY (organization_id, last_run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_sources add constraint county_hunter_sources_last_run_fk foreign key (organization_id, last_run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_runs', 'county_hunter_runs_landing_snapshot_fk', 'FOREIGN KEY (organization_id, landing_snapshot_id) REFERENCES county_hunter_discovery_snapshots(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_runs add constraint county_hunter_runs_landing_snapshot_fk foreign key (organization_id, landing_snapshot_id) references public.county_hunter_discovery_snapshots(organization_id, id) on delete restrict'),
+      ('public.county_hunter_discovery_runs', 'county_hunter_runs_document_snapshot_fk', 'FOREIGN KEY (organization_id, document_snapshot_id) REFERENCES county_hunter_discovery_snapshots(organization_id, id) ON DELETE RESTRICT', 'alter table public.county_hunter_discovery_runs add constraint county_hunter_runs_document_snapshot_fk foreign key (organization_id, document_snapshot_id) references public.county_hunter_discovery_snapshots(organization_id, id) on delete restrict')
+    ) as definitions(table_name, constraint_name, expected_definition, creation_sql)
+  loop
+    perform pg_temp.county_hunter_ensure_constraint(
+      expected.table_name::regclass,
+      expected.constraint_name,
+      expected.expected_definition,
+      expected.creation_sql
+    );
+  end loop;
+end;
+$$;
 
-alter table public.county_hunter_discovery_snapshots
-  add constraint county_hunter_snapshots_tenant_run_fk
-  foreign key (organization_id, run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete restrict,
-  add constraint county_hunter_snapshots_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete restrict;
-
-alter table public.county_hunter_discovery_records
-  add constraint county_hunter_records_tenant_run_fk
-  foreign key (organization_id, run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete restrict,
-  add constraint county_hunter_records_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete restrict,
-  add constraint county_hunter_records_tenant_property_fk
-  foreign key (organization_id, property_id)
-  references public.county_hunter_properties(organization_id, id) on delete restrict,
-  add constraint county_hunter_records_tenant_duplicate_fk
-  foreign key (organization_id, duplicate_of_record_id)
-  references public.county_hunter_discovery_records(organization_id, id) on delete restrict;
-
-alter table public.county_hunter_discovery_changes
-  add constraint county_hunter_changes_tenant_run_fk
-  foreign key (organization_id, run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete restrict,
-  add constraint county_hunter_changes_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete restrict,
-  add constraint county_hunter_changes_tenant_property_fk
-  foreign key (organization_id, property_id)
-  references public.county_hunter_properties(organization_id, id) on delete restrict;
-
-alter table public.county_hunter_discovery_locks
-  add constraint county_hunter_locks_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete cascade,
-  add constraint county_hunter_locks_tenant_run_fk
-  foreign key (organization_id, run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete cascade;
-
-alter table public.county_hunter_auctions
-  add constraint county_hunter_auctions_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete restrict;
-
-alter table public.county_hunter_properties
-  add constraint county_hunter_properties_tenant_source_fk
-  foreign key (organization_id, source_id)
-  references public.county_hunter_sources(organization_id, id) on delete restrict,
-  add constraint county_hunter_properties_first_run_fk
-  foreign key (organization_id, first_seen_run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete restrict,
-  add constraint county_hunter_properties_last_run_fk
-  foreign key (organization_id, last_seen_run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete restrict;
-
-alter table public.county_hunter_sources
-  add constraint county_hunter_sources_last_run_fk
-  foreign key (organization_id, last_run_id)
-  references public.county_hunter_discovery_runs(organization_id, id) on delete restrict;
-
-alter table public.county_hunter_discovery_runs
-  add constraint county_hunter_runs_landing_snapshot_fk
-  foreign key (organization_id, landing_snapshot_id)
-  references public.county_hunter_discovery_snapshots(organization_id, id) on delete restrict,
-  add constraint county_hunter_runs_document_snapshot_fk
-  foreign key (organization_id, document_snapshot_id)
-  references public.county_hunter_discovery_snapshots(organization_id, id) on delete restrict;
-
-create unique index county_hunter_auctions_source_sale_date_unique
+create unique index if not exists county_hunter_auctions_source_sale_date_unique
   on public.county_hunter_auctions (organization_id, source_id, sale_date)
   where source_id is not null and sale_date is not null;
 
-create unique index county_hunter_properties_source_record_key_unique
+create unique index if not exists county_hunter_properties_source_record_key_unique
   on public.county_hunter_properties (organization_id, source_id, source_record_key)
   where source_id is not null and source_record_key is not null;
 
-create index county_hunter_discovery_runs_source_created_idx
+create index if not exists county_hunter_discovery_runs_source_created_idx
   on public.county_hunter_discovery_runs (organization_id, source_id, created_at desc);
 
-create index county_hunter_discovery_records_run_order_idx
+create index if not exists county_hunter_discovery_records_run_order_idx
   on public.county_hunter_discovery_records (organization_id, run_id, source_order);
 
-create index county_hunter_discovery_changes_run_type_idx
+create index if not exists county_hunter_discovery_changes_run_type_idx
   on public.county_hunter_discovery_changes (organization_id, run_id, change_type);
+
+-- CREATE INDEX IF NOT EXISTS is replay-safe but does not prove equivalence.
+-- Fail closed if a same-named index has a different table, key order, predicate,
+-- uniqueness flag or access method.
+do $$
+declare
+  expected record;
+  existing_definition text;
+begin
+  for expected in
+    select * from (values
+      ('county_hunter_auctions_source_sale_date_unique', 'CREATE UNIQUE INDEX county_hunter_auctions_source_sale_date_unique ON public.county_hunter_auctions USING btree (organization_id, source_id, sale_date) WHERE ((source_id IS NOT NULL) AND (sale_date IS NOT NULL))'),
+      ('county_hunter_properties_source_record_key_unique', 'CREATE UNIQUE INDEX county_hunter_properties_source_record_key_unique ON public.county_hunter_properties USING btree (organization_id, source_id, source_record_key) WHERE ((source_id IS NOT NULL) AND (source_record_key IS NOT NULL))'),
+      ('county_hunter_discovery_runs_source_created_idx', 'CREATE INDEX county_hunter_discovery_runs_source_created_idx ON public.county_hunter_discovery_runs USING btree (organization_id, source_id, created_at DESC)'),
+      ('county_hunter_discovery_records_run_order_idx', 'CREATE INDEX county_hunter_discovery_records_run_order_idx ON public.county_hunter_discovery_records USING btree (organization_id, run_id, source_order)'),
+      ('county_hunter_discovery_changes_run_type_idx', 'CREATE INDEX county_hunter_discovery_changes_run_type_idx ON public.county_hunter_discovery_changes USING btree (organization_id, run_id, change_type)')
+    ) as definitions(index_name, expected_definition)
+  loop
+    select pg_catalog.pg_get_indexdef(index_relation.oid)
+      into existing_definition
+    from pg_catalog.pg_class index_relation
+    join pg_catalog.pg_namespace namespace on namespace.oid = index_relation.relnamespace
+    join pg_catalog.pg_index index_row on index_row.indexrelid = index_relation.oid
+    where namespace.nspname = 'public'
+      and index_relation.relname = expected.index_name;
+
+    if existing_definition is null
+       or lower(regexp_replace(existing_definition, '\s+', '', 'g'))
+          <> lower(regexp_replace(expected.expected_definition, '\s+', '', 'g')) then
+      raise exception 'County Hunter migration conflict for index %: definition differs', expected.index_name;
+    end if;
+  end loop;
+end;
+$$;
 
 -- New public tables are explicitly granted because Supabase no longer exposes new
 -- public tables to the Data API by default. RLS remains the row-level boundary.
@@ -277,116 +319,80 @@ grant select, insert on public.county_hunter_discovery_records to authenticated;
 grant select, insert on public.county_hunter_discovery_changes to authenticated;
 grant select, insert, delete on public.county_hunter_discovery_locks to authenticated;
 
-create policy county_hunter_discovery_snapshots_select
-  on public.county_hunter_discovery_snapshots for select to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.view'))
-  );
-create policy county_hunter_discovery_snapshots_insert
-  on public.county_hunter_discovery_snapshots for insert to authenticated
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
+create or replace function pg_temp.county_hunter_ensure_policy(
+  p_table regclass,
+  p_policy_name text,
+  p_command "char",
+  p_expected_qual text,
+  p_expected_check text,
+  p_ddl text
+)
+returns void
+language plpgsql
+as $$
+declare
+  existing_command "char";
+  existing_permissive boolean;
+  existing_roles oid[];
+  existing_qual text;
+  existing_check text;
+begin
+  select policy_row.polcmd,
+         policy_row.polpermissive,
+         policy_row.polroles,
+         pg_catalog.pg_get_expr(policy_row.polqual, policy_row.polrelid, true),
+         pg_catalog.pg_get_expr(policy_row.polwithcheck, policy_row.polrelid, true)
+    into existing_command, existing_permissive, existing_roles, existing_qual, existing_check
+  from pg_catalog.pg_policy policy_row
+  where policy_row.polrelid = p_table
+    and policy_row.polname = p_policy_name;
 
-create policy county_hunter_discovery_records_select
-  on public.county_hunter_discovery_records for select to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.view'))
-  );
-create policy county_hunter_discovery_records_insert
-  on public.county_hunter_discovery_records for insert to authenticated
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
+  if not found then
+    execute p_ddl;
+    return;
+  end if;
 
-create policy county_hunter_discovery_changes_select
-  on public.county_hunter_discovery_changes for select to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.view'))
-  );
-create policy county_hunter_discovery_changes_insert
-  on public.county_hunter_discovery_changes for insert to authenticated
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
+  if existing_command <> p_command
+     or not existing_permissive
+     or existing_roles <> array['authenticated'::regrole::oid]
+     or coalesce(lower(regexp_replace(existing_qual, '\s+', '', 'g')), '') <>
+        coalesce(lower(regexp_replace(p_expected_qual, '\s+', '', 'g')), '')
+     or coalesce(lower(regexp_replace(existing_check, '\s+', '', 'g')), '') <>
+        coalesce(lower(regexp_replace(p_expected_check, '\s+', '', 'g')), '') then
+    raise exception 'County Hunter migration conflict for policy %: definition differs', p_policy_name;
+  end if;
+end;
+$$;
 
-create policy county_hunter_discovery_locks_admin
-  on public.county_hunter_discovery_locks for all to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  )
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
+do $$
+declare
+  view_expression text := $expression$organization_id = (( SELECT county_hunter_current_organization_id() AS county_hunter_current_organization_id)) AND ( SELECT county_hunter_has_permission('county_hunter.view'::text) AS county_hunter_has_permission)$expression$;
+  admin_expression text := $expression$organization_id = (( SELECT county_hunter_current_organization_id() AS county_hunter_current_organization_id)) AND ( SELECT county_hunter_has_permission('county_hunter.admin'::text) AS county_hunter_has_permission)$expression$;
+  manager_expression text := $expression$organization_id = (( SELECT county_hunter_current_organization_id() AS county_hunter_current_organization_id)) AND NOT managed_by_adapter AND ( SELECT county_hunter_has_permission('county_hunter.manage'::text) AS county_hunter_has_permission)$expression$;
+begin
+  if exists (
+    select 1 from pg_catalog.pg_policy policy_row
+    where policy_row.polname in ('county_hunter_sources_insert', 'county_hunter_sources_update')
+      and policy_row.polrelid = 'public.county_hunter_sources'::regclass
+  ) then
+    raise exception 'County Hunter migration conflict: deprecated source policy still exists';
+  end if;
 
--- A manager may continue to maintain manual sources, but an adapter-managed
--- official source can only be created or changed by an administrator.
-drop policy county_hunter_sources_insert on public.county_hunter_sources;
-drop policy county_hunter_sources_update on public.county_hunter_sources;
-
-create policy county_hunter_sources_manager_insert
-  on public.county_hunter_sources for insert to authenticated
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and not managed_by_adapter
-    and (select public.county_hunter_has_permission('county_hunter.manage'))
-  );
-create policy county_hunter_sources_admin_insert
-  on public.county_hunter_sources for insert to authenticated
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
-create policy county_hunter_sources_manager_update
-  on public.county_hunter_sources for update to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and not managed_by_adapter
-    and (select public.county_hunter_has_permission('county_hunter.manage'))
-  )
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and not managed_by_adapter
-    and (select public.county_hunter_has_permission('county_hunter.manage'))
-  );
-create policy county_hunter_sources_admin_update
-  on public.county_hunter_sources for update to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  )
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
-
-drop policy county_hunter_discovery_runs_insert on public.county_hunter_discovery_runs;
-drop policy county_hunter_discovery_runs_update on public.county_hunter_discovery_runs;
-
-create policy county_hunter_discovery_runs_insert
-  on public.county_hunter_discovery_runs for insert to authenticated
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
-create policy county_hunter_discovery_runs_update
-  on public.county_hunter_discovery_runs for update to authenticated
-  using (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  )
-  with check (
-    organization_id = (select public.county_hunter_current_organization_id())
-    and (select public.county_hunter_has_permission('county_hunter.admin'))
-  );
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_snapshots'::regclass, 'county_hunter_discovery_snapshots_select', 'r', view_expression, null, $ddl$create policy county_hunter_discovery_snapshots_select on public.county_hunter_discovery_snapshots for select to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.view')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_snapshots'::regclass, 'county_hunter_discovery_snapshots_insert', 'a', null, admin_expression, $ddl$create policy county_hunter_discovery_snapshots_insert on public.county_hunter_discovery_snapshots for insert to authenticated with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_records'::regclass, 'county_hunter_discovery_records_select', 'r', view_expression, null, $ddl$create policy county_hunter_discovery_records_select on public.county_hunter_discovery_records for select to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.view')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_records'::regclass, 'county_hunter_discovery_records_insert', 'a', null, admin_expression, $ddl$create policy county_hunter_discovery_records_insert on public.county_hunter_discovery_records for insert to authenticated with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_changes'::regclass, 'county_hunter_discovery_changes_select', 'r', view_expression, null, $ddl$create policy county_hunter_discovery_changes_select on public.county_hunter_discovery_changes for select to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.view')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_changes'::regclass, 'county_hunter_discovery_changes_insert', 'a', null, admin_expression, $ddl$create policy county_hunter_discovery_changes_insert on public.county_hunter_discovery_changes for insert to authenticated with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_locks'::regclass, 'county_hunter_discovery_locks_admin', '*', admin_expression, admin_expression, $ddl$create policy county_hunter_discovery_locks_admin on public.county_hunter_discovery_locks for all to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin'))) with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_sources'::regclass, 'county_hunter_sources_manager_insert', 'a', null, manager_expression, $ddl$create policy county_hunter_sources_manager_insert on public.county_hunter_sources for insert to authenticated with check (organization_id = (select public.county_hunter_current_organization_id()) and not managed_by_adapter and (select public.county_hunter_has_permission('county_hunter.manage')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_sources'::regclass, 'county_hunter_sources_admin_insert', 'a', null, admin_expression, $ddl$create policy county_hunter_sources_admin_insert on public.county_hunter_sources for insert to authenticated with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_sources'::regclass, 'county_hunter_sources_manager_update', 'w', manager_expression, manager_expression, $ddl$create policy county_hunter_sources_manager_update on public.county_hunter_sources for update to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and not managed_by_adapter and (select public.county_hunter_has_permission('county_hunter.manage'))) with check (organization_id = (select public.county_hunter_current_organization_id()) and not managed_by_adapter and (select public.county_hunter_has_permission('county_hunter.manage')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_sources'::regclass, 'county_hunter_sources_admin_update', 'w', admin_expression, admin_expression, $ddl$create policy county_hunter_sources_admin_update on public.county_hunter_sources for update to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin'))) with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_runs'::regclass, 'county_hunter_discovery_runs_insert', 'a', null, admin_expression, $ddl$create policy county_hunter_discovery_runs_insert on public.county_hunter_discovery_runs for insert to authenticated with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+  perform pg_temp.county_hunter_ensure_policy('public.county_hunter_discovery_runs'::regclass, 'county_hunter_discovery_runs_update', 'w', admin_expression, admin_expression, $ddl$create policy county_hunter_discovery_runs_update on public.county_hunter_discovery_runs for update to authenticated using (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin'))) with check (organization_id = (select public.county_hunter_current_organization_id()) and (select public.county_hunter_has_permission('county_hunter.admin')))$ddl$);
+end;
+$$;
 
 create or replace function public.county_hunter_configure_gwinnett_discovery()
 returns table (county_id uuid, source_id uuid)

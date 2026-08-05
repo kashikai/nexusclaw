@@ -249,7 +249,19 @@ create table if not exists public.county_hunter_discovery_runs (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
   county_id uuid not null references public.county_hunter_counties(id) on delete restrict,
-  status text not null default 'queued' check (status in ('queued', 'running', 'completed', 'partial', 'failed')),
+  status text not null default 'queued' check (
+    status in (
+      'queued',
+      'fetching_source',
+      'fetching_document',
+      'parsing',
+      'normalizing',
+      'comparing',
+      'completed',
+      'review_required',
+      'failed'
+    )
+  ),
   started_at timestamptz,
   finished_at timestamptz,
   sources_checked integer not null default 0 check (sources_checked >= 0),
@@ -318,33 +330,98 @@ create table if not exists public.county_hunter_audit_logs (
   created_at timestamptz not null default now()
 );
 
--- Composite tenant keys prevent a row from referencing an entity owned by another organization.
-alter table public.county_hunter_states add constraint county_hunter_states_org_id_unique unique (organization_id, id);
-alter table public.county_hunter_counties add constraint county_hunter_counties_org_id_unique unique (organization_id, id);
-alter table public.county_hunter_sources add constraint county_hunter_sources_org_id_unique unique (organization_id, id);
-alter table public.county_hunter_auctions add constraint county_hunter_auctions_org_id_unique unique (organization_id, id);
-alter table public.county_hunter_properties add constraint county_hunter_properties_org_id_unique unique (organization_id, id);
+-- Composite tenant keys prevent a row from referencing an entity owned by another
+-- organization. PostgreSQL has no ADD CONSTRAINT IF NOT EXISTS, so replay checks
+-- both the named constraint and its complete canonical definition. A same-named
+-- relation or a structurally different constraint is a hard conflict.
+do $$
+declare
+  expected record;
+  existing_oid oid;
+  actual_definition text;
+  backing_index_is_valid boolean;
+begin
+  for expected in
+    select * from (values
+      ('public.county_hunter_states', 'county_hunter_states_org_id_unique', 'UNIQUE (organization_id, id)', 'alter table public.county_hunter_states add constraint county_hunter_states_org_id_unique unique (organization_id, id)'),
+      ('public.county_hunter_counties', 'county_hunter_counties_org_id_unique', 'UNIQUE (organization_id, id)', 'alter table public.county_hunter_counties add constraint county_hunter_counties_org_id_unique unique (organization_id, id)'),
+      ('public.county_hunter_sources', 'county_hunter_sources_org_id_unique', 'UNIQUE (organization_id, id)', 'alter table public.county_hunter_sources add constraint county_hunter_sources_org_id_unique unique (organization_id, id)'),
+      ('public.county_hunter_auctions', 'county_hunter_auctions_org_id_unique', 'UNIQUE (organization_id, id)', 'alter table public.county_hunter_auctions add constraint county_hunter_auctions_org_id_unique unique (organization_id, id)'),
+      ('public.county_hunter_properties', 'county_hunter_properties_org_id_unique', 'UNIQUE (organization_id, id)', 'alter table public.county_hunter_properties add constraint county_hunter_properties_org_id_unique unique (organization_id, id)'),
+      ('public.county_hunter_counties', 'county_hunter_counties_tenant_state_fk', 'FOREIGN KEY (organization_id, state_id) REFERENCES county_hunter_states(organization_id, id)', 'alter table public.county_hunter_counties add constraint county_hunter_counties_tenant_state_fk foreign key (organization_id, state_id) references public.county_hunter_states(organization_id, id)'),
+      ('public.county_hunter_sources', 'county_hunter_sources_tenant_county_fk', 'FOREIGN KEY (organization_id, county_id) REFERENCES county_hunter_counties(organization_id, id)', 'alter table public.county_hunter_sources add constraint county_hunter_sources_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id)'),
+      ('public.county_hunter_auctions', 'county_hunter_auctions_tenant_county_fk', 'FOREIGN KEY (organization_id, county_id) REFERENCES county_hunter_counties(organization_id, id)', 'alter table public.county_hunter_auctions add constraint county_hunter_auctions_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id)'),
+      ('public.county_hunter_auction_sources', 'county_hunter_auction_sources_tenant_auction_fk', 'FOREIGN KEY (organization_id, auction_id) REFERENCES county_hunter_auctions(organization_id, id)', 'alter table public.county_hunter_auction_sources add constraint county_hunter_auction_sources_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id)'),
+      ('public.county_hunter_auction_sources', 'county_hunter_auction_sources_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id)', 'alter table public.county_hunter_auction_sources add constraint county_hunter_auction_sources_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id)'),
+      ('public.county_hunter_properties', 'county_hunter_properties_tenant_auction_fk', 'FOREIGN KEY (organization_id, auction_id) REFERENCES county_hunter_auctions(organization_id, id)', 'alter table public.county_hunter_properties add constraint county_hunter_properties_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id)'),
+      ('public.county_hunter_properties', 'county_hunter_properties_tenant_county_fk', 'FOREIGN KEY (organization_id, county_id) REFERENCES county_hunter_counties(organization_id, id)', 'alter table public.county_hunter_properties add constraint county_hunter_properties_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id)'),
+      ('public.county_hunter_parcel_matches', 'county_hunter_parcel_matches_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_parcel_matches add constraint county_hunter_parcel_matches_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_property_snapshots', 'county_hunter_property_snapshots_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_property_snapshots add constraint county_hunter_property_snapshots_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_risk_assessments', 'county_hunter_risks_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_risk_assessments add constraint county_hunter_risks_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_valuation_scenarios', 'county_hunter_valuations_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_valuation_scenarios add constraint county_hunter_valuations_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_shortlists', 'county_hunter_shortlists_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_shortlists add constraint county_hunter_shortlists_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_monitoring_events', 'county_hunter_events_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_monitoring_events add constraint county_hunter_events_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_monitoring_events', 'county_hunter_events_tenant_auction_fk', 'FOREIGN KEY (organization_id, auction_id) REFERENCES county_hunter_auctions(organization_id, id)', 'alter table public.county_hunter_monitoring_events add constraint county_hunter_events_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id)'),
+      ('public.county_hunter_monitoring_events', 'county_hunter_events_tenant_source_fk', 'FOREIGN KEY (organization_id, source_id) REFERENCES county_hunter_sources(organization_id, id)', 'alter table public.county_hunter_monitoring_events add constraint county_hunter_events_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id)'),
+      ('public.county_hunter_review_tasks', 'county_hunter_reviews_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_review_tasks add constraint county_hunter_reviews_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_review_tasks', 'county_hunter_reviews_tenant_county_fk', 'FOREIGN KEY (organization_id, county_id) REFERENCES county_hunter_counties(organization_id, id)', 'alter table public.county_hunter_review_tasks add constraint county_hunter_reviews_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id)'),
+      ('public.county_hunter_discovery_runs', 'county_hunter_runs_tenant_county_fk', 'FOREIGN KEY (organization_id, county_id) REFERENCES county_hunter_counties(organization_id, id)', 'alter table public.county_hunter_discovery_runs add constraint county_hunter_runs_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id)'),
+      ('public.county_hunter_bid_assignments', 'county_hunter_bids_tenant_property_fk', 'FOREIGN KEY (organization_id, property_id) REFERENCES county_hunter_properties(organization_id, id)', 'alter table public.county_hunter_bid_assignments add constraint county_hunter_bids_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id)'),
+      ('public.county_hunter_bid_assignments', 'county_hunter_bids_tenant_auction_fk', 'FOREIGN KEY (organization_id, auction_id) REFERENCES county_hunter_auctions(organization_id, id)', 'alter table public.county_hunter_bid_assignments add constraint county_hunter_bids_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id)')
+    ) as definitions(table_name, constraint_name, expected_definition, creation_sql)
+  loop
+    existing_oid := null;
+    select constraint_row.oid
+      into existing_oid
+    from pg_catalog.pg_constraint constraint_row
+    where constraint_row.conrelid = expected.table_name::regclass
+      and constraint_row.conname = expected.constraint_name;
 
-alter table public.county_hunter_counties add constraint county_hunter_counties_tenant_state_fk foreign key (organization_id, state_id) references public.county_hunter_states(organization_id, id);
-alter table public.county_hunter_sources add constraint county_hunter_sources_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id);
-alter table public.county_hunter_auctions add constraint county_hunter_auctions_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id);
-alter table public.county_hunter_auction_sources add constraint county_hunter_auction_sources_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id);
-alter table public.county_hunter_auction_sources add constraint county_hunter_auction_sources_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id);
-alter table public.county_hunter_properties add constraint county_hunter_properties_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id);
-alter table public.county_hunter_properties add constraint county_hunter_properties_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id);
-alter table public.county_hunter_parcel_matches add constraint county_hunter_parcel_matches_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_property_snapshots add constraint county_hunter_property_snapshots_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_risk_assessments add constraint county_hunter_risks_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_valuation_scenarios add constraint county_hunter_valuations_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_shortlists add constraint county_hunter_shortlists_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_monitoring_events add constraint county_hunter_events_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_monitoring_events add constraint county_hunter_events_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id);
-alter table public.county_hunter_monitoring_events add constraint county_hunter_events_tenant_source_fk foreign key (organization_id, source_id) references public.county_hunter_sources(organization_id, id);
-alter table public.county_hunter_review_tasks add constraint county_hunter_reviews_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_review_tasks add constraint county_hunter_reviews_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id);
-alter table public.county_hunter_discovery_runs add constraint county_hunter_runs_tenant_county_fk foreign key (organization_id, county_id) references public.county_hunter_counties(organization_id, id);
-alter table public.county_hunter_bid_assignments add constraint county_hunter_bids_tenant_property_fk foreign key (organization_id, property_id) references public.county_hunter_properties(organization_id, id);
-alter table public.county_hunter_bid_assignments add constraint county_hunter_bids_tenant_auction_fk foreign key (organization_id, auction_id) references public.county_hunter_auctions(organization_id, id);
+    if existing_oid is null then
+      if exists (
+        select 1
+        from pg_catalog.pg_class relation
+        join pg_catalog.pg_namespace namespace on namespace.oid = relation.relnamespace
+        where namespace.nspname = 'public'
+          and relation.relname = expected.constraint_name
+      ) then
+        raise exception 'County Hunter migration conflict for constraint %: a same-named relation already exists', expected.constraint_name;
+      end if;
+      execute expected.creation_sql;
+      select constraint_row.oid
+        into existing_oid
+      from pg_catalog.pg_constraint constraint_row
+      where constraint_row.conrelid = expected.table_name::regclass
+        and constraint_row.conname = expected.constraint_name;
+    end if;
+
+    select lower(regexp_replace(replace(pg_catalog.pg_get_constraintdef(existing_oid, true), 'public.', ''), '\s+', '', 'g'))
+      into actual_definition;
+    if actual_definition <> lower(regexp_replace(expected.expected_definition, '\s+', '', 'g')) then
+      raise exception 'County Hunter migration conflict for constraint %: definition differs', expected.constraint_name;
+    end if;
+
+    if expected.expected_definition like 'UNIQUE %' then
+      select coalesce(bool_and(
+        index_row.indisunique
+        and index_row.indisvalid
+        and index_row.indisready
+        and index_row.indpred is null
+        and access_method.amname = 'btree'
+      ), false)
+        into backing_index_is_valid
+      from pg_catalog.pg_constraint constraint_row
+      join pg_catalog.pg_index index_row on index_row.indexrelid = constraint_row.conindid
+      join pg_catalog.pg_class index_relation on index_relation.oid = index_row.indexrelid
+      join pg_catalog.pg_am access_method on access_method.oid = index_relation.relam
+      where constraint_row.oid = existing_oid;
+      if not backing_index_is_valid then
+        raise exception 'County Hunter migration conflict for constraint %: backing unique index differs', expected.constraint_name;
+      end if;
+    end if;
+  end loop;
+end;
+$$;
 
 create index if not exists county_hunter_states_org_idx on public.county_hunter_states (organization_id);
 create index if not exists county_hunter_counties_org_state_idx on public.county_hunter_counties (organization_id, state_id);
@@ -361,6 +438,48 @@ create index if not exists county_hunter_discovery_runs_county_idx on public.cou
 create index if not exists county_hunter_monitoring_events_created_idx on public.county_hunter_monitoring_events (organization_id, created_at desc);
 create index if not exists county_hunter_audit_logs_entity_idx on public.county_hunter_audit_logs (organization_id, entity_type, entity_id, created_at desc);
 
+-- IF NOT EXISTS prevents a harmless replay failure; this catalog assertion keeps
+-- a same-named but structurally different index from being silently accepted.
+do $$
+declare
+  expected record;
+  existing_definition text;
+begin
+  for expected in
+    select * from (values
+      ('county_hunter_states_org_idx', 'CREATE INDEX county_hunter_states_org_idx ON public.county_hunter_states USING btree (organization_id)'),
+      ('county_hunter_counties_org_state_idx', 'CREATE INDEX county_hunter_counties_org_state_idx ON public.county_hunter_counties USING btree (organization_id, state_id)'),
+      ('county_hunter_counties_source_status_idx', 'CREATE INDEX county_hunter_counties_source_status_idx ON public.county_hunter_counties USING btree (organization_id, source_status)'),
+      ('county_hunter_sources_county_status_idx', 'CREATE INDEX county_hunter_sources_county_status_idx ON public.county_hunter_sources USING btree (organization_id, county_id, status)'),
+      ('county_hunter_auctions_date_idx', 'CREATE INDEX county_hunter_auctions_date_idx ON public.county_hunter_auctions USING btree (organization_id, sale_date)'),
+      ('county_hunter_auctions_county_idx', 'CREATE INDEX county_hunter_auctions_county_idx ON public.county_hunter_auctions USING btree (organization_id, county_id)'),
+      ('county_hunter_properties_parcel_idx', 'CREATE INDEX county_hunter_properties_parcel_idx ON public.county_hunter_properties USING btree (organization_id, parcel_number)'),
+      ('county_hunter_properties_status_idx', 'CREATE INDEX county_hunter_properties_status_idx ON public.county_hunter_properties USING btree (organization_id, status)'),
+      ('county_hunter_properties_risk_idx', 'CREATE INDEX county_hunter_properties_risk_idx ON public.county_hunter_properties USING btree (organization_id, risk_score)'),
+      ('county_hunter_properties_auction_idx', 'CREATE INDEX county_hunter_properties_auction_idx ON public.county_hunter_properties USING btree (organization_id, auction_id)'),
+      ('county_hunter_review_tasks_status_idx', 'CREATE INDEX county_hunter_review_tasks_status_idx ON public.county_hunter_review_tasks USING btree (organization_id, status, priority)'),
+      ('county_hunter_discovery_runs_county_idx', 'CREATE INDEX county_hunter_discovery_runs_county_idx ON public.county_hunter_discovery_runs USING btree (organization_id, county_id, created_at DESC)'),
+      ('county_hunter_monitoring_events_created_idx', 'CREATE INDEX county_hunter_monitoring_events_created_idx ON public.county_hunter_monitoring_events USING btree (organization_id, created_at DESC)'),
+      ('county_hunter_audit_logs_entity_idx', 'CREATE INDEX county_hunter_audit_logs_entity_idx ON public.county_hunter_audit_logs USING btree (organization_id, entity_type, entity_id, created_at DESC)')
+    ) as definitions(index_name, expected_definition)
+  loop
+    select pg_catalog.pg_get_indexdef(index_relation.oid)
+      into existing_definition
+    from pg_catalog.pg_class index_relation
+    join pg_catalog.pg_namespace namespace on namespace.oid = index_relation.relnamespace
+    join pg_catalog.pg_index index_row on index_row.indexrelid = index_relation.oid
+    where namespace.nspname = 'public'
+      and index_relation.relname = expected.index_name;
+
+    if existing_definition is null
+       or lower(regexp_replace(existing_definition, '\s+', '', 'g'))
+          <> lower(regexp_replace(expected.expected_definition, '\s+', '', 'g')) then
+      raise exception 'County Hunter migration conflict for index %: definition differs', expected.index_name;
+    end if;
+  end loop;
+end;
+$$;
+
 create or replace function public.county_hunter_set_updated_at()
 returns trigger
 language plpgsql
@@ -369,6 +488,37 @@ as $$
 begin
   new.updated_at = now();
   return new;
+end;
+$$;
+
+create or replace function pg_temp.county_hunter_ensure_trigger(
+  p_table regclass,
+  p_trigger_name text,
+  p_expected_definition text,
+  p_ddl text
+)
+returns void
+language plpgsql
+as $$
+declare
+  existing_definition text;
+begin
+  select pg_catalog.pg_get_triggerdef(trigger_row.oid, true)
+    into existing_definition
+  from pg_catalog.pg_trigger trigger_row
+  where trigger_row.tgrelid = p_table
+    and trigger_row.tgname = p_trigger_name
+    and not trigger_row.tgisinternal;
+
+  if existing_definition is null then
+    execute p_ddl;
+    return;
+  end if;
+
+  if lower(regexp_replace(replace(existing_definition, 'public.', ''), '\s+', '', 'g')) <>
+     lower(regexp_replace(replace(p_expected_definition, 'public.', ''), '\s+', '', 'g')) then
+    raise exception 'County Hunter migration conflict for trigger %: definition differs', p_trigger_name;
+  end if;
 end;
 $$;
 
@@ -382,10 +532,17 @@ begin
     'county_hunter_valuation_scenarios', 'county_hunter_shortlists', 'county_hunter_review_tasks',
     'county_hunter_discovery_runs', 'county_hunter_bid_assignments', 'county_hunter_settings'
   ] loop
-    execute format('drop trigger if exists %I on public.%I', table_name || '_updated_at', table_name);
-    execute format(
-      'create trigger %I before update on public.%I for each row execute function public.county_hunter_set_updated_at()',
-      table_name || '_updated_at', table_name
+    perform pg_temp.county_hunter_ensure_trigger(
+      format('public.%I', table_name)::regclass,
+      table_name || '_updated_at',
+      format(
+        'create trigger %I before update on %I for each row execute function county_hunter_set_updated_at()',
+        table_name || '_updated_at', table_name
+      ),
+      format(
+        'create trigger %I before update on public.%I for each row execute function public.county_hunter_set_updated_at()',
+        table_name || '_updated_at', table_name
+      )
     );
   end loop;
 end;

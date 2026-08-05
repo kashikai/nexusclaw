@@ -23,23 +23,77 @@ create index if not exists county_hunter_memberships_org_user_idx
   on public.county_hunter_memberships (organization_id, user_id)
   where active;
 
-drop trigger if exists county_hunter_memberships_updated_at on public.county_hunter_memberships;
-create trigger county_hunter_memberships_updated_at
-  before update on public.county_hunter_memberships
-  for each row execute function public.county_hunter_set_updated_at();
+do $$
+declare
+  existing_definition text;
+begin
+  select pg_catalog.pg_get_indexdef(index_relation.oid)
+    into existing_definition
+  from pg_catalog.pg_class index_relation
+  join pg_catalog.pg_namespace namespace on namespace.oid = index_relation.relnamespace
+  join pg_catalog.pg_index index_row on index_row.indexrelid = index_relation.oid
+  where namespace.nspname = 'public'
+    and index_relation.relname = 'county_hunter_memberships_org_user_idx';
+
+  if existing_definition is null
+     or lower(regexp_replace(existing_definition, '\s+', '', 'g')) <>
+        lower(regexp_replace(
+          'CREATE INDEX county_hunter_memberships_org_user_idx ON public.county_hunter_memberships USING btree (organization_id, user_id) WHERE active',
+          '\s+', '', 'g'
+        )) then
+    raise exception 'County Hunter migration conflict for index county_hunter_memberships_org_user_idx: definition differs';
+  end if;
+end;
+$$;
+
+do $$
+declare
+  existing_definition text;
+begin
+  select pg_catalog.pg_get_triggerdef(trigger_row.oid, true)
+    into existing_definition
+  from pg_catalog.pg_trigger trigger_row
+  where trigger_row.tgrelid = 'public.county_hunter_memberships'::regclass
+    and trigger_row.tgname = 'county_hunter_memberships_updated_at'
+    and not trigger_row.tgisinternal;
+
+  if existing_definition is null then
+    create trigger county_hunter_memberships_updated_at
+      before update on public.county_hunter_memberships
+      for each row execute function public.county_hunter_set_updated_at();
+  elsif lower(regexp_replace(replace(existing_definition, 'public.', ''), '\s+', '', 'g')) <>
+        lower(regexp_replace(
+          'CREATE TRIGGER county_hunter_memberships_updated_at BEFORE UPDATE ON county_hunter_memberships FOR EACH ROW EXECUTE FUNCTION county_hunter_set_updated_at()',
+          '\s+', '', 'g'
+        )) then
+    raise exception 'County Hunter migration conflict for trigger county_hunter_memberships_updated_at: definition differs';
+  end if;
+end;
+$$;
 
 alter table public.county_hunter_memberships enable row level security;
 alter table public.county_hunter_memberships force row level security;
 revoke all on public.county_hunter_memberships from anon, authenticated;
 grant select on public.county_hunter_memberships to authenticated;
 
-create policy county_hunter_memberships_select
-  on public.county_hunter_memberships for select to authenticated
-  using (
-    user_id = (select auth.uid())
-    and organization_id = (select public.county_hunter_current_organization_id())
-    and active
-  );
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_catalog.pg_policy policy_row
+    where policy_row.polrelid = 'public.county_hunter_memberships'::regclass
+      and policy_row.polname = 'county_hunter_memberships_select'
+  ) then
+    create policy county_hunter_memberships_select
+      on public.county_hunter_memberships for select to authenticated
+      using (
+        user_id = (select auth.uid())
+        and organization_id = (select public.county_hunter_current_organization_id())
+        and active
+      );
+  end if;
+end;
+$$;
 
 -- Permissions are sourced from the membership table, never from client-controlled
 -- input or user_metadata. Admin is an explicit superset for County Hunter operations.
@@ -69,7 +123,7 @@ grant execute on function public.county_hunter_has_permission(text) to authentic
 -- matching active membership are the only tenant inputs accepted by this RPC.
 drop function if exists public.county_hunter_seed_georgia(uuid);
 
-create function public.county_hunter_seed_georgia()
+create or replace function public.county_hunter_seed_georgia()
 returns table (counties_created integer)
 language plpgsql
 security definer

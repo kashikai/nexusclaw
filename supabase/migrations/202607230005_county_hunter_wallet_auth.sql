@@ -20,6 +20,34 @@ create index if not exists county_hunter_auth_challenges_wallet_created_idx
 create index if not exists county_hunter_auth_challenges_expiry_idx
   on public.county_hunter_auth_challenges (expires_at);
 
+do $$
+declare
+  expected record;
+  existing_definition text;
+begin
+  for expected in
+    select * from (values
+      ('county_hunter_auth_challenges_wallet_created_idx', 'CREATE INDEX county_hunter_auth_challenges_wallet_created_idx ON public.county_hunter_auth_challenges USING btree (wallet_address, created_at DESC)'),
+      ('county_hunter_auth_challenges_expiry_idx', 'CREATE INDEX county_hunter_auth_challenges_expiry_idx ON public.county_hunter_auth_challenges USING btree (expires_at)')
+    ) as definitions(index_name, expected_definition)
+  loop
+    select pg_catalog.pg_get_indexdef(index_relation.oid)
+      into existing_definition
+    from pg_catalog.pg_class index_relation
+    join pg_catalog.pg_namespace namespace on namespace.oid = index_relation.relnamespace
+    join pg_catalog.pg_index index_row on index_row.indexrelid = index_relation.oid
+    where namespace.nspname = 'public'
+      and index_relation.relname = expected.index_name;
+
+    if existing_definition is null
+       or lower(regexp_replace(existing_definition, '\s+', '', 'g')) <>
+          lower(regexp_replace(expected.expected_definition, '\s+', '', 'g')) then
+      raise exception 'County Hunter migration conflict for index %: definition differs', expected.index_name;
+    end if;
+  end loop;
+end;
+$$;
+
 alter table public.county_hunter_auth_challenges enable row level security;
 alter table public.county_hunter_auth_challenges force row level security;
 revoke all on public.county_hunter_auth_challenges from public, anon, authenticated;

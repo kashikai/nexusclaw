@@ -27,7 +27,7 @@ describe('County Hunter additive migrations', () => {
     expect(sql).toContain('county_hunter_memberships')
     expect(sql).toContain('membership.user_id = (select auth.uid())')
     expect(sql).toContain('membership.organization_id = (select public.county_hunter_current_organization_id())')
-    expect(sql).toContain('create function public.county_hunter_seed_georgia()')
+    expect(sql).toContain('create or replace function public.county_hunter_seed_georgia()')
     expect(sql).not.toContain('service_role')
   })
 
@@ -57,6 +57,27 @@ describe('County Hunter additive migrations', () => {
     expect(sql).toContain('alter function public.county_hunter_write_audit_log() set search_path = pg_catalog, public')
   })
 
+  it('moves SIWE RPC execution to the server-only role and hardens all privileged functions', () => {
+    const sql = migration('20260804181518_county_hunter_siwe_server_only_hardening.sql')
+    for (const functionName of [
+      'county_hunter_write_audit_log',
+      'county_hunter_issue_auth_challenge',
+      'county_hunter_consume_auth_challenge',
+      'county_hunter_seed_georgia',
+      'county_hunter_begin_snapshot_replay',
+    ]) {
+      expect(sql).toContain(`public.${functionName}`)
+    }
+    expect(sql).toContain('set search_path = pg_catalog, public')
+    expect(sql).toContain('from public, anon, authenticated, service_role')
+    expect(sql).toMatch(/county_hunter_issue_auth_challenge[\s\S]+to service_role/)
+    expect(sql).toMatch(/county_hunter_consume_auth_challenge[\s\S]+to service_role/)
+    expect(sql).toMatch(/county_hunter_seed_georgia\(\)[\s\S]+to authenticated/)
+    expect(sql).toMatch(/county_hunter_begin_snapshot_replay\(uuid, text, integer\)[\s\S]+to authenticated/)
+    expect(sql).not.toMatch(/alter default privileges/i)
+    expect(sql).not.toMatch(/\bdrop\s+(?:table|function|index)\b/i)
+  })
+
   it('ships rollback-only cross-tenant staging checks for two organizations and four users', () => {
     const sql = stagingTest()
     expect(sql).toContain('viewer_a')
@@ -79,7 +100,7 @@ describe('County Hunter additive migrations', () => {
       'county_hunter_discovery_changes',
       'county_hunter_discovery_locks',
     ]) {
-      expect(sql).toContain(`create table public.${table}`)
+      expect(sql).toContain(`create table if not exists public.${table}`)
       expect(sql).toContain(`alter table public.%I enable row level security`)
       expect(sql).toContain(`'${table}'`)
     }
@@ -125,5 +146,46 @@ describe('County Hunter additive migrations', () => {
     expect(script).toContain('The database host/user does not match COUNTY_HUNTER_STAGING_PROJECT_REF')
     expect(script).toContain("if ($MigrationsOnly)")
     expect(script).toContain('RLS fixtures were not requested')
+    expect(script).toContain("'--single-transaction'")
+  })
+
+  it('keeps all County Hunter migrations replay-safe without hiding structural conflicts', () => {
+    const migrationNames = [
+      '202607230001_county_hunter_foundation.sql',
+      '202607230002_county_hunter_rls.sql',
+      '202607230003_county_hunter_seed_counties.sql',
+      '202607230004_county_hunter_auth_hardening.sql',
+      '202607230005_county_hunter_wallet_auth.sql',
+      '20260726153642_county_hunter_gwinnett_discovery.sql',
+      '20260726160827_county_hunter_gwinnett_discovery_rpc_fix.sql',
+      '20260726174825_county_hunter_snapshot_replay.sql',
+      '20260804181518_county_hunter_siwe_server_only_hardening.sql',
+    ]
+    const migrations = migrationNames.map(migration)
+    const foundation = migrations[0]
+    const rls = migrations[1]
+    const discovery = migrations[5]
+    const replay = migrations[7]
+
+    expect(migrations).toHaveLength(9)
+    expect(foundation).toContain('pg_catalog.pg_get_constraintdef')
+    expect(foundation).toContain('pg_catalog.pg_get_indexdef')
+    expect(foundation).toContain('definition differs')
+    expect(foundation).toContain('if existing_oid is null then')
+    expect(rls).toContain('county_hunter_create_policy_if_absent')
+    expect(rls).toContain('county_hunter_ensure_trigger')
+    expect(discovery).toContain('county_hunter_ensure_constraint')
+    expect(discovery).toContain('create unique index if not exists')
+    expect(discovery).toContain('county_hunter_ensure_policy')
+    expect(discovery).not.toMatch(/\bdrop\s+policy\b/i)
+    expect(replay).toContain('add column if not exists run_type')
+    expect(replay).toContain('create index if not exists county_hunter_discovery_runs_source_run_idx')
+
+    for (const sql of migrations) {
+      expect(sql).not.toMatch(/\bdrop\s+(?:table|index)\b/i)
+      expect(sql).not.toMatch(/\btruncate\b/i)
+    }
+    expect(foundation).not.toMatch(/\bdelete\s+from\b/i)
+    expect(foundation).not.toMatch(/\bdrop\s+constraint\b/i)
   })
 })

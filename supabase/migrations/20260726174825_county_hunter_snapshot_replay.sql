@@ -2,30 +2,109 @@
 -- Replay is additive, tenant-scoped and never changes the original snapshot.
 
 alter table public.county_hunter_discovery_runs
-  add column run_type text not null default 'official_fetch',
-  add column source_run_id uuid;
+  add column if not exists run_type text not null default 'official_fetch',
+  add column if not exists source_run_id uuid;
 
-alter table public.county_hunter_discovery_runs
-  add constraint county_hunter_discovery_runs_type_check
-    check (run_type in ('official_fetch', 'snapshot_replay')),
-  add constraint county_hunter_discovery_runs_replay_source_check
-    check (
-      (run_type = 'official_fetch' and source_run_id is null)
-      or
-      (run_type = 'snapshot_replay' and source_run_id is not null)
-    ),
-  add constraint county_hunter_discovery_runs_tenant_source_run_fk
-    foreign key (organization_id, source_run_id)
-    references public.county_hunter_discovery_runs(organization_id, id)
-    on delete restrict;
+create or replace function pg_temp.county_hunter_ensure_constraint(
+  p_table regclass,
+  p_constraint_name text,
+  p_expected_definition text,
+  p_ddl text
+)
+returns void
+language plpgsql
+as $$
+declare
+  constraint_oid oid;
+  actual_definition text;
+begin
+  select constraint_row.oid
+    into constraint_oid
+  from pg_catalog.pg_constraint constraint_row
+  where constraint_row.conrelid = p_table
+    and constraint_row.conname = p_constraint_name;
 
-create index county_hunter_discovery_runs_source_run_idx
+  if constraint_oid is null then
+    if exists (
+      select 1
+      from pg_catalog.pg_class relation
+      join pg_catalog.pg_namespace namespace on namespace.oid = relation.relnamespace
+      where namespace.nspname = 'public'
+        and relation.relname = p_constraint_name
+    ) then
+      raise exception 'County Hunter migration conflict for constraint %: a same-named relation already exists', p_constraint_name;
+    end if;
+    execute p_ddl;
+    select constraint_row.oid
+      into constraint_oid
+    from pg_catalog.pg_constraint constraint_row
+    where constraint_row.conrelid = p_table
+      and constraint_row.conname = p_constraint_name;
+  end if;
+
+  actual_definition := lower(regexp_replace(
+    replace(pg_catalog.pg_get_constraintdef(constraint_oid, true), 'public.', ''),
+    '\s+', '', 'g'
+  ));
+  if actual_definition <> lower(regexp_replace(p_expected_definition, '\s+', '', 'g')) then
+    raise exception 'County Hunter migration conflict for constraint %: definition differs', p_constraint_name;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  perform pg_temp.county_hunter_ensure_constraint(
+    'public.county_hunter_discovery_runs'::regclass,
+    'county_hunter_discovery_runs_type_check',
+    $definition$CHECK (run_type = ANY (ARRAY['official_fetch'::text, 'snapshot_replay'::text]))$definition$,
+    $ddl$alter table public.county_hunter_discovery_runs add constraint county_hunter_discovery_runs_type_check check (run_type in ('official_fetch', 'snapshot_replay'))$ddl$
+  );
+  perform pg_temp.county_hunter_ensure_constraint(
+    'public.county_hunter_discovery_runs'::regclass,
+    'county_hunter_discovery_runs_replay_source_check',
+    $definition$CHECK (run_type = 'official_fetch'::text AND source_run_id IS NULL OR run_type = 'snapshot_replay'::text AND source_run_id IS NOT NULL)$definition$,
+    $ddl$alter table public.county_hunter_discovery_runs add constraint county_hunter_discovery_runs_replay_source_check check ((run_type = 'official_fetch' and source_run_id is null) or (run_type = 'snapshot_replay' and source_run_id is not null))$ddl$
+  );
+  perform pg_temp.county_hunter_ensure_constraint(
+    'public.county_hunter_discovery_runs'::regclass,
+    'county_hunter_discovery_runs_tenant_source_run_fk',
+    'FOREIGN KEY (organization_id, source_run_id) REFERENCES county_hunter_discovery_runs(organization_id, id) ON DELETE RESTRICT',
+    'alter table public.county_hunter_discovery_runs add constraint county_hunter_discovery_runs_tenant_source_run_fk foreign key (organization_id, source_run_id) references public.county_hunter_discovery_runs(organization_id, id) on delete restrict'
+  );
+end;
+$$;
+
+create index if not exists county_hunter_discovery_runs_source_run_idx
   on public.county_hunter_discovery_runs (
     organization_id,
     source_run_id,
     created_at desc
   )
   where source_run_id is not null;
+
+do $$
+declare
+  existing_definition text;
+begin
+  select pg_catalog.pg_get_indexdef(index_relation.oid)
+    into existing_definition
+  from pg_catalog.pg_class index_relation
+  join pg_catalog.pg_namespace namespace on namespace.oid = index_relation.relnamespace
+  join pg_catalog.pg_index index_row on index_row.indexrelid = index_relation.oid
+  where namespace.nspname = 'public'
+    and index_relation.relname = 'county_hunter_discovery_runs_source_run_idx';
+
+  if existing_definition is null
+     or lower(regexp_replace(existing_definition, '\s+', '', 'g')) <>
+        lower(regexp_replace(
+          'CREATE INDEX county_hunter_discovery_runs_source_run_idx ON public.county_hunter_discovery_runs USING btree (organization_id, source_run_id, created_at DESC) WHERE (source_run_id IS NOT NULL)',
+          '\s+', '', 'g'
+        )) then
+    raise exception 'County Hunter migration conflict for index county_hunter_discovery_runs_source_run_idx: definition differs';
+  end if;
+end;
+$$;
 
 create or replace function public.county_hunter_begin_snapshot_replay(
   p_snapshot_id uuid,
