@@ -3,6 +3,7 @@ param(
   [switch]$TestConnectivity,
   [switch]$MigrationsOnly,
   [switch]$RlsOnly,
+  [switch]$StrictAdminKey,
   [string]$DatabaseUrl,
   [string]$ProjectRef,
   [string]$OrganizationA,
@@ -17,12 +18,16 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 
 function Import-CountyHunterEnvFile {
-  param([string]$Path)
+  param(
+    [string]$Path,
+    [string[]]$ExcludedNames = @()
+  )
   if (-not (Test-Path -LiteralPath $Path)) { return }
 
   foreach ($line in Get-Content -LiteralPath $Path) {
     if ($line -notmatch '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$') { continue }
     $name = $Matches[1]
+    if ($name -in $ExcludedNames) { continue }
     if (Test-Path "Env:$name") { continue }
     $value = $Matches[2].Trim()
     if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
@@ -41,6 +46,37 @@ function Protect-CountyHunterRunnerOutput {
     -replace '(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b', '[redacted-uuid]' `
     -replace '(?i)\b0x[0-9a-f]{40,}\b', '[redacted-wallet-or-key]' `
     -replace '(?i)\b(?:eyJ|sb_(?:publishable|secret)_)[A-Za-z0-9._-]{12,}\b', '[redacted-token]'
+}
+
+function Resolve-CountyHunterAdminKeySource {
+  param(
+    [System.Collections.Generic.List[string]]$Issues,
+    [bool]$StrictLegacy
+  )
+
+  $secretKey = [string]$env:SUPABASE_SECRET_KEY
+  $legacyKey = [string]$env:SUPABASE_SERVICE_ROLE_KEY
+
+  if ($StrictLegacy -and -not [string]::IsNullOrWhiteSpace($legacyKey)) {
+    $Issues.Add('SUPABASE_SERVICE_ROLE_KEY is rejected in strict admin-key mode.')
+    return $null
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($secretKey)) {
+    if ($secretKey -notmatch '^sb_secret_.+$') {
+      $Issues.Add('SUPABASE_SECRET_KEY must use the Supabase secret-key format.')
+      return $null
+    }
+    return 'SUPABASE_SECRET_KEY'
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($legacyKey)) {
+    Write-Warning 'SUPABASE_SERVICE_ROLE_KEY is deprecated; configure SUPABASE_SECRET_KEY. No key value was logged.'
+    return 'SUPABASE_SERVICE_ROLE_KEY'
+  }
+
+  $Issues.Add('SUPABASE_SECRET_KEY is missing; the deprecated legacy fallback is not configured.')
+  return $null
 }
 
 function Invoke-CountyHunterPsql {
@@ -65,7 +101,14 @@ function Invoke-CountyHunterPsql {
   return $commandExitCode
 }
 
-Import-CountyHunterEnvFile (Join-Path $repositoryRoot '.env.staging.local')
+$stagingEnvironmentPath = Join-Path $repositoryRoot '.env.staging.local'
+$strictAdminKeyRequested =
+  $StrictAdminKey -or $env:COUNTY_HUNTER_STRICT_ADMIN_KEY -eq 'true'
+$excludedEnvironmentNames =
+  if ($strictAdminKeyRequested) { @('SUPABASE_SERVICE_ROLE_KEY') } else { @() }
+Import-CountyHunterEnvFile `
+  -Path $stagingEnvironmentPath `
+  -ExcludedNames $excludedEnvironmentNames
 
 if (-not $DatabaseUrl) { $DatabaseUrl = $env:COUNTY_HUNTER_STAGING_DB_URL }
 if (-not $ProjectRef) { $ProjectRef = $env:COUNTY_HUNTER_STAGING_PROJECT_REF }
@@ -89,16 +132,29 @@ if (-not $PreflightOnly -and -not $MigrationsOnly -and -not $RlsOnly) {
 
 if ($PreflightOnly) {
   $issues = [System.Collections.Generic.List[string]]::new()
+  if (
+    $env:COUNTY_HUNTER_STRICT_ADMIN_KEY -and
+    $env:COUNTY_HUNTER_STRICT_ADMIN_KEY -notin @('true', 'false')
+  ) {
+    $issues.Add('COUNTY_HUNTER_STRICT_ADMIN_KEY must be true or false.')
+  }
+  $adminKeySource = Resolve-CountyHunterAdminKeySource `
+    -Issues $issues `
+    -StrictLegacy $strictAdminKeyRequested
+
   $requiredEnvironment = [ordered]@{
     NEXT_PUBLIC_SUPABASE_URL = $env:NEXT_PUBLIC_SUPABASE_URL
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = $env:NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    SUPABASE_SERVICE_ROLE_KEY = $env:SUPABASE_SERVICE_ROLE_KEY
     COUNTY_HUNTER_STAGING_DB_URL = $DatabaseUrl
     COUNTY_HUNTER_AUTH_ORIGIN = $env:COUNTY_HUNTER_AUTH_ORIGIN
     COUNTY_HUNTER_STAGING_PROJECT_REF = $ProjectRef
     COUNTY_HUNTER_STAGING_CONFIRM = $env:COUNTY_HUNTER_STAGING_CONFIRM
     COUNTY_HUNTER_TEST_ORG_A = $OrganizationA
     COUNTY_HUNTER_TEST_ORG_B = $OrganizationB
+    COUNTY_HUNTER_TEST_VIEWER_A = $ViewerA
+    COUNTY_HUNTER_TEST_MANAGER_A = $ManagerA
+    COUNTY_HUNTER_TEST_ADMIN_A = $AdminA
+    COUNTY_HUNTER_TEST_ADMIN_B = $AdminB
     COUNTY_HUNTER_ENABLED = $env:COUNTY_HUNTER_ENABLED
     NEXT_PUBLIC_COUNTY_HUNTER_ENABLED = $env:NEXT_PUBLIC_COUNTY_HUNTER_ENABLED
   }
@@ -142,6 +198,18 @@ if ($PreflightOnly) {
     $issues.Add('COUNTY_HUNTER_TEST_ORG_A and COUNTY_HUNTER_TEST_ORG_B must be distinct.')
   }
 
+  $fixtureUserIds = @($ViewerA, $ManagerA, $AdminA, $AdminB)
+  foreach ($fixtureUserId in $fixtureUserIds) {
+    $parsedFixtureUserId = [guid]::Empty
+    if ($fixtureUserId -and -not [guid]::TryParse($fixtureUserId, [ref]$parsedFixtureUserId)) {
+      $issues.Add('All County Hunter fixture user identifiers must be valid UUIDs.')
+      break
+    }
+  }
+  if (($fixtureUserIds | Where-Object { $_ } | Select-Object -Unique).Count -ne 4) {
+    $issues.Add('The four County Hunter fixture user identifiers must be distinct.')
+  }
+
   $databaseUri = $null
   $databaseUser = $null
   if ($DatabaseUrl) {
@@ -159,6 +227,14 @@ if ($PreflightOnly) {
       }
       if ($databaseUri.Host -notmatch '(\.supabase\.co|\.supabase\.com)$') {
         $issues.Add('COUNTY_HUNTER_STAGING_DB_URL must use a dedicated Supabase host.')
+      }
+      if (
+        $databaseUri.Host -match '\.pooler\.supabase\.com$' -or
+        $databaseUri.Host -ne "db.$ProjectRef.supabase.co" -or
+        $databaseUser -ne 'postgres' -or
+        $databaseUri.Port -ne 5432
+      ) {
+        $issues.Add('COUNTY_HUNTER_STAGING_DB_URL must use the Direct Connection on port 5432.')
       }
     } catch {
       $issues.Add('COUNTY_HUNTER_STAGING_DB_URL is not a valid URL.')
@@ -308,6 +384,14 @@ if (-not $stagingIdentity.Contains($ProjectRef.ToLowerInvariant())) {
 if ($databaseUri.Host -notmatch '(\.supabase\.co|\.supabase\.com)$') {
   throw 'The remote validation runner accepts only a dedicated Supabase staging host.'
 }
+if (
+  $databaseUri.Host -match '\.pooler\.supabase\.com$' -or
+  $databaseUri.Host -ne "db.$ProjectRef.supabase.co" -or
+  $databaseUser -ne 'postgres' -or
+  $databaseUri.Port -ne 5432
+) {
+  throw 'The staging runner requires the Direct Connection on port 5432 and refuses pooler endpoints.'
+}
 
 if ($env:NEXT_PUBLIC_SUPABASE_URL) {
   try { $apiUri = [uri]$env:NEXT_PUBLIC_SUPABASE_URL } catch { throw 'NEXT_PUBLIC_SUPABASE_URL is invalid.' }
@@ -339,7 +423,7 @@ if ($RlsOnly) {
 }
 
 $previousPgEnvironment = @{}
-foreach ($name in @('PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'PGSSLMODE')) {
+foreach ($name in @('PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'PGSSLMODE', 'PGGSSENCMODE')) {
   $previousPgEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 
@@ -350,6 +434,7 @@ try {
   $env:PGPASSWORD = $databasePassword
   $env:PGDATABASE = $databaseName
   $env:PGSSLMODE = 'require'
+  $env:PGGSSENCMODE = 'disable'
 
   if ($MigrationsOnly) {
     $migrationDirectory = Join-Path $repositoryRoot 'supabase\migrations'
@@ -360,6 +445,7 @@ try {
         $migrationExitCode = Invoke-CountyHunterPsql -Command $psqlCommand -Arguments @(
           '-X',
           '-q',
+          '--single-transaction',
           '-v', 'ON_ERROR_STOP=1',
           '-v', 'VERBOSITY=terse',
           '-f', $_.FullName

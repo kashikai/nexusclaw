@@ -10,6 +10,7 @@ import {
   validateSiweMessage,
 } from 'viem/siwe'
 import { normalizeCountyHunterSiweOrigin } from '../features/county-hunter/siwe-origin.mjs'
+import { readSupabaseAdminKey } from './lib/supabase-admin-key.mjs'
 
 const EXPECTED_AUTH = normalizeCountyHunterSiweOrigin('https://localhost:3000')
 const EXPECTED_CHAIN_ID = 8453
@@ -79,7 +80,7 @@ function logSanitizedFailure(error) {
   console.error(`safe_message=${safeErrorMessage(cause, failure.message)}`)
 }
 
-async function loadLocalEnvironment() {
+async function loadLocalEnvironment({ excludedNames = new Set() } = {}) {
   let contents
   try {
     contents = await readFile(environmentPath, 'utf8')
@@ -88,13 +89,32 @@ async function loadLocalEnvironment() {
   }
   for (const line of contents.split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/)
-    if (!match || process.env[match[1]]) continue
+    if (!match || excludedNames.has(match[1]) || process.env[match[1]]) continue
     let value = match[2].trim()
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1)
     }
     process.env[match[1]] = value
   }
+}
+
+async function persistLocalEnvironment(previousContents, nextContents, { strict }) {
+  if (nextContents === previousContents) return nextContents
+  if (strict) {
+    throw new ProvisioningFailure(
+      'persist-local-fixtures',
+      'configuration',
+      diagnosticCause(
+        'StrictEnvironmentMutationError',
+        undefined,
+        'strict_environment_update_required',
+        'Strict validation requires existing staging fixtures and will not modify the local environment file.',
+      ),
+      'Strict validation cannot update local staging fixtures.',
+    )
+  }
+  await writeFile(environmentPath, nextContents, { encoding: 'utf8', mode: 0o600 })
+  return nextContents
 }
 
 function setEnvironmentAssignment(contents, name, value) {
@@ -119,11 +139,14 @@ function diagnosticCause(name, status, code, message) {
   return { name, status, code, message }
 }
 
-async function validatePublishableKeyForStaging({ supabaseUrl, projectRef }) {
+async function validatePublishableKeyForStaging({
+  supabaseUrl,
+  projectRef,
+  adminKey,
+}) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (publishableKey === serviceRoleKey || publishableKey.startsWith('sb_secret_')) {
+  if (publishableKey === adminKey || publishableKey.startsWith('sb_secret_')) {
     throw new ProvisioningFailure(
       'validate-publishable-key',
       'configuration',
@@ -207,6 +230,7 @@ function userWalletAddresses(user) {
     user?.user_metadata?.address,
     user?.user_metadata?.wallet_address,
     user?.user_metadata?.sub,
+    user?.user_metadata?.custom_claims?.address,
   ]
   for (const identity of user?.identities ?? []) {
     candidates.push(
@@ -254,6 +278,7 @@ function findExistingFixtureUser(users, fixture) {
   const roleMatches = users.filter((user) => (
     user?.app_metadata?.county_hunter_fixture === true
     && user?.app_metadata?.county_hunter_fixture_role === fixture.role
+    && user?.app_metadata?.county_hunter_fixture_retired !== true
   ))
   const candidates = [...new Map(
     [...walletMatches, ...roleMatches].map((user) => [user.id, user]),
@@ -456,6 +481,7 @@ async function ensureWalletUser({
       organization_id: fixture.organizationId,
       county_hunter_fixture: true,
       county_hunter_fixture_role: fixture.role,
+      county_hunter_fixture_retired: false,
     },
   })
   const { error: signOutError } = await walletClient.auth.signOut({ scope: 'local' })
@@ -488,13 +514,33 @@ async function ensureWalletUser({
 }
 
 async function main() {
-  await loadLocalEnvironment()
+  const strictAdminKey =
+    process.argv.includes('--strict-admin-key')
+    || process.env.COUNTY_HUNTER_STRICT_ADMIN_KEY === 'true'
+  await loadLocalEnvironment({
+    excludedNames: strictAdminKey
+      ? new Set(['SUPABASE_SERVICE_ROLE_KEY'])
+      : new Set(),
+  })
+
+  let adminKey
+  try {
+    adminKey = readSupabaseAdminKey(process.env, {
+      strictLegacy: strictAdminKey ? true : undefined,
+    }).key
+  } catch (error) {
+    throw new ProvisioningFailure(
+      'validate-admin-key',
+      'configuration',
+      error,
+      'The staging administrative key configuration is invalid.',
+    )
+  }
 
   const required = [
     'COUNTY_HUNTER_STAGING_PROJECT_REF',
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY',
     'COUNTY_HUNTER_AUTH_ORIGIN',
     'COUNTY_HUNTER_TEST_ORG_A',
     'COUNTY_HUNTER_TEST_ORG_B',
@@ -590,7 +636,7 @@ async function main() {
     )
   }
 
-  const admin = createClient(supabaseUrl.origin, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+  const admin = createClient(supabaseUrl.origin, adminKey, {
     auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false },
   })
   const fixtures = [
@@ -620,7 +666,8 @@ async function main() {
     },
   ]
 
-  let environmentContents = await readFile(environmentPath, 'utf8')
+  let persistedEnvironmentContents = await readFile(environmentPath, 'utf8')
+  let environmentContents = persistedEnvironmentContents
   const preparedFixtures = fixtures.map((fixture) => {
     const privateKeyVariable = `${fixture.variable}_PRIVATE_KEY`
     const addressVariable = `${fixture.variable}_ADDRESS`
@@ -648,11 +695,20 @@ async function main() {
     return { ...fixture, privateKeyVariable, addressVariable, account }
   })
 
-  // Persist disposable keys only in the ignored staging environment. They are
-  // never printed, passed to the admin client, or committed.
-  await writeFile(environmentPath, environmentContents, { encoding: 'utf8', mode: 0o600 })
+  // Non-strict provisioning may persist disposable fixtures only in the ignored
+  // staging environment. Strict validation requires every fixture to exist and
+  // never rewrites that file.
+  persistedEnvironmentContents = await persistLocalEnvironment(
+    persistedEnvironmentContents,
+    environmentContents,
+    { strict: strictAdminKey },
+  )
 
-  await validatePublishableKeyForStaging({ supabaseUrl, projectRef })
+  await validatePublishableKeyForStaging({
+    supabaseUrl,
+    projectRef,
+    adminKey,
+  })
   const knownUsers = await listAllAuthUsers(admin)
   const results = []
   for (const fixture of preparedFixtures) {
@@ -669,7 +725,11 @@ async function main() {
     process.env[result.variable] = result.userId
     environmentContents = setEnvironmentAssignment(environmentContents, result.variable, result.userId)
   }
-  await writeFile(environmentPath, environmentContents, { encoding: 'utf8', mode: 0o600 })
+  persistedEnvironmentContents = await persistLocalEnvironment(
+    persistedEnvironmentContents,
+    environmentContents,
+    { strict: strictAdminKey },
+  )
 
   const reconciledUsers = await listAllAuthUsers(admin)
   for (const result of results) {
