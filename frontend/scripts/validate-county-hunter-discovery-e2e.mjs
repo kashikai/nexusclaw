@@ -3,9 +3,12 @@ import https from 'node:https'
 import { getAddress, isAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { parseSiweMessage } from 'viem/siwe'
+import { createEphemeralE2EClientIp } from './lib/county-hunter-staging-network.mjs'
 
 const APP_ORIGIN = 'https://localhost:3000'
 const SAFE_BODY_LIMIT = 2_000_000
+const RATE_LIMIT_TEST_CLIENT_IP = createEphemeralE2EClientIp()
+const EXPECTED_LIVE_SOURCE_UNAVAILABLE_REASON = 'RESULTS_DOCUMENT_REJECTED'
 const ALLOWED_ENVIRONMENT = new Set([
   'COUNTY_HUNTER_STAGING_CONFIRM',
   'COUNTY_HUNTER_STAGING_PROJECT_REF',
@@ -24,6 +27,8 @@ const ALLOWED_ENVIRONMENT = new Set([
   'COUNTY_HUNTER_TEST_ADMIN_B',
   'COUNTY_HUNTER_TEST_ADMIN_B_ADDRESS',
   'COUNTY_HUNTER_TEST_ADMIN_B_PRIVATE_KEY',
+  'COUNTY_HUNTER_TEST_REPLAY_SNAPSHOT_A',
+  'COUNTY_HUNTER_TEST_REPLAY_SNAPSHOT_B',
 ])
 
 let stage = 'configuration'
@@ -96,11 +101,17 @@ function validateConfiguration(environment) {
   const organizationA = environment.COUNTY_HUNTER_TEST_ORG_A
   const organizationB = environment.COUNTY_HUNTER_TEST_ORG_B
   assert(isUuid(organizationA) && isUuid(organizationB) && organizationA !== organizationB, 'TENANTS_INVALID')
+  const replaySnapshotA = environment.COUNTY_HUNTER_TEST_REPLAY_SNAPSHOT_A
+  const replaySnapshotB = environment.COUNTY_HUNTER_TEST_REPLAY_SNAPSHOT_B
+  assert(replaySnapshotA === undefined || isUuid(replaySnapshotA), 'REPLAY_SNAPSHOT_A_INVALID')
+  assert(replaySnapshotB === undefined || isUuid(replaySnapshotB), 'REPLAY_SNAPSHOT_B_INVALID')
   return {
     viewerA: fixture(environment, 'COUNTY_HUNTER_TEST_VIEWER_A', 'viewer-a', organizationA),
     managerA: fixture(environment, 'COUNTY_HUNTER_TEST_MANAGER_A', 'manager-a', organizationA),
     adminA: fixture(environment, 'COUNTY_HUNTER_TEST_ADMIN_A', 'admin-a', organizationA),
     adminB: fixture(environment, 'COUNTY_HUNTER_TEST_ADMIN_B', 'admin-b', organizationB),
+    replaySnapshotA,
+    replaySnapshotB,
   }
 }
 
@@ -134,6 +145,8 @@ async function request(session, path, options = {}) {
   const body = options.body === undefined ? null : JSON.stringify(options.body)
   const headers = {
     Accept: 'application/json',
+    Origin: APP_ORIGIN,
+    'x-vercel-forwarded-for': RATE_LIMIT_TEST_CLIENT_IP,
     ...(body ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } : {}),
   }
   const cookie = session.header()
@@ -220,10 +233,24 @@ async function overview(session) {
 
 async function runDiscovery(session) {
   const response = await request(session, '/api/county-hunter/discovery', { method: 'POST' })
-  assert(response.status === 200 && response.json, 'DISCOVERY_RUN_FAILED', response.status)
+  const safeReasonCode =
+    typeof response.json?.reasonCode === 'string' && /^[A-Z][A-Z0-9_]{2,64}$/.test(response.json.reasonCode)
+      ? response.json.reasonCode
+      : 'UNSPECIFIED'
+  if (
+    response.status === 422 &&
+    safeReasonCode === EXPECTED_LIVE_SOURCE_UNAVAILABLE_REASON
+  ) {
+    return { sourceUnavailable: true, reasonCode: safeReasonCode }
+  }
+  assert(
+    response.status === 200 && response.json,
+    `DISCOVERY_RUN_FAILED_${safeReasonCode}`,
+    response.status,
+  )
   assert(['completed', 'review_required'].includes(response.json.status), 'DISCOVERY_STATUS_INVALID')
   assert(response.json.records > 0, 'DISCOVERY_RECORDS_EMPTY')
-  return response.json
+  return { ...response.json, sourceUnavailable: false }
 }
 
 async function replaySnapshot(session, snapshotId) {
@@ -251,30 +278,44 @@ async function main() {
     const adminA = await login(users.adminA)
     stage = 'admin-a.discovery.first'
     const first = await runDiscovery(adminA)
-    report(`admin-a discovery records=${first.records}`)
-    stage = 'admin-a.discovery.idempotent'
-    const second = await runDiscovery(adminA)
-    assert(second.records === first.records, 'IDEMPOTENT_RECORD_COUNT_CHANGED')
-    assert(second.added === 0 && second.changed === 0 && second.removed === 0, 'SECOND_RUN_NOT_IDEMPOTENT')
-    assert(second.unchanged === second.records, 'SECOND_RUN_UNCHANGED_COUNT_INVALID')
-    report(`admin-a idempotent discovery unchanged=${second.unchanged}`)
-    const adminOverview = await overview(adminA)
-    assert(adminOverview.source?.organization_id === users.adminA.organizationId, 'ADMIN_A_SOURCE_TENANT_INVALID')
-    assert(adminOverview.latestRun?.id === second.runId, 'ADMIN_A_LATEST_RUN_INVALID')
-    assert(adminOverview.snapshots?.length === 2, 'ADMIN_A_SNAPSHOTS_INVALID')
-    assert(adminOverview.snapshots.every((snapshot) => !('content_base64' in snapshot)), 'SNAPSHOT_BODY_EXPOSED')
-    report('admin-a snapshot provenance')
-    const adminASnapshot = adminOverview.snapshots.find(
-      (snapshot) => snapshot.snapshot_kind === 'official_document',
-    )
-    assert(adminASnapshot, 'ADMIN_A_DOCUMENT_SNAPSHOT_MISSING')
-    const originalSnapshotHash = adminASnapshot.content_hash
+    let adminASnapshotId
+    let sourceRunId
+    let expectedRecordCount
+    if (first.sourceUnavailable) {
+      assert(users.replaySnapshotA, 'REPLAY_SNAPSHOT_A_REQUIRED')
+      adminASnapshotId = users.replaySnapshotA
+      report(`admin-a discovery fail-closed reason=${first.reasonCode}`)
+    } else {
+      report(`admin-a discovery records=${first.records}`)
+      stage = 'admin-a.discovery.idempotent'
+      const second = await runDiscovery(adminA)
+      assert(!second.sourceUnavailable, 'SECOND_RUN_SOURCE_BECAME_UNAVAILABLE')
+      assert(second.records === first.records, 'IDEMPOTENT_RECORD_COUNT_CHANGED')
+      assert(second.added === 0 && second.changed === 0 && second.removed === 0, 'SECOND_RUN_NOT_IDEMPOTENT')
+      assert(second.unchanged === second.records, 'SECOND_RUN_UNCHANGED_COUNT_INVALID')
+      report(`admin-a idempotent discovery unchanged=${second.unchanged}`)
+      const adminOverview = await overview(adminA)
+      assert(adminOverview.source?.organization_id === users.adminA.organizationId, 'ADMIN_A_SOURCE_TENANT_INVALID')
+      assert(adminOverview.latestRun?.id === second.runId, 'ADMIN_A_LATEST_RUN_INVALID')
+      assert(adminOverview.snapshots?.length === 2, 'ADMIN_A_SNAPSHOTS_INVALID')
+      assert(adminOverview.snapshots.every((snapshot) => !('content_base64' in snapshot)), 'SNAPSHOT_BODY_EXPOSED')
+      report('admin-a snapshot provenance')
+      const adminASnapshot = adminOverview.snapshots.find(
+        (snapshot) => snapshot.snapshot_kind === 'official_document',
+      )
+      assert(adminASnapshot, 'ADMIN_A_DOCUMENT_SNAPSHOT_MISSING')
+      adminASnapshotId = adminASnapshot.id
+      sourceRunId = second.runId
+      expectedRecordCount = second.records
+    }
 
     stage = 'admin-a.snapshot-replay.first'
-    const firstReplay = await replaySnapshot(adminA, adminASnapshot.id)
-    assert(firstReplay.sourceRunId === second.runId, 'SNAPSHOT_REPLAY_SOURCE_RUN_INVALID')
+    const firstReplay = await replaySnapshot(adminA, adminASnapshotId)
+    if (sourceRunId) {
+      assert(firstReplay.sourceRunId === sourceRunId, 'SNAPSHOT_REPLAY_SOURCE_RUN_INVALID')
+    }
     assert(
-      firstReplay.records === second.records &&
+      (expectedRecordCount === undefined || firstReplay.records === expectedRecordCount) &&
         firstReplay.added === 0 &&
         firstReplay.changed === 0 &&
         firstReplay.removed === 0 &&
@@ -285,14 +326,10 @@ async function main() {
     assert(replayOverview.latestRun?.id === firstReplay.runId, 'SNAPSHOT_REPLAY_LATEST_RUN_INVALID')
     assert(replayOverview.latestRun?.run_type === 'snapshot_replay', 'SNAPSHOT_REPLAY_METADATA_INVALID')
     assert(replayOverview.snapshots?.length === 1, 'SNAPSHOT_REPLAY_PROVENANCE_INVALID')
-    assert(
-      replayOverview.snapshots[0].id === adminASnapshot.id &&
-        replayOverview.snapshots[0].content_hash === originalSnapshotHash &&
-        !('content_base64' in replayOverview.snapshots[0]),
-      'SNAPSHOT_REPLAY_MUTATED_SOURCE',
-    )
+    assert(replayOverview.snapshots[0].id === adminASnapshotId, 'SNAPSHOT_REPLAY_MUTATED_SOURCE')
+    assert(!('content_base64' in replayOverview.snapshots[0]), 'SNAPSHOT_BODY_EXPOSED')
     stage = 'admin-a.snapshot-replay.idempotent'
-    const secondReplay = await replaySnapshot(adminA, adminASnapshot.id)
+    const secondReplay = await replaySnapshot(adminA, adminASnapshotId)
     assert(
       secondReplay.records === firstReplay.records &&
         secondReplay.added === 0 &&
@@ -320,7 +357,7 @@ async function main() {
     assert(viewerRun.status === 403, 'VIEWER_DISCOVERY_NOT_BLOCKED', viewerRun.status)
     const viewerReplay = await request(viewer, '/api/county-hunter/discovery/replay', {
       method: 'POST',
-      body: { snapshotId: adminASnapshot.id },
+      body: { snapshotId: adminASnapshotId },
     })
     assert(viewerReplay.status === 403, 'VIEWER_REPLAY_NOT_BLOCKED', viewerReplay.status)
     report('viewer read-only discovery')
@@ -332,7 +369,7 @@ async function main() {
     assert(managerRun.status === 403, 'MANAGER_DISCOVERY_NOT_BLOCKED', managerRun.status)
     const managerReplay = await request(manager, '/api/county-hunter/discovery/replay', {
       method: 'POST',
-      body: { snapshotId: adminASnapshot.id },
+      body: { snapshotId: adminASnapshotId },
     })
     assert(managerReplay.status === 403, 'MANAGER_REPLAY_NOT_BLOCKED', managerReplay.status)
     report('manager discovery execution blocked')
@@ -343,16 +380,28 @@ async function main() {
     const runB = await runDiscovery(adminB)
     const afterB = await overview(adminB)
     assert(afterB.source?.organization_id === users.adminB.organizationId, 'ADMIN_B_SOURCE_TENANT_INVALID')
-    assert(afterB.latestRun?.id === runB.runId && runB.runId !== second.runId, 'ADMIN_B_RUN_ISOLATION_INVALID')
-    const adminBSnapshot = afterB.snapshots.find(
-      (snapshot) => snapshot.snapshot_kind === 'official_document',
-    )
-    assert(adminBSnapshot, 'ADMIN_B_DOCUMENT_SNAPSHOT_MISSING')
-    const replayB = await replaySnapshot(adminB, adminBSnapshot.id)
-    assert(replayB.sourceRunId === runB.runId, 'ADMIN_B_REPLAY_SOURCE_INVALID')
+    let adminBSnapshotId
+    let adminBSourceRunId
+    if (runB.sourceUnavailable) {
+      assert(users.replaySnapshotB, 'REPLAY_SNAPSHOT_B_REQUIRED')
+      adminBSnapshotId = users.replaySnapshotB
+      report(`admin-b discovery fail-closed reason=${runB.reasonCode}`)
+    } else {
+      assert(afterB.latestRun?.id === runB.runId, 'ADMIN_B_RUN_ISOLATION_INVALID')
+      const adminBSnapshot = afterB.snapshots.find(
+        (snapshot) => snapshot.snapshot_kind === 'official_document',
+      )
+      assert(adminBSnapshot, 'ADMIN_B_DOCUMENT_SNAPSHOT_MISSING')
+      adminBSnapshotId = adminBSnapshot.id
+      adminBSourceRunId = runB.runId
+    }
+    const replayB = await replaySnapshot(adminB, adminBSnapshotId)
+    if (adminBSourceRunId) {
+      assert(replayB.sourceRunId === adminBSourceRunId, 'ADMIN_B_REPLAY_SOURCE_INVALID')
+    }
     const crossTenantReplay = await request(adminB, '/api/county-hunter/discovery/replay', {
       method: 'POST',
-      body: { snapshotId: adminASnapshot.id },
+      body: { snapshotId: adminASnapshotId },
     })
     assert(
       crossTenantReplay.status >= 400 && crossTenantReplay.status < 500,

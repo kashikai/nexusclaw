@@ -78,6 +78,22 @@ describe('County Hunter additive migrations', () => {
     expect(sql).not.toMatch(/\bdrop\s+(?:table|function|index)\b/i)
   })
 
+  it('adds a private atomic distributed SIWE rate-limit backend', () => {
+    const sql = migration('20260806081241_county_hunter_distributed_rate_limit.sql')
+    expect(sql).toContain('create schema if not exists private')
+    expect(sql).toContain('private.county_hunter_rate_limit_buckets')
+    expect(sql).toContain('bucket_hash')
+    expect(sql).toContain('county_hunter_consume_rate_limit_buckets')
+    expect(sql).toContain('security definer')
+    expect(sql).toContain("set search_path = ''")
+    expect(sql).toContain('on conflict on constraint county_hunter_rate_limit_buckets_pkey')
+    expect(sql).toContain('request_count + 1')
+    expect(sql).toContain('for update skip locked')
+    expect(sql).toContain('from public, anon, authenticated, service_role')
+    expect(sql).toMatch(/county_hunter_consume_rate_limit_buckets[\s\S]+to service_role/)
+    expect(sql).not.toMatch(/\b(?:ip|wallet)_address\b/)
+  })
+
   it('ships rollback-only cross-tenant staging checks for two organizations and four users', () => {
     const sql = stagingTest()
     expect(sql).toContain('viewer_a')
@@ -160,6 +176,7 @@ describe('County Hunter additive migrations', () => {
       '20260726160827_county_hunter_gwinnett_discovery_rpc_fix.sql',
       '20260726174825_county_hunter_snapshot_replay.sql',
       '20260804181518_county_hunter_siwe_server_only_hardening.sql',
+      '20260806081241_county_hunter_distributed_rate_limit.sql',
     ]
     const migrations = migrationNames.map(migration)
     const foundation = migrations[0]
@@ -167,7 +184,7 @@ describe('County Hunter additive migrations', () => {
     const discovery = migrations[5]
     const replay = migrations[7]
 
-    expect(migrations).toHaveLength(9)
+    expect(migrations).toHaveLength(10)
     expect(foundation).toContain('pg_catalog.pg_get_constraintdef')
     expect(foundation).toContain('pg_catalog.pg_get_indexdef')
     expect(foundation).toContain('definition differs')

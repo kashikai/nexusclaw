@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createHash } from 'node:crypto'
+import { isIP } from 'node:net'
 import { CountyHunterHttpError } from './http-error'
 
 export type CountyHunterRateLimitPolicy = {
@@ -19,6 +20,7 @@ const globalRateLimitState = globalThis as typeof globalThis & {
 
 export type CountyHunterRateLimitRequest = {
   key: string
+  scope?: string
   policy: CountyHunterRateLimitPolicy
 }
 
@@ -81,6 +83,7 @@ const defaultBackend = new CountyHunterInMemoryRateLimitBackend(sharedBuckets)
 
 export const COUNTY_HUNTER_RATE_LIMITS = {
   siweChallenge: { limit: 10, windowMs: 5 * 60 * 1000 },
+  siweChallengeInvalidPayload: { limit: 10, windowMs: 5 * 60 * 1000 },
   siweVerifyGlobal: { limit: 30, windowMs: 5 * 60 * 1000 },
   siweVerifyWallet: { limit: 10, windowMs: 5 * 60 * 1000 },
   siweVerifyInvalidPayload: { limit: 10, windowMs: 5 * 60 * 1000 },
@@ -101,6 +104,54 @@ export function countyHunterRequestRateLimitKey(
   return createHash('sha256')
     .update(`${scope}:${clientAddress}:${discriminator}`)
     .digest('hex')
+}
+
+function normalizeIpAddress(value: string): string | null {
+  const candidate = value.trim()
+  const version = isIP(candidate)
+  if (version === 4) return candidate
+  if (version !== 6) return null
+  try {
+    const hostname = new URL(`http://[${candidate}]/`).hostname
+    return hostname.slice(1, -1).toLowerCase()
+  } catch {
+    return null
+  }
+}
+
+export function readCountyHunterTrustedClientIp(
+  request: Request,
+  environment: NodeJS.ProcessEnv = process.env,
+): string {
+  const vercelForwardedFor = request.headers
+    .get('x-vercel-forwarded-for')
+    ?.trim()
+  const candidate = environment.NODE_ENV === 'production'
+    ? vercelForwardedFor
+    : vercelForwardedFor ||
+      request.headers.get('x-real-ip')?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  const normalized = candidate && !candidate.includes(',')
+    ? normalizeIpAddress(candidate)
+    : null
+  if (!normalized) {
+    throw new CountyHunterHttpError(
+      'County Hunter authentication is temporarily unavailable.',
+      503,
+    )
+  }
+  return normalized
+}
+
+export function countyHunterSiweRateLimitBucketMaterial(
+  request: Request,
+  scope: string,
+  discriminator: string,
+  environment: NodeJS.ProcessEnv = process.env,
+): string {
+  const clientIp = readCountyHunterTrustedClientIp(request, environment)
+  return ['county-hunter-rate-limit-v1', scope, clientIp, discriminator]
+    .join('\u0000')
 }
 
 export function countyHunterIdentityRateLimitKey(
@@ -130,8 +181,24 @@ export async function enforceCountyHunterRateLimits(
   now = Date.now(),
   backend: CountyHunterRateLimitBackend = defaultBackend,
 ): Promise<readonly CountyHunterRateLimitDecision[]> {
-  const decisions = await backend.consume(requests, now)
-  if (decisions.length !== requests.length) {
+  let decisions: readonly CountyHunterRateLimitDecision[]
+  try {
+    decisions = await backend.consume(requests, now)
+  } catch {
+    throw new CountyHunterHttpError(
+      'County Hunter authentication is temporarily unavailable.',
+      503,
+    )
+  }
+  if (
+    decisions.length !== requests.length ||
+    decisions.some((decision) =>
+      typeof decision.allowed !== 'boolean' ||
+      !Number.isSafeInteger(decision.limit) ||
+      !Number.isSafeInteger(decision.remaining) ||
+      !Number.isFinite(decision.resetAt),
+    )
+  ) {
     throw new CountyHunterHttpError('County Hunter rate limiting is unavailable.', 503)
   }
 

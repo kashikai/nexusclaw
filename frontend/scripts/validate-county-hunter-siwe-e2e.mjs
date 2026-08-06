@@ -4,6 +4,7 @@ import https from 'node:https'
 import { getAddress, isAddress, verifyMessage } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { parseSiweMessage } from 'viem/siwe'
+import { createEphemeralE2EClientIp } from './lib/county-hunter-staging-network.mjs'
 import { validateApplicationCountiesAgainstAdmin } from './lib/county-hunter-staging-counties.mjs'
 
 const APP_ORIGIN = 'https://localhost:3000'
@@ -12,6 +13,7 @@ const EXPECTED_DOMAIN = 'localhost:3000'
 const EXPECTED_URI = 'https://localhost:3000/'
 const EXPECTED_STATEMENT = 'Sign in to the NexusClaw County Hunter workspace.'
 const SAFE_BODY_LIMIT = 1_000_000
+const RATE_LIMIT_TEST_CLIENT_IP = createEphemeralE2EClientIp()
 
 let currentStage = 'configuration'
 const sessions = []
@@ -159,6 +161,7 @@ async function request(jar, path, options = {}) {
   const headers = {
     Accept: 'application/json',
     Origin: APP_ORIGIN,
+    'x-vercel-forwarded-for': RATE_LIMIT_TEST_CLIENT_IP,
     ...(body ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } : {}),
   }
   const cookie = jar.header()

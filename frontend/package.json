@@ -7,7 +7,7 @@
     "build": "next build",
     "lint": "next lint",
     "start": "next start",
-    "test": "vitest run",
+    "test": "vitest run --maxWorkers=1 --minWorkers=1",
     "test:county-hunter:discovery-e2e": "node scripts/validate-county-hunter-discovery-e2e.mjs",
     "test:county-hunter:staging-e2e": "node scripts/validate-county-hunter-siwe-e2e.mjs",
     "typecheck": "tsc --noEmit --incremental false"

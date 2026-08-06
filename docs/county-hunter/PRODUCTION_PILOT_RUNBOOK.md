@@ -45,8 +45,10 @@ All items require recorded evidence and two-person review:
 - public and server Base RPC endpoints are dedicated to production, restricted
   as supported by the provider, and monitored;
 - the deployment platform contains no staging/test variables, database URL,
-  database password, Supabase service role/secret key, disposable wallet, or
-  localhost certificate;
+  database password, generic Supabase secret, legacy service role, disposable
+  wallet, or localhost certificate; the dedicated
+  `COUNTY_HUNTER_SUPABASE_SECRET_KEY` and the independent
+  `COUNTY_HUNTER_RATE_LIMIT_SECRET` are stored only as server secrets;
 - backup location, retention, restore operator, RPO, RTO, log sink, alert
   recipients, and incident channel are approved;
 - the exact release SHA, dependency audit, tests, build, and disabled-mode
@@ -54,6 +56,29 @@ All items require recorded evidence and two-person review:
 
 Use `frontend/.env.production.example` only as a field inventory. Never deploy
 that file, and never replace its markers in Git.
+
+The production Supabase boundary uses four explicit classes:
+
+- `PUBLIC_BROWSER`: `NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL` and
+  `NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY`. These identify only the
+  isolated County Hunter project.
+- `PRIVATE_SERVER_RUNTIME`: `COUNTY_HUNTER_SUPABASE_SECRET_KEY`,
+  `COUNTY_HUNTER_RATE_LIMIT_BACKEND=postgres`, and the independent
+  `COUNTY_HUNTER_RATE_LIMIT_SECRET`. They are used only by server-only SIWE
+  challenge and distributed rate-limit code. The admin client disables session
+  persistence, token refresh, and URL session detection.
+- `MIGRATION_ONLY`: `COUNTY_HUNTER_PRODUCTION_DB_URL`, supplied only to a
+  separately authorized migration or backup process and never to Next.js.
+- `FORBIDDEN_IN_PRODUCTION`: generic `SUPABASE_SECRET_KEY`, legacy
+  `SUPABASE_SERVICE_ROLE_KEY`, every `COUNTY_HUNTER_STAGING_*`, and every
+  `COUNTY_HUNTER_TEST_*` variable.
+
+The generic `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+remain assigned exclusively to agents, signal-agent, and legacy NexusClaw
+flows. County Hunter has no production fallback to them. The temporary generic
+publishable/secret compatibility exists only outside `NODE_ENV=production`
+while the already validated staging environment transitions.
 
 ## Initial production state
 
@@ -97,10 +122,13 @@ Before enabling the module, verify:
    duplicated origins, and other chain IDs fail closed.
 8. Nonces expire, are consumed exactly once, and an expired nonce or replayed
    signature is rejected.
-9. Session cookies are `Secure`, `HttpOnly` where the server owns them, and use
+9. Challenge issue/consume calls run only through the County Hunter
+   server-only admin client. Normal sessions use the namespaced publishable key
+   plus the user's JWT; no administrative key or response reaches the browser.
+10. Session cookies are `Secure`, `HttpOnly` where the server owns them, and use
    the reviewed `SameSite` policy. Login, refresh, and logout responses remain
    `private, no-store`.
-10. Public signup is disabled. Invite only the named pilot users, and use no
+11. Public signup is disabled. Invite only the named pilot users, and use no
     staging or disposable test user.
 
 Run anonymous, Viewer, Manager, Admin, inactive-membership, missing-membership,
@@ -124,30 +152,38 @@ an approved maintenance window, and a fresh backup:
    temporary identities; do not retain those identities.
 6. Apply the three Phase 2 migrations, in filename order:
    `20260726153642`, `20260726160827`, and `20260726174825`.
-7. Recheck objects, grants, RLS, function ownership/search paths, snapshot
+7. Apply the SIWE server-only hardening migration
+   `20260804181518_county_hunter_siwe_server_only_hardening.sql` and verify that
+   privileged issue/consume RPCs remain executable only by the approved
+   server-side role.
+8. Apply `20260806081241_county_hunter_distributed_rate_limit.sql`. Verify the
+   bucket table exists only in the private schema, has no Data API grants, and
+   the consume and bounded-cleanup RPCs are executable only by `service_role`.
+   Exercise atomic same-bucket concurrency before enablement.
+9. Recheck objects, grants, RLS, function ownership/search paths, snapshot
    lineage, replay isolation, and the source lock.
-8. Create exactly one pilot organization using an approved production admin
+10. Create exactly one pilot organization using an approved production admin
    workflow.
-9. Invite only the named pilot users and create active memberships with the
+11. Invite only the named pilot users and create active memberships with the
    minimum role permissions.
-10. Bootstrap the organization. Confirm the first result against the current
-    seed and the second call returns zero new rows.
-11. Configure only the official Gwinnett County source. A human must verify the
-    URL, hostname, document type, and publication timestamp.
-12. Keep collection disabled until a named Admin is ready for the manual run.
-13. Temporarily enable collection under change control and run one manual
-    Discovery as that Admin.
-14. Compare the parsed count and each exception with the official publication
-    at that moment. Do not assume the historical count of 25.
-15. Run the second manual collection and validate idempotency/diffs against the
-    unchanged or newly published source.
-16. Run one manual replay from the selected stored snapshot and verify lineage,
-    unchanged/diff results, actor, and tenant.
-17. Validate Viewer read-only behavior, Manager denial for Discovery/replay and
-    administration, Admin scope, missing/inactive memberships, payload tenant
-    substitution, and cross-tenant SELECT/INSERT/UPDATE/DELETE denial.
-18. Disable collection immediately after the controlled run unless another
-    approved operator window is active.
+12. Bootstrap the organization. Confirm the first result against the current
+   seed and the second call returns zero new rows.
+13. Configure only the official Gwinnett County source. A human must verify the
+   URL, hostname, document type, and publication timestamp.
+14. Keep collection disabled until a named Admin is ready for the manual run.
+15. Temporarily enable collection under change control and run one manual
+   Discovery as that Admin.
+16. Compare the parsed count and each exception with the official publication
+   at that moment. Do not assume the historical count of 25.
+17. Run the second manual collection and validate idempotency/diffs against the
+   unchanged or newly published source.
+18. Run one manual replay from the selected stored snapshot and verify lineage,
+   unchanged/diff results, actor, and tenant.
+19. Validate Viewer read-only behavior, Manager denial for Discovery/replay and
+   administration, Admin scope, missing/inactive memberships, payload tenant
+   substitution, and cross-tenant SELECT/INSERT/UPDATE/DELETE denial.
+20. Disable collection immediately after the controlled run unless another
+   approved operator window is active.
 
 Discovery retains the source lock, duplicate prevention, cooldown, fetch
 timeout, body-size limit, redirect limit, SSRF protection, content checks, and
@@ -218,26 +254,54 @@ window, two consecutive source failures, any migration/backup failure, or any
 fatal exception. Exact thresholds must also be enforced by the deployment
 gateway/log platform.
 
-The in-process limits are defense in depth and are not distributed. Configure
-gateway/WAF limits for SIWE challenge and verification, Discovery reads,
-Discovery execution, replay, bootstrap, and administrative endpoints. Keep
-Discovery at one manual run per source/lock window.
-
 ### Rate-limit topology gate
 
-The planned Vercel deployment is classified as
-`DISTRIBUTED_BACKEND_REQUIRED`: separate serverless instances do not share
-process memory. The application exposes a server-only asynchronous rate-limit
-backend interface so an approved shared implementation can replace the local
-fixed-window backend without changing authorization routes. No shared vendor
-or paid service is selected by this preparation.
+Production SIWE rate limiting uses the dedicated County Hunter PostgreSQL
+database. `COUNTY_HUNTER_RATE_LIMIT_BACKEND` must be exactly `postgres`; the
+in-memory adapter is limited to local development and unit tests and is
+rejected while the production module is enabled.
 
-The in-memory backend remains useful for local validation and defense in depth
-within one instance, but it is not the production enforcement boundary.
-Production County Hunter flags must remain off until an approved distributed
-backend or deployment gateway atomically enforces the documented global and
-per-identity limits across all instances. This is a production-ON condition,
-not a staging bypass.
+The server derives fixed-length bucket identifiers with HMAC-SHA-256 and the
+independent `COUNTY_HUNTER_RATE_LIMIT_SECRET`. Raw IP addresses and wallet
+addresses are never stored or logged. Verification consumes both applicable
+buckets atomically:
+
+- route plus IP: 30 requests per fixed 300-second window;
+- route plus IP plus normalized wallet: 10 requests per fixed 300-second
+  window;
+- invalid payload: route plus IP plus the fixed `invalid-payload` discriminator,
+  10 requests per fixed 300-second window.
+
+Challenge issuance retains its own policies and buckets, separate from verify.
+Every denial returns HTTP 429 with `Retry-After`, `X-RateLimit-Limit`,
+`X-RateLimit-Remaining`, and `X-RateLimit-Reset`. If the shared backend cannot
+make an authoritative decision, the route fails closed with a sanitized HTTP
+503; it never falls back to process memory.
+
+The atomic RPC signature is
+`public.county_hunter_consume_rate_limit_buckets(text[], text[], integer[], integer[])`.
+It accepts only validated HMAC hashes, approved scopes, limits, and 300-second
+windows, and returns only bucket position, `allowed`, `limit`, `remaining`, and
+`reset_at`. Its empty `search_path`, fully qualified relations, and grants are
+part of the production database review gate.
+
+Expired rows stop affecting decisions as soon as their database-clock window
+ends. Requests perform a small bounded opportunistic cleanup. The privileged
+bounded-cleanup RPC is available to the database operator; a daily Supabase
+Cron invocation is optional and must be configured manually under separate
+authorization. Lack of cron does not change enforcement correctness.
+
+Vercel WAF is an additional future defense and is not configured by this local
+preparation. On Hobby, use the single available rate-limit rule for POST
+`/api/county-hunter/auth/*`, counted by IP, 60 requests per 300 seconds, with
+HTTP 429. This manual step does not replace the PostgreSQL global and
+per-wallet limits.
+
+Rollback order for this component is: keep all production flags false, restore
+the previous approved application, revoke the consume/cleanup RPC grants if
+needed, and preserve bucket rows as security evidence. Do not drop the private
+table automatically. Removing the migration requires separate database-owner
+approval and a verified backup.
 
 ## User notices
 

@@ -8,11 +8,10 @@ vi.mock('server-only', () => ({}))
 
 import {
   COUNTY_HUNTER_RATE_LIMITS,
-  countyHunterRequestRateLimitKey,
   createCountyHunterInMemoryRateLimitBackend,
-  enforceCountyHunterRateLimit,
 } from '../../features/county-hunter/server/rate-limit'
 import {
+  enforceCountyHunterSiweChallengeRateLimit,
   enforceCountyHunterSiweVerifyRateLimit,
   readDeclaredCountyHunterWalletForRateLimit,
 } from '../../features/county-hunter/server/siwe-rate-limit'
@@ -38,7 +37,7 @@ function message(index: number) {
 
 function request() {
   return new Request('https://localhost:3000/api/county-hunter/auth/verify', {
-    headers: { 'x-real-ip': 'shared-test-client' },
+    headers: { 'x-vercel-forwarded-for': '203.0.113.10' },
   })
 }
 
@@ -138,15 +137,10 @@ describe('County Hunter layered SIWE verify rate limits', () => {
 
   it('keeps challenge and verify scopes separate', async () => {
     const backend = createCountyHunterInMemoryRateLimitBackend()
-    const challengeKey = countyHunterRequestRateLimitKey(
-      request(),
-      'siwe-challenge',
-      address(1),
-    )
     for (let attempt = 0; attempt < COUNTY_HUNTER_RATE_LIMITS.siweChallenge.limit; attempt += 1) {
-      await enforceCountyHunterRateLimit(
-        challengeKey,
-        COUNTY_HUNTER_RATE_LIMITS.siweChallenge,
+      await enforceCountyHunterSiweChallengeRateLimit(
+        request(),
+        address(1),
         START,
         backend,
       )
@@ -195,8 +189,10 @@ describe('County Hunter layered SIWE verify rate limits', () => {
       join(process.cwd(), 'features', 'county-hunter', 'server', 'siwe-rate-limit.ts'),
       'utf8',
     )
-    expect(source).not.toMatch(/NODE_ENV|test.?mode|bypass|x-rate-limit-key/i)
+    expect(source).not.toMatch(/test.?mode|bypass|x-rate-limit-key/i)
     expect(source).not.toContain('signature')
     expect(source).toContain('parseSiweMessage')
+    expect(source).toContain("configured === 'postgres'")
+    expect(source).toContain("environment.NODE_ENV === 'production'")
   })
 })

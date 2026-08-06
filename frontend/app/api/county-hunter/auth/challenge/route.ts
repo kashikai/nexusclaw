@@ -4,13 +4,9 @@ import { COUNTY_HUNTER_NO_STORE_HEADERS } from '@/features/county-hunter/server/
 import { isCountyHunterServerEnabled } from '@/features/county-hunter/server/feature-flags'
 import { CountyHunterHttpError } from '@/features/county-hunter/server/http-error'
 import { logCountyHunterEvent } from '@/features/county-hunter/server/operational-logging'
-import {
-  COUNTY_HUNTER_RATE_LIMITS,
-  countyHunterRequestRateLimitKey,
-  enforceCountyHunterRateLimit,
-} from '@/features/county-hunter/server/rate-limit'
 import { countyHunterErrorResponse } from '@/features/county-hunter/server/responses'
 import { issueCountyHunterChallenge } from '@/features/county-hunter/server/siwe'
+import { enforceCountyHunterSiweChallengeRateLimit } from '@/features/county-hunter/server/siwe-rate-limit'
 import {
   assertCountyHunterSiweOrigin,
   COUNTY_HUNTER_CHALLENGE_BODY_LIMIT,
@@ -29,29 +25,30 @@ export async function POST(request: NextRequest) {
 
     const config = readCountyHunterWalletAuthConfig()
     assertCountyHunterSiweOrigin(request, config.origin)
-    const body = await readCountyHunterSiweJson(
-      request,
-      COUNTY_HUNTER_CHALLENGE_BODY_LIMIT,
-    )
+    let body: unknown
+    try {
+      body = await readCountyHunterSiweJson(
+        request,
+        COUNTY_HUNTER_CHALLENGE_BODY_LIMIT,
+      )
+    } catch (error) {
+      await enforceCountyHunterSiweChallengeRateLimit(request, null)
+      throw error
+    }
+    const address =
+      body &&
+      typeof body === 'object' &&
+      !Array.isArray(body) &&
+      !Object.keys(body).some((key) => key !== 'address') &&
+      typeof (body as { address?: unknown }).address === 'string'
+        ? (body as { address: string }).address
+        : null
+    await enforceCountyHunterSiweChallengeRateLimit(request, address)
     if (
-      !body ||
-      typeof body !== 'object' ||
-      Array.isArray(body) ||
-      Object.keys(body).some((key) => key !== 'address') ||
-      typeof (body as { address?: unknown }).address !== 'string'
+      !address
     ) {
       throw new CountyHunterHttpError('A wallet address is required.', 400)
     }
-
-    const address = (body as { address: string }).address
-    await enforceCountyHunterRateLimit(
-      countyHunterRequestRateLimitKey(
-        request,
-        'siwe-challenge',
-        address.toLowerCase(),
-      ),
-      COUNTY_HUNTER_RATE_LIMITS.siweChallenge,
-    )
 
     const result = await issueCountyHunterChallenge(
       address,

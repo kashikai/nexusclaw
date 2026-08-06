@@ -41,4 +41,12 @@ describe('County Hunter discovery staging E2E harness', () => {
     expect(script).not.toContain('console.log(environment')
     expect(script).not.toContain('console.error(error')
   })
+
+  it('accepts only the audited live-source rejection before replaying prior snapshots', () => {
+    expect(script).toContain("EXPECTED_LIVE_SOURCE_UNAVAILABLE_REASON = 'RESULTS_DOCUMENT_REJECTED'")
+    expect(script).toContain('REPLAY_SNAPSHOT_A_REQUIRED')
+    expect(script).toContain('REPLAY_SNAPSHOT_B_REQUIRED')
+    expect(script).toContain("response.status === 422")
+    expect(script).toContain("'x-vercel-forwarded-for': RATE_LIMIT_TEST_CLIENT_IP")
+  })
 })

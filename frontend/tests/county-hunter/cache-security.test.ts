@@ -99,15 +99,19 @@ describe('County Hunter authenticated cache isolation', () => {
     ]
 
     browserSources.forEach((file) => {
-      expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
-      expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SECRET_KEY')
+      const source = readFileSync(file, 'utf8')
+      expect(source, file).not.toMatch(/\bSUPABASE_SERVICE_ROLE_KEY\b/)
+      expect(source, file).not.toMatch(/\bSUPABASE_SECRET_KEY\b/)
+      expect(source, file).not.toContain('COUNTY_HUNTER_SUPABASE_SECRET_KEY')
+      expect(source, file).not.toContain('COUNTY_HUNTER_RATE_LIMIT_SECRET')
     })
 
     const serverSources = sourceFiles(join(root, 'features', 'county-hunter', 'server'))
     serverSources.forEach((file) => {
-      expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
+      const source = readFileSync(file, 'utf8')
+      expect(source, file).not.toMatch(/\bSUPABASE_SERVICE_ROLE_KEY\b/)
       if (!file.endsWith('admin-supabase.ts')) {
-        expect(readFileSync(file, 'utf8'), file).not.toContain('SUPABASE_SECRET_KEY')
+        expect(source, file).not.toMatch(/\bSUPABASE_SECRET_KEY\b/)
       }
     })
 
@@ -118,6 +122,9 @@ describe('County Hunter authenticated cache isolation', () => {
       'SUPABASE_SECRET_KEY',
     )
     expect(readSource('features', 'county-hunter', 'server', 'admin-supabase.ts')).toContain(
+      "import 'server-only'",
+    )
+    expect(readSource('features', 'county-hunter', 'server', 'postgres-rate-limit.ts')).toContain(
       "import 'server-only'",
     )
   })
