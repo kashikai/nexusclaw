@@ -20,6 +20,8 @@
 | `c7fa2880` | `fix(county-hunter): isolate SIWE rate limits by wallet` |
 | `68be8a86` | `test(county-hunter): strengthen staging release validation` |
 | `ea6f6e4b` | `chore(security): update runtime dependency audit policy` |
+| `745e418b` | `refactor(county-hunter): separate production Supabase configuration` |
+| `5377e3ad` | `security(county-hunter): add distributed PostgreSQL rate limiting` |
 
 ## Database artifacts
 
@@ -34,15 +36,20 @@ The release candidate contains the following County Hunter migrations:
 - `20260726160827_county_hunter_gwinnett_discovery_rpc_fix.sql`
 - `20260726174825_county_hunter_snapshot_replay.sql`
 - `20260804181518_county_hunter_siwe_server_only_hardening.sql`
+- `20260806081241_county_hunter_distributed_rate_limit.sql`
 
-The replay-safety migration gate passed twice against staging before this local
-packaging step. The SIWE hardening migration was applied and validated. No
-database write, migration, fixture rotation, provisioning, or rollback was
-performed while preparing this release candidate.
+The complete replay-safety migration gate, including the distributed
+rate-limit migration, passed twice against staging with exit code 0. The SIWE
+hardening and private PostgreSQL rate-limit objects were applied and validated.
+No database write, migration, fixture rotation, provisioning, or rollback was
+performed while creating the local commits recorded in this manifest.
 
 ## Validation evidence
 
-- Local tests: 166 passed; one live-source opt-in test skipped.
+- Local tests: 198 passed.
+- Distributed staging integrations: 8 passed, including multi-instance shared
+  buckets, atomic concurrency, per-wallet/global limits, window rollover,
+  sanitized storage, complete HTTP 429 headers, and fail-closed HTTP 503.
 - TypeScript typecheck: passed.
 - Lint: passed with the pre-existing documented warnings.
 - Next.js 15.5.21 production build: passed with the pre-existing documented
@@ -55,9 +62,16 @@ performed while preparing this release candidate.
   passed.
 - SIWE privileged RPC boundary: direct `PUBLIC`, `anon`, and `authenticated`
   execution denied; server-only execution path passed.
-- Gwinnett Discovery: passed; repeated execution remained idempotent.
-- Snapshot replay: passed and remained tenant-scoped.
-- Runtime administrative key selection: `SUPABASE_SECRET_KEY`.
+- Gwinnett Discovery: the current official page exposed results but no current
+  property list, so collection was rejected with the approved
+  `RESULTS_DOCUMENT_REJECTED` fail-closed outcome and imported no invalid data.
+- Snapshot replay: passed against previously approved snapshots, returned 25
+  unchanged records for the validated tenant flow, and remained tenant-scoped.
+- County Hunter production Supabase configuration is isolated from agents,
+  signal-agent, and legacy NexusClaw flows through namespaced public and
+  server-only variables.
+- Staging validation selected `COUNTY_HUNTER_SUPABASE_SECRET_KEY`; strict legacy
+  fallback remained disabled.
 - Legacy fallback used: false.
 - Staging commercial data remained preserved.
 
@@ -89,3 +103,17 @@ performed while preparing this release candidate.
   project reference, database URL, or connection string is recorded here.
 - This document does not authorize push, pull request, merge, deployment, or
   production enablement.
+
+## Distributed production preparation
+
+The County Hunter production Supabase separation and distributed PostgreSQL
+SIWE rate limiter are committed locally and validated in staging. The private
+bucket table stores only HMAC identifiers; the atomic consume and bounded
+cleanup functions have restricted execution grants and an empty search path.
+The application does not fall back to in-process memory when the production
+backend is unavailable.
+
+No production Supabase or Vercel configuration has been changed. The Vercel
+Hobby WAF rule remains a documented future manual defense-in-depth step. All
+three production feature flags remain false, and this RC does not authorize a
+push, pull request, merge, deployment, or production enablement.
