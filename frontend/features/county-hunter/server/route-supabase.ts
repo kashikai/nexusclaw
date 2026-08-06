@@ -3,16 +3,13 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import type { NextRequest, NextResponse } from 'next/server'
 import { applyCountyHunterNoStore } from './cache-control'
 import { countyHunterCookieOptions, isSupabaseAuthCookieName } from './cookie-options'
-import { CountyHunterHttpError } from './http-error'
+import { readCountyHunterPublicSupabaseConfig } from './public-supabase-config'
 
 type PendingCookie = { name: string; value: string; options: CookieOptions }
 
 export function createCountyHunterRouteSupabaseClient(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  if (!supabaseUrl || !publishableKey) {
-    throw new CountyHunterHttpError('The shared Supabase project is not configured.', 503)
-  }
+  const { supabaseUrl, publishableKey } =
+    readCountyHunterPublicSupabaseConfig()
 
   const pendingCookies: PendingCookie[] = []
   const supabase = createServerClient(supabaseUrl, publishableKey, {

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { readCountyHunterServerAdminConfig } from '../../features/county-hunter/server/admin-supabase'
+import { readCountyHunterPublicSupabaseConfig } from '../../features/county-hunter/server/public-supabase-config'
 import {
   assertCountyHunterSiweOrigin,
   COUNTY_HUNTER_CHALLENGE_BODY_LIMIT,
@@ -16,25 +17,52 @@ const source = (...segments: string[]) =>
   readFileSync(join(root, ...segments), 'utf8')
 
 describe('County Hunter server-only SIWE hardening', () => {
-  it('accepts only a Supabase secret key and never falls back to a legacy key', () => {
+  it('uses the isolated County Hunter project and secret in production', () => {
+    expect(readCountyHunterServerAdminConfig({
+      NODE_ENV: 'production',
+      NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL: 'https://production-project.supabase.co',
+      NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY:
+        'sb_publishable_synthetic-production-key',
+      COUNTY_HUNTER_SUPABASE_SECRET_KEY:
+        'sb_secret_synthetic-server-only-key',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://legacy-agents.supabase.co',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        'sb_publishable_synthetic-legacy-key',
+    })).toEqual({
+      supabaseUrl: 'https://production-project.supabase.co',
+      secretKey: 'sb_secret_synthetic-server-only-key',
+    })
+  })
+
+  it('keeps the deprecated generic staging fallback outside production only', () => {
     expect(readCountyHunterServerAdminConfig({
       NODE_ENV: 'test',
       NEXT_PUBLIC_SUPABASE_URL: 'https://staging-project.supabase.co',
-      SUPABASE_SECRET_KEY: 'sb_secret_synthetic-server-only-key',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        'sb_publishable_synthetic-staging-key',
+      SUPABASE_SECRET_KEY: 'sb_secret_synthetic-staging-key',
     })).toEqual({
       supabaseUrl: 'https://staging-project.supabase.co',
-      secretKey: 'sb_secret_synthetic-server-only-key',
+      secretKey: 'sb_secret_synthetic-staging-key',
     })
 
     expect(() => readCountyHunterServerAdminConfig({
-      NODE_ENV: 'test',
+      NODE_ENV: 'production',
       NEXT_PUBLIC_SUPABASE_URL: 'https://staging-project.supabase.co',
-      SUPABASE_SERVICE_ROLE_KEY: 'synthetic-legacy-value',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        'sb_publishable_synthetic-staging-key',
+      SUPABASE_SECRET_KEY: 'sb_secret_synthetic-staging-key',
     })).toThrowError(expect.objectContaining({ status: 503 }))
-    expect(() => readCountyHunterServerAdminConfig({
+  })
+
+  it('never mixes an incomplete County Hunter public configuration with legacy values', () => {
+    expect(() => readCountyHunterPublicSupabaseConfig({
       NODE_ENV: 'test',
-      NEXT_PUBLIC_SUPABASE_URL: 'https://staging-project.supabase.co',
-      SUPABASE_SECRET_KEY: 'not-a-secret-key',
+      NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL:
+        'https://isolated-project.supabase.co',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://legacy-agents.supabase.co',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        'sb_publishable_synthetic-legacy-key',
     })).toThrowError(expect.objectContaining({ status: 503 }))
   })
 
@@ -81,9 +109,9 @@ describe('County Hunter server-only SIWE hardening', () => {
     const verifyRoute = source('app', 'api', 'county-hunter', 'auth', 'verify', 'route.ts')
 
     expect(adminClient.startsWith("import 'server-only'")).toBe(true)
-    expect(adminClient).toContain('SUPABASE_SECRET_KEY')
+    expect(adminClient).toContain('COUNTY_HUNTER_SUPABASE_SECRET_KEY')
     expect(adminClient).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
-    expect(adminClient).toContain("startsWith('sb_secret_')")
+    expect(adminClient).toContain('SUPABASE_SECRET_KEY.test(secretKey)')
     expect(adminClient).toContain('autoRefreshToken: false')
     expect(adminClient).toContain('detectSessionInUrl: false')
     expect(adminClient).toContain('persistSession: false')
@@ -91,6 +119,7 @@ describe('County Hunter server-only SIWE hardening', () => {
 
     expect(challengeStore).toContain('createCountyHunterServerAdminClient')
     expect(challengeStore).not.toContain('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+    expect(challengeStore).not.toContain('NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY')
     expect(challengeRoute).toContain('assertCountyHunterSiweOrigin')
     expect(challengeRoute).toContain('readCountyHunterSiweJson')
     expect(verifyRoute).toContain('assertCountyHunterSiweOrigin')

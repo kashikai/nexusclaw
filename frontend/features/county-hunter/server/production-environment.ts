@@ -1,10 +1,16 @@
 import 'server-only'
 
+import { Buffer } from 'node:buffer'
 import { CountyHunterHttpError } from './http-error'
 
 const PRODUCTION_CONFIRMATION = 'PRODUCTION_PILOT'
 const SUPABASE_PROJECT_REF = /^[a-z0-9]{20}$/
 const WALLETCONNECT_PROJECT_ID = /^[a-f0-9]{32}$/i
+const SUPABASE_PUBLISHABLE_KEY = /^sb_publishable_[A-Za-z0-9_-]{20,}$/
+const SECRET_KEY_FORMAT = /^sb_secret_[A-Za-z0-9_-]{20,}$/
+const RATE_LIMIT_SECRET_HEX = /^(?:[A-Fa-f0-9]{2}){32,}$/
+const RATE_LIMIT_SECRET_BASE64 = /^[A-Za-z0-9+/_-]+={0,2}$/
+const NON_PRODUCTION_SECRET = /(?:example|synthetic|test(?:ing)?)/i
 const PLACEHOLDER_VALUE =
   /(replace(?:_with)?|placeholder|change[-_ ]?me|your[-_ ]|dominio-de-producao|<[^>]+>|\$\{[^}]+\}|^demo$)/i
 const PROHIBITED_RUNTIME_NAME =
@@ -72,17 +78,9 @@ function strictHttpsUrl(
   return url
 }
 
-function assertPublicSupabaseKey(value: string): void {
-  if (
-    value.length < 20 ||
-    value.startsWith('sb_secret_') ||
-    PLACEHOLDER_VALUE.test(value)
-  ) {
-    throw configurationError('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
-  }
-
+function decodedJwtRole(value: string): unknown {
   const jwtParts = value.split('.')
-  if (jwtParts.length !== 3) return
+  if (jwtParts.length !== 3) return undefined
   try {
     const encodedPayload = jwtParts[1]
       .replace(/-/g, '+')
@@ -91,12 +89,53 @@ function assertPublicSupabaseKey(value: string): void {
     const payload = JSON.parse(
       atob(encodedPayload),
     ) as { role?: unknown }
-    if (payload.role === 'service_role') {
-      throw configurationError('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+    return payload.role
+  } catch {
+    return undefined
+  }
+}
+
+function assertPublicSupabaseKey(value: string, variable: string): void {
+  if (
+    !SUPABASE_PUBLISHABLE_KEY.test(value) ||
+    PLACEHOLDER_VALUE.test(value)
+  ) {
+    throw configurationError(variable)
+  }
+}
+
+function rateLimitSecretHasEnoughBytes(value: string): boolean {
+  if (RATE_LIMIT_SECRET_HEX.test(value)) return true
+  if (!RATE_LIMIT_SECRET_BASE64.test(value)) return false
+  const unpadded = value.replace(/=+$/, '')
+  if (unpadded.length % 4 === 1) return false
+  try {
+    const normalized = unpadded
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(unpadded.length / 4) * 4, '=')
+    return Buffer.from(normalized, 'base64').byteLength >= 32
+  } catch {
+    return false
+  }
+}
+
+function assertNoAdministrativePublicVariables(
+  environment: NodeJS.ProcessEnv,
+): void {
+  for (const [name, rawValue] of Object.entries(environment)) {
+    const value = rawValue?.trim()
+    if (
+      name.startsWith('NEXT_PUBLIC_') &&
+      value &&
+      (
+        name.includes('RATE_LIMIT_SECRET') ||
+        value.startsWith('sb_secret_') ||
+        decodedJwtRole(value) === 'service_role'
+      )
+    ) {
+      throw configurationError(name)
     }
-  } catch (error) {
-    if (error instanceof CountyHunterHttpError) throw error
-    throw configurationError('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
   }
 }
 
@@ -118,6 +157,7 @@ export function validateCountyHunterProductionEnvironment(
   }
 
   assertNoProhibitedRuntimeVariables(environment)
+  assertNoAdministrativePublicVariables(environment)
 
   const appOriginUrl = strictHttpsUrl(environment, 'NEXT_PUBLIC_APP_ORIGIN', {
     originOnly: true,
@@ -139,18 +179,53 @@ export function validateCountyHunterProductionEnvironment(
 
   const supabaseUrl = strictHttpsUrl(
     environment,
-    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL',
     { originOnly: true },
   )
   if (supabaseUrl.hostname !== `${productionProjectRef}.supabase.co`) {
-    throw configurationError('NEXT_PUBLIC_SUPABASE_URL')
+    throw configurationError('NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL')
   }
 
   const publishableKey = required(
     environment,
-    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+    'NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY',
   )
-  assertPublicSupabaseKey(publishableKey)
+  assertPublicSupabaseKey(
+    publishableKey,
+    'NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY',
+  )
+
+  const secretKey = required(
+    environment,
+    'COUNTY_HUNTER_SUPABASE_SECRET_KEY',
+  )
+  if (!SECRET_KEY_FORMAT.test(secretKey)) {
+    throw configurationError('COUNTY_HUNTER_SUPABASE_SECRET_KEY')
+  }
+
+  const rateLimitBackend = required(
+    environment,
+    'COUNTY_HUNTER_RATE_LIMIT_BACKEND',
+  )
+  if (rateLimitBackend !== 'postgres') {
+    throw configurationError('COUNTY_HUNTER_RATE_LIMIT_BACKEND')
+  }
+
+  const rateLimitSecret = required(
+    environment,
+    'COUNTY_HUNTER_RATE_LIMIT_SECRET',
+  )
+  if (
+    !rateLimitSecretHasEnoughBytes(rateLimitSecret) ||
+    NON_PRODUCTION_SECRET.test(rateLimitSecret) ||
+    /^(.)\1+$/.test(rateLimitSecret) ||
+    rateLimitSecret === secretKey ||
+    Object.entries(environment).some(([name, value]) =>
+      name.startsWith('NEXT_PUBLIC_') && value?.trim() === rateLimitSecret,
+    )
+  ) {
+    throw configurationError('COUNTY_HUNTER_RATE_LIMIT_SECRET')
+  }
 
   const walletConnectProjectId = required(
     environment,

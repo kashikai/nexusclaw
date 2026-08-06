@@ -12,16 +12,21 @@ production runtime.
 
 | Variable | Classification | Required condition | Browser exposure | Production rule |
 |---|---|---|---|---|
-| `COUNTY_HUNTER_ENABLED` | server-only | Always; defaults false | Prohibited | Exact `true` or `false`; enabling invokes full production validation. |
-| `COUNTY_HUNTER_DISCOVERY_ENABLED` | server-only | Always; defaults false | Prohibited | Cannot be true when the module is false; enable only during an approved manual collection window. |
-| `NEXT_PUBLIC_COUNTY_HUNTER_ENABLED` | client-public | Always; defaults false | Expected | Navigation/appearance only; never grants access. |
-| `COUNTY_HUNTER_PRODUCTION_CONFIRM` | server-only | When module is enabled | Prohibited | Exact production-pilot confirmation; not a secret and not reusable for staging. |
-| `COUNTY_HUNTER_PRODUCTION_PROJECT_REF` | server-only | When module is enabled | Prohibited | Exactly 20 lowercase alphanumeric characters; must match the dedicated Supabase URL. |
-| `NEXT_PUBLIC_APP_ORIGIN` | client-public | When module is enabled | Expected | Exact pathless HTTPS production origin; no local/staging host, query, fragment, credential, or placeholder. |
-| `COUNTY_HUNTER_AUTH_ORIGIN` | server-only | When module is enabled | Prohibited | Must equal the public origin; fixed input to SIWE, never derived from `Host`. |
-| `NEXT_PUBLIC_SUPABASE_URL` | client-public | When module is enabled | Expected | Exact dedicated production project URL; no staging/local/placeholder URL. |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | client-public | When module is enabled | Expected | Dedicated production publishable key only; service-role/secret keys are rejected. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client-public, optional legacy | Only if a non-County-Hunter legacy flow still imports it | Expected when used | Dedicated production public anon key; migrate consumers to the publishable key separately. Never use a service role. |
+| `COUNTY_HUNTER_ENABLED` | `PRIVATE_SERVER_RUNTIME` | Always; defaults false | Prohibited | Exact `true` or `false`; enabling invokes full production validation. |
+| `COUNTY_HUNTER_DISCOVERY_ENABLED` | `PRIVATE_SERVER_RUNTIME` | Always; defaults false | Prohibited | Cannot be true when the module is false; enable only during an approved manual collection window. |
+| `NEXT_PUBLIC_COUNTY_HUNTER_ENABLED` | `PUBLIC_BROWSER` | Always; defaults false | Expected | Navigation/appearance only; never grants access. |
+| `COUNTY_HUNTER_PRODUCTION_CONFIRM` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Exact production-pilot confirmation; not a secret and not reusable for staging. |
+| `COUNTY_HUNTER_PRODUCTION_PROJECT_REF` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Exactly 20 lowercase alphanumeric characters; must match the dedicated County Hunter Supabase URL. |
+| `NEXT_PUBLIC_APP_ORIGIN` | `PUBLIC_BROWSER` | When module is enabled | Expected | Exact pathless HTTPS production origin; no local/staging host, query, fragment, credential, or placeholder. |
+| `COUNTY_HUNTER_AUTH_ORIGIN` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Must equal the public origin; fixed input to SIWE, never derived from `Host`. |
+| `NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL` | `PUBLIC_BROWSER` | When module is enabled | Expected | Exact isolated County Hunter production project URL; no generic, staging, local, or placeholder fallback. |
+| `NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY` | `PUBLIC_BROWSER` | When module is enabled | Expected | Isolated project publishable key only; service-role/secret keys are rejected. |
+| `COUNTY_HUNTER_SUPABASE_SECRET_KEY` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Dedicated `sb_secret_` key used only by server-only SIWE challenge and distributed rate-limit RPC clients; never imported by Client Components. |
+| `COUNTY_HUNTER_RATE_LIMIT_BACKEND` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Must be exactly `postgres` in production. `memory` is limited to local/unit-test use. |
+| `COUNTY_HUNTER_RATE_LIMIT_SECRET` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Independent random HMAC secret encoded as at least 32 bytes in hex, standard base64, or base64url; must not reuse a Supabase, database, wallet, RPC, or WalletConnect credential. |
+| `NEXT_PUBLIC_SUPABASE_URL` | `PUBLIC_BROWSER` legacy | Only if agents, signal-agent, or another legacy flow uses it | Expected when used | Generic NexusClaw project only. County Hunter cannot fall back to it in production. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `PUBLIC_BROWSER` legacy | Only if a legacy flow uses it | Expected when used | Generic NexusClaw publishable key only; independent from County Hunter. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `PUBLIC_BROWSER` legacy | Only if agents, signal-agent, or another legacy flow uses it | Expected when used | Generic NexusClaw anon key. Never use a service role. |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | client-public | When module is enabled | Expected | Dedicated production client ID, provider-restricted to the exact origin; 32 hexadecimal characters and no placeholder. |
 | `NEXT_PUBLIC_BASE_RPC_URL` | client-public | When module is enabled | Expected | Client-safe dedicated production HTTPS endpoint; no embedded credentials, query, fragment, local or staging host. |
 | `COUNTY_HUNTER_BASE_RPC_URL` | server-only | When module is enabled | Prohibited | Dedicated production HTTPS RPC for SIWE verification; may use a deployment secret reference, never a client import. |
@@ -38,17 +43,24 @@ but are prohibited in the deployed frontend process:
 
 | Variable/value class | Classification | Allowed location |
 |---|---|---|
-| Supabase service role or new secret key | deployment-secret, prohibited-in-browser and prohibited-in-app-runtime | Short-lived isolated admin job/secret manager only |
-| Production database URL | deployment-secret, prohibited-in-browser and prohibited-in-app-runtime | Approved migration/backup runner only |
+| `COUNTY_HUNTER_PRODUCTION_DB_URL` | `MIGRATION_ONLY` | Approved migration/backup runner only; never the Next.js process |
+| `SUPABASE_SECRET_KEY` | `FORBIDDEN_IN_PRODUCTION` | Deprecated staging compatibility only |
+| `SUPABASE_SERVICE_ROLE_KEY` | `FORBIDDEN_IN_PRODUCTION` | Nowhere in the production application or browser |
+| Production database password | `MIGRATION_ONLY` | Approved migration/backup runner secret store only |
 | Database password | deployment-secret, prohibited-in-browser and prohibited-in-app-runtime | Approved secret manager/tool input only |
 | Backup encryption key | deployment-secret, prohibited-in-browser and prohibited-in-app-runtime | Backup platform/HSM only |
 | Deployment provider token | deployment-secret, prohibited-in-browser and prohibited-in-app-runtime | Deployment platform secret store only |
 | DNS/TLS provider credential | deployment-secret, prohibited-in-browser and prohibited-in-app-runtime | Provider secret store only |
 
-The runtime validator rejects non-empty `SUPABASE_SERVICE_ROLE_KEY`,
-`SUPABASE_SECRET_KEY`, `DATABASE_URL`, `COUNTY_HUNTER_PRODUCTION_DB_URL`,
-`POSTGRES_PASSWORD`, all `COUNTY_HUNTER_STAGING_*`, and all
-`COUNTY_HUNTER_TEST_*` values when the production module is enabled.
+The runtime validator permits `COUNTY_HUNTER_SUPABASE_SECRET_KEY` only as the
+server-only administrative credential required by the enabled module. It also
+requires the PostgreSQL rate-limit backend and an independent, non-public
+rate-limit HMAC secret of at least 32 decoded bytes. It
+rejects non-empty `SUPABASE_SERVICE_ROLE_KEY`, generic `SUPABASE_SECRET_KEY`,
+`DATABASE_URL`, `COUNTY_HUNTER_PRODUCTION_DB_URL`, `POSTGRES_PASSWORD`, all
+`COUNTY_HUNTER_STAGING_*`, and all `COUNTY_HUNTER_TEST_*` values. It also scans
+every `NEXT_PUBLIC_*` value and rejects new secret keys or legacy
+`service_role` JWTs.
 
 ## Fail-fast rules
 
@@ -59,10 +71,18 @@ evaluation fails safely without echoing values if:
 - either canonical origin is absent, placeholder, HTTP, local, staging,
   credential-bearing, or contains a path/query/fragment;
 - application and Auth origins differ;
-- the production Supabase ref is malformed or differs from the Supabase URL;
+- the production Supabase ref is malformed or differs from the isolated County
+  Hunter Supabase URL;
 - the Supabase URL is not the dedicated `*.supabase.co` project origin;
-- the public Supabase key is absent, placeholder, a new secret key, or a legacy
-  JWT with role `service_role`;
+- the County Hunter publishable key is absent, malformed, placeholder, a new
+  secret key, or a legacy JWT with role `service_role`;
+- the namespaced County Hunter server secret is absent, malformed, or replaced
+  by either generic/legacy administrative variable;
+- the rate-limit backend is absent or not exactly `postgres`;
+- the rate-limit HMAC secret is absent, malformed, placeholder-like, public,
+  too short, or reused from another configured credential;
+- the production module would need to fall back to the generic agents or
+  signal-agent Supabase project;
 - the WalletConnect Project ID is missing, malformed, repeated, or a
   placeholder;
 - either Base RPC is missing, non-HTTPS, local, staging, invalid, or a
@@ -78,12 +98,16 @@ deployment. No client-public flag can override server authorization.
 
 ## Client-boundary verification
 
-All modules that read server-only values import `server-only`. Automated tests
+All modules that read server-only values import `server-only`. The County
+Hunter admin client disables session persistence, automatic token refresh, and
+URL session detection; it does not build authorization headers manually.
+Automated tests
 scan every Client Component for server variable names and server production
 configuration imports. The production build must additionally be scanned to
 confirm:
 
-- no service role, secret key, database URL/password, private RPC credential,
+- no service role, secret key, rate-limit secret, database URL/password,
+  private RPC credential,
   staging/test identifier, wallet/private key, token, or cookie is present;
 - no local origin or localhost certificate reference is emitted in
   `.next/static`;

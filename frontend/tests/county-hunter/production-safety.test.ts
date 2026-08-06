@@ -35,10 +35,21 @@ function validProductionEnvironment(): NodeJS.ProcessEnv {
     COUNTY_HUNTER_PRODUCTION_PROJECT_REF: 'abcdefghijklmnopqrst',
     NEXT_PUBLIC_APP_ORIGIN: 'https://county-hunter.nexusclaw.test',
     COUNTY_HUNTER_AUTH_ORIGIN: 'https://county-hunter.nexusclaw.test',
-    NEXT_PUBLIC_SUPABASE_URL:
+    NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL:
       'https://abcdefghijklmnopqrst.supabase.co',
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY:
       'sb_publishable_abcdefghijklmnopqrstuvwxyz123456',
+    COUNTY_HUNTER_SUPABASE_SECRET_KEY:
+      'sb_secret_abcdefghijklmnopqrstuvwxyz123456',
+    COUNTY_HUNTER_RATE_LIMIT_BACKEND: 'postgres',
+    COUNTY_HUNTER_RATE_LIMIT_SECRET:
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+    NEXT_PUBLIC_SUPABASE_URL:
+      'https://legacyagentsproject.supabase.co',
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      'sb_publishable_legacyagents1234567890123456',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      'synthetic-legacy-agents-anon-key',
     NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
       '0123456789abcdef0123456789abcdef',
     NEXT_PUBLIC_BASE_RPC_URL:
@@ -121,7 +132,7 @@ describe('County Hunter production pilot safety controls', () => {
         'REPLACE_WITH_PROJECT_ID'
     }],
     ['invalid Supabase URL', (environment: NodeJS.ProcessEnv) => {
-      environment.NEXT_PUBLIC_SUPABASE_URL =
+      environment.NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL =
         'https://unrelated.nexusclaw.test'
     }],
     ['staging project ref present', (environment: NodeJS.ProcessEnv) => {
@@ -131,8 +142,28 @@ describe('County Hunter production pilot safety controls', () => {
     ['service role present', (environment: NodeJS.ProcessEnv) => {
       environment.SUPABASE_SERVICE_ROLE_KEY = 'sensitive-runtime-value'
     }],
+    ['generic secret present', (environment: NodeJS.ProcessEnv) => {
+      environment.SUPABASE_SECRET_KEY = 'sensitive-runtime-value'
+    }],
     ['database URL present', (environment: NodeJS.ProcessEnv) => {
       environment.DATABASE_URL = 'sensitive-runtime-value'
+    }],
+    ['production database URL present', (environment: NodeJS.ProcessEnv) => {
+      environment.COUNTY_HUNTER_PRODUCTION_DB_URL = 'sensitive-runtime-value'
+    }],
+    ['test fixture present', (environment: NodeJS.ProcessEnv) => {
+      environment.COUNTY_HUNTER_TEST_ADMIN_A_PRIVATE_KEY =
+        'sensitive-runtime-value'
+    }],
+    ['memory rate-limit backend', (environment: NodeJS.ProcessEnv) => {
+      environment.COUNTY_HUNTER_RATE_LIMIT_BACKEND = 'memory'
+    }],
+    ['missing rate-limit secret', (environment: NodeJS.ProcessEnv) => {
+      delete environment.COUNTY_HUNTER_RATE_LIMIT_SECRET
+    }],
+    ['public rate-limit secret', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_COUNTY_HUNTER_RATE_LIMIT_SECRET =
+        'sensitive-runtime-value'
     }],
   ])('rejects %s without echoing configured values', (_label, mutate) => {
     const environment = validProductionEnvironment()
@@ -156,12 +187,49 @@ describe('County Hunter production pilot safety controls', () => {
     const payload = Buffer.from(
       JSON.stringify({ role: 'service_role' }),
     ).toString('base64url')
-    environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY =
+    environment.NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY =
       `${header}.${payload}.synthetic`
 
     expect(() =>
       validateCountyHunterProductionEnvironment(environment),
-    ).toThrow(/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/)
+    ).toThrow(/NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY/)
+  })
+
+  it('rejects administrative key material in any public variable', () => {
+    const environment = validProductionEnvironment()
+    environment.NEXT_PUBLIC_ACCIDENTAL_ADMIN_KEY =
+      'sb_secret_synthetic-never-public'
+
+    expect(() =>
+      validateCountyHunterProductionEnvironment(environment),
+    ).toThrow(/NEXT_PUBLIC_ACCIDENTAL_ADMIN_KEY/)
+  })
+
+  it('allows all County Hunter flags to remain off without an administrative secret', () => {
+    expect(isCountyHunterServerEnabled({
+      NODE_ENV: 'production',
+      COUNTY_HUNTER_ENABLED: 'false',
+      COUNTY_HUNTER_DISCOVERY_ENABLED: 'false',
+      NEXT_PUBLIC_COUNTY_HUNTER_ENABLED: 'false',
+    })).toBe(false)
+  })
+
+  it('requires the namespaced secret when the production module is enabled', () => {
+    const environment = validProductionEnvironment()
+    delete environment.COUNTY_HUNTER_SUPABASE_SECRET_KEY
+
+    expect(() => isCountyHunterServerEnabled(environment)).toThrow(
+      /COUNTY_HUNTER_SUPABASE_SECRET_KEY/,
+    )
+  })
+
+  it('requires the distributed rate-limit secret when the production module is enabled', () => {
+    const environment = validProductionEnvironment()
+    delete environment.COUNTY_HUNTER_RATE_LIMIT_SECRET
+
+    expect(() => isCountyHunterServerEnabled(environment)).toThrow(
+      /COUNTY_HUNTER_RATE_LIMIT_SECRET/,
+    )
   })
 
   it('does not allow the collection switch to bypass the module switch', () => {
@@ -227,7 +295,7 @@ describe('County Hunter production pilot safety controls', () => {
     for (const file of clientFiles) {
       const source = readFileSync(file, 'utf8')
       expect(source, file).not.toMatch(
-        /SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|DATABASE_URL|COUNTY_HUNTER_BASE_RPC_URL|server\/production-environment/,
+        /SUPABASE_SERVICE_ROLE_KEY|(?:COUNTY_HUNTER_)?SUPABASE_SECRET_KEY|COUNTY_HUNTER_RATE_LIMIT_SECRET|DATABASE_URL|COUNTY_HUNTER_BASE_RPC_URL|server\/(?:production-environment|postgres-rate-limit)/,
       )
     }
   })
@@ -247,6 +315,15 @@ describe('County Hunter production pilot safety controls', () => {
     )
     expect(productionExample).not.toMatch(
       /^(?:SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|DATABASE_URL)=/m,
+    )
+    expect(productionExample).toMatch(
+      /^COUNTY_HUNTER_SUPABASE_SECRET_KEY=$/m,
+    )
+    expect(productionExample).toMatch(
+      /^COUNTY_HUNTER_RATE_LIMIT_BACKEND=postgres$/m,
+    )
+    expect(productionExample).toMatch(
+      /^COUNTY_HUNTER_RATE_LIMIT_SECRET=$/m,
     )
     expect(sharedExample).not.toMatch(
       /^NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=[a-f0-9]{32}$/im,

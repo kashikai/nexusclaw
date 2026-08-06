@@ -4,6 +4,7 @@ import type { CountyHunterPermission } from '../types'
 import { isUuid } from '../validation'
 import { CountyHunterHttpError } from './http-error'
 import { countyHunterCookieOptions } from './cookie-options'
+import { readCountyHunterPublicSupabaseConfig } from './public-supabase-config'
 
 export type TrustedCountyHunterIdentity = {
   supabaseUrl: string
@@ -23,11 +24,8 @@ const COUNTY_HUNTER_PERMISSIONS = new Set<CountyHunterPermission>([
 ])
 
 export async function readTrustedCountyHunterIdentity(): Promise<TrustedCountyHunterIdentity | null> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  if (!supabaseUrl || !publishableKey) {
-    throw new CountyHunterHttpError('The shared Supabase project is not configured.', 503)
-  }
+  const { supabaseUrl, publishableKey } =
+    readCountyHunterPublicSupabaseConfig()
 
   const cookieStore = await cookies()
   const supabase = createServerClient(supabaseUrl, publishableKey, {

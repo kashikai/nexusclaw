@@ -6,6 +6,7 @@ import {
 } from '@/features/county-hunter/server/cache-control'
 import { countyHunterCookieOptions } from '@/features/county-hunter/server/cookie-options'
 import { isCountyHunterServerEnabled } from '@/features/county-hunter/server/feature-flags'
+import { readCountyHunterPublicSupabaseConfig } from '@/features/county-hunter/server/public-supabase-config'
 
 export async function middleware(request: NextRequest) {
   if (!isCountyHunterServerEnabled()) {
@@ -13,23 +14,21 @@ export async function middleware(request: NextRequest) {
   }
 
   let response = NextResponse.next({ request })
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const { supabaseUrl, publishableKey } =
+    readCountyHunterPublicSupabaseConfig()
 
-  if (supabaseUrl && publishableKey) {
-    const supabase = createServerClient(supabaseUrl, publishableKey, {
-      cookieOptions: countyHunterCookieOptions(),
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
-        },
+  const supabase = createServerClient(supabaseUrl, publishableKey, {
+    cookieOptions: countyHunterCookieOptions(),
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+        response = NextResponse.next({ request })
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
       },
-    })
-    await supabase.auth.getUser()
-  }
+    },
+  })
+  await supabase.auth.getUser()
 
   return applyCountyHunterNoStore(response)
 }

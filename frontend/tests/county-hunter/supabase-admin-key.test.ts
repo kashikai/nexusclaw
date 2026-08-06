@@ -124,16 +124,25 @@ describe('Supabase administrative key migration', () => {
       join(root, 'features', 'county-hunter', 'server', 'supabase.ts'),
     ]) {
       expect(readFileSync(file, 'utf8'), file).toContain(
-        'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+        'readCountyHunterPublicSupabaseConfig',
       )
     }
+
+    const publicResolver = readFileSync(
+      join(root, 'features', 'county-hunter', 'server', 'public-supabase-config.ts'),
+      'utf8',
+    )
+    expect(publicResolver).toContain(
+      'NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY',
+    )
+    expect(publicResolver).toContain("environment.NODE_ENV === 'production'")
 
     const serverAdmin = readFileSync(
       join(root, 'features', 'county-hunter', 'server', 'admin-supabase.ts'),
       'utf8',
     )
     expect(serverAdmin.startsWith("import 'server-only'")).toBe(true)
-    expect(serverAdmin).toContain('SUPABASE_SECRET_KEY')
+    expect(serverAdmin).toContain('COUNTY_HUNTER_SUPABASE_SECRET_KEY')
     expect(serverAdmin).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
   })
 
