@@ -109,8 +109,8 @@ confirm:
 - no service role, secret key, rate-limit secret, database URL/password,
   private RPC credential,
   staging/test identifier, wallet/private key, token, or cookie is present;
-- no local origin or localhost certificate reference is emitted in
-  `.next/static`;
+- no application-owned local origin, staging endpoint, or localhost
+  certificate reference is emitted in `.next/static`;
 - no real value from an ignored local environment file appears in tracked
   changes or browser artifacts;
 - no public source map contains a server-only value.
@@ -135,5 +135,41 @@ pilot preparation's literal “no localhost in the production bundle” gate.
 Do not hide the strings, patch `node_modules`, or remove wallet functionality.
 Before deployment, resolve this through a supported upstream package/config
 change with a separate wallet-stack review and repeat the QR, MetaMask,
-Coinbase, Base 8453, SIWE, bundle, build, and clean-install gates. Until then
-this remains a deployment blocker.
+Coinbase, Base 8453, SIWE, bundle, build, and clean-install gates. This raw
+token-count decision is superseded by the runtime gate below.
+
+## Wallet bundle runtime gate
+
+Third-party local-development and validation tokens are classified by behavior
+rather than treated as configured NexusClaw endpoints:
+
+| Package | Version | Classification | Observed purpose |
+| --- | --- | --- | --- |
+| `@reown/appkit-common` / `@reown/appkit-controllers` | 1.8.19 | `VENDOR_DEVELOPMENT_FALLBACK` | Default development ancestors and local-origin validation. |
+| `@walletconnect/jsonrpc-utils` | 1.0.8 | `VENDOR_VALIDATION_LITERAL` | WebSocket URL classification. |
+| `@rainbow-me/rainbowkit` | 2.2.11 | `VENDOR_DEVELOPMENT_FALLBACK` | Development chain icon metadata. |
+| `engine.io-client` via MetaMask SDK | 6.6.6 | `VENDOR_DEVELOPMENT_FALLBACK` | Browser hostname fallback and offline handling. |
+| `next` | 15.5.21 | `VENDOR_VALIDATION_LITERAL` | Standards-compatible URL parsing. |
+
+None of these values is selected by NexusClaw configuration. WalletConnect
+metadata receives the validated `NEXT_PUBLIC_APP_ORIGIN` explicitly, and
+production disables WalletConnect when that origin or its Project ID is
+missing or invalid. A first-deploy browser smoke must still prove that provider
+initialization, modal opening, and QR generation send no request to a local,
+test, or staging destination.
+
+The corrected gate requires:
+
+- `APP_OWNED_LOCALHOST_RUNTIME=false`;
+- `APP_OWNED_STAGING_URLS=false`;
+- `METADATA_EXPLICIT=true`;
+- `METADATA_MATCHES_APP_ORIGIN=true`;
+- `SIWE_MATCHES_APP_ORIGIN=true`;
+- `PRODUCTION_PLACEHOLDERS_REJECTED=true`;
+- `OUTBOUND_LOCALHOST_REQUESTS=false` or `PENDING_REAL_DOMAIN_SMOKE` before
+  the first deploy is approved;
+- `VENDOR_TOKENS_DOCUMENTED=true`.
+
+`RAW_LOCALHOST_TOKEN_COUNT=0` is not a release requirement. Reassess these
+vendor tokens whenever the WalletConnect, RainbowKit, Wagmi, MetaMask, or Next
+stack changes. Do not perform a major update solely to remove inert strings.

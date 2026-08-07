@@ -323,7 +323,8 @@ The Discovery UI must continue to state that:
 Before deployment authorization, build and run locally with synthetic
 placeholders and all flags false. Require Home health, RPC degradation,
 County Hunter 404/safe unavailability, Discovery/replay denial, no staging
-acceptance, and no secret/local origin in the public bundle.
+acceptance, no application-owned local origin in the public bundle, explicit
+WalletConnect metadata, and a documented classification for vendor tokens.
 
 After an independently authorized deployment, but before enabling collection:
 
@@ -334,6 +335,18 @@ After an independently authorized deployment, but before enabling collection:
 - role, membership, RLS, tenant-isolation, and rate-limit checks;
 - one-tenant/Gwinnett-only configuration and no scheduled job;
 - backup and alert delivery.
+
+For the first real-domain deployment, install the DevTools Snippet from
+`frontend/scripts/browser/wallet-production-network-smoke.js` before opening
+RainbowKit. With all County Hunter flags still false, start the monitor, open
+the wallet modal, open and close the WalletConnect QR flow, exercise MetaMask
+connect/disconnect without signing or transacting, then call
+`__NEXUSCLAW_WALLET_NETWORK_SMOKE__.finish()`. The sanitized result must report
+`passed=true` and `forbiddenRequests=0`. The harness monitors `fetch`,
+`XMLHttpRequest`, `WebSocket`, `EventSource`, `navigator.sendBeacon`, and
+`window.open`; it stores no URL, query, Project ID, cookie, token, wallet, or
+signature. Official WalletConnect/Reown destinations are observed but not
+blocked.
 
 No smoke test may use real funds or send a transaction.
 

@@ -407,3 +407,30 @@ current `security/county-hunter-production-gate` branch.
 The complete advisory register, reachability proof, rollback rehearsal and
 dependency-recovery procedure are in
 `docs/security/PHASE2_PRODUCTION_GATE.md`.
+
+## Wallet bundle runtime risk register (2026-08-07)
+
+The production bundle contains local-development and URL-validation tokens
+owned by pinned third-party packages. They are not NexusClaw configuration,
+metadata, or endpoints:
+
+- Reown AppKit 1.8.19: development ancestor defaults and origin checks;
+- WalletConnect JSON-RPC Utils 1.0.8: WebSocket URL validation;
+- RainbowKit 2.2.11: local development-chain metadata;
+- Engine.IO Client 6.6.6 through MetaMask SDK 0.33.1: browser fallback and
+  offline handling;
+- Next 15.5.21: URL parser compatibility behavior.
+
+NexusClaw passes validated `NEXT_PUBLIC_APP_ORIGIN` explicitly as WalletConnect
+metadata and disables WalletConnect in production when origin or Project ID
+validation fails. The bundle gate rejects unclassified local tokens and every
+application-owned local, test, or staging URL. The first real-domain deployment
+must run the browser network harness while opening RainbowKit and the QR flow;
+it records only transport/count/decision metadata and fails on local, loopback,
+test, or staging destinations.
+
+No local request was inferred from the literals during static inspection, but
+the real-domain network result remains required before production activation.
+Review this acceptance on every wallet-stack update. A major dependency update
+will not be undertaken only to remove strings that are neither selected nor
+used as network destinations.
