@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/validate-production-bundle-runtime.mjs",
     "lint": "next lint",
     "start": "next start",
     "test": "vitest run --maxWorkers=1 --minWorkers=1",
