@@ -26,7 +26,10 @@ export function readCountyHunterWalletAuthConfig(
   let normalizedOrigin: ReturnType<typeof normalizeCountyHunterSiweOrigin>
   try {
     normalizedOrigin = normalizeCountyHunterSiweOrigin(configuredOrigin, {
-      allowHttpLocalhost: environment.NODE_ENV !== 'production',
+      allowHttpLoopback: environment.NODE_ENV !== 'production',
+      requireProductionOrigin:
+        environment.NODE_ENV === 'production' &&
+        environment.COUNTY_HUNTER_PRODUCTION_CONFIRM === 'PRODUCTION_PILOT',
     })
   } catch {
     throw new CountyHunterHttpError('County Hunter wallet authentication origin is invalid.', 503)

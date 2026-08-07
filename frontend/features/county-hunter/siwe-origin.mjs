@@ -3,14 +3,23 @@
  * a pathless canonical origin and an exact redirect URI with one trailing slash.
  *
  * @param {string} configuredOrigin
- * @param {{ allowHttpLocalhost?: boolean }} [options]
+ * @param {{ allowHttpLoopback?: boolean, requireProductionOrigin?: boolean }} [options]
  * @returns {{ origin: string, uri: string, domain: string }}
  */
 export function normalizeCountyHunterSiweOrigin(
   configuredOrigin,
-  { allowHttpLocalhost = false } = {},
+  {
+    allowHttpLoopback = false,
+    requireProductionOrigin = false,
+  } = {},
 ) {
-  if (typeof configuredOrigin !== 'string' || configuredOrigin.length === 0) {
+  const placeholder =
+    /(replace(?:_with)?|placeholder|change[-_ ]?me|your[-_ ]|dominio-de-producao|<[^>]+>|\$\{[^}]+>|^demo$)/i
+  if (
+    typeof configuredOrigin !== 'string' ||
+    configuredOrigin.length === 0 ||
+    placeholder.test(configuredOrigin)
+  ) {
     throw new TypeError('County Hunter wallet authentication origin is required.')
   }
 
@@ -21,10 +30,21 @@ export function normalizeCountyHunterSiweOrigin(
     throw new TypeError('County Hunter wallet authentication origin is invalid.')
   }
 
-  const localDevelopment = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+  const normalizedHostname = url.hostname
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+  const hostnameLabels = normalizedHostname.split('.')
+  const numericAddress = hostnameLabels.length === 4 && hostnameLabels.every(
+    (label) => /^\d{1,3}$/.test(label),
+  )
+  const localDevelopment = (
+    hostnameLabels.length === 1 ||
+    numericAddress ||
+    normalizedHostname === '::1'
+  )
   const protocolIsAllowed = (
     url.protocol === 'https:'
-    || (allowHttpLocalhost && localDevelopment && url.protocol === 'http:')
+    || (allowHttpLoopback && localDevelopment && url.protocol === 'http:')
   )
   if (
     !protocolIsAllowed
@@ -33,6 +53,16 @@ export function normalizeCountyHunterSiweOrigin(
     || url.pathname !== '/'
     || url.search
     || url.hash
+    || (
+      requireProductionOrigin &&
+      (
+        localDevelopment ||
+        hostnameLabels.some((label) => label.includes('staging')) ||
+        normalizedHostname.endsWith('.test') ||
+        normalizedHostname.endsWith('.invalid') ||
+        normalizedHostname.endsWith('.local')
+      )
+    )
   ) {
     throw new TypeError('County Hunter wallet authentication origin is invalid.')
   }

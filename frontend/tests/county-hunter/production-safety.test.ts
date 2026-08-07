@@ -25,6 +25,12 @@ import {
 import {
   validateCountyHunterProductionEnvironment,
 } from '../../features/county-hunter/server/production-environment'
+import {
+  readCountyHunterWalletAuthConfig,
+} from '../../features/county-hunter/server/wallet-auth-config'
+import {
+  resolveWalletRuntimeConfiguration,
+} from '../../config/wallet-runtime'
 
 function validProductionEnvironment(): NodeJS.ProcessEnv {
   return {
@@ -33,8 +39,8 @@ function validProductionEnvironment(): NodeJS.ProcessEnv {
     COUNTY_HUNTER_DISCOVERY_ENABLED: 'false',
     COUNTY_HUNTER_PRODUCTION_CONFIRM: 'PRODUCTION_PILOT',
     COUNTY_HUNTER_PRODUCTION_PROJECT_REF: 'abcdefghijklmnopqrst',
-    NEXT_PUBLIC_APP_ORIGIN: 'https://county-hunter.nexusclaw.test',
-    COUNTY_HUNTER_AUTH_ORIGIN: 'https://county-hunter.nexusclaw.test',
+    NEXT_PUBLIC_APP_ORIGIN: 'https://pilot.example.com',
+    COUNTY_HUNTER_AUTH_ORIGIN: 'https://pilot.example.com',
     NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL:
       'https://abcdefghijklmnopqrst.supabase.co',
     NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY:
@@ -53,9 +59,9 @@ function validProductionEnvironment(): NodeJS.ProcessEnv {
     NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
       '0123456789abcdef0123456789abcdef',
     NEXT_PUBLIC_BASE_RPC_URL:
-      'https://public-rpc.nexusclaw.test/base',
+      'https://public-rpc.example.com/base',
     COUNTY_HUNTER_BASE_RPC_URL:
-      'https://server-rpc.nexusclaw.test/base',
+      'https://server-rpc.example.com/base',
   }
 }
 
@@ -95,12 +101,41 @@ describe('County Hunter production pilot safety controls', () => {
     expect(isCountyHunterDiscoveryEnabled(environment)).toBe(false)
   })
 
+  it('binds WalletConnect metadata and SIWE to the same explicit origin', () => {
+    const environment = validProductionEnvironment()
+    const production = validateCountyHunterProductionEnvironment(environment)
+    const wallet = resolveWalletRuntimeConfiguration(
+      environment,
+      'https://ignored.example.com',
+    )
+    const siwe = readCountyHunterWalletAuthConfig(environment)
+
+    expect(wallet.walletConnectEnabled).toBe(true)
+    expect(wallet.metadata?.url).toBe(environment.NEXT_PUBLIC_APP_ORIGIN)
+    expect(wallet.metadata?.url).toBe(production.appOrigin)
+    expect(siwe.origin).toBe(production.appOrigin)
+    expect(siwe.uri).toBe(`${production.appOrigin}/`)
+    expect(siwe.domain).toBe(new URL(production.appOrigin).host)
+  })
+
+  it('does not use a browser or dependency fallback in production', () => {
+    const environment = validProductionEnvironment()
+    delete environment.NEXT_PUBLIC_APP_ORIGIN
+
+    expect(
+      resolveWalletRuntimeConfiguration(
+        environment,
+        'https://runtime.example.com',
+      ),
+    ).toEqual({ walletConnectEnabled: false })
+  })
+
   it.each([
     ['missing origin', (environment: NodeJS.ProcessEnv) => {
       delete environment.NEXT_PUBLIC_APP_ORIGIN
     }],
     ['HTTP origin', (environment: NodeJS.ProcessEnv) => {
-      environment.NEXT_PUBLIC_APP_ORIGIN = 'http://county-hunter.nexusclaw.test'
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'http://pilot.example.com'
     }],
     ['localhost origin', (environment: NodeJS.ProcessEnv) => {
       environment.NEXT_PUBLIC_APP_ORIGIN = 'https://localhost:3000'
@@ -111,6 +146,26 @@ describe('County Hunter production pilot safety controls', () => {
         'https://county-hunter.staging.nexusclaw.test'
       environment.COUNTY_HUNTER_AUTH_ORIGIN =
         'https://county-hunter.staging.nexusclaw.test'
+    }],
+    ['loopback IP origin', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'https://127.0.0.1:3000'
+      environment.COUNTY_HUNTER_AUTH_ORIGIN = 'https://127.0.0.1:3000'
+    }],
+    ['test TLD origin', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'https://pilot.example.test'
+      environment.COUNTY_HUNTER_AUTH_ORIGIN = 'https://pilot.example.test'
+    }],
+    ['origin query', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'https://pilot.example.com?mode=test'
+    }],
+    ['origin fragment', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'https://pilot.example.com#test'
+    }],
+    ['origin credentials', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'https://user:pass@pilot.example.com'
+    }],
+    ['origin placeholder', (environment: NodeJS.ProcessEnv) => {
+      environment.NEXT_PUBLIC_APP_ORIGIN = 'REPLACE_WITH_PRODUCTION_ORIGIN'
     }],
     ['origin path', (environment: NodeJS.ProcessEnv) => {
       environment.NEXT_PUBLIC_APP_ORIGIN =

@@ -69,6 +69,7 @@ function strictHttpsUrl(
     url.hostname === '127.0.0.1' ||
     url.hostname === '::1' ||
     hostnameLabels.includes('staging') ||
+    url.hostname.endsWith('.test') ||
     url.hostname.endsWith('.invalid') ||
     (originOnly && (url.pathname !== '/' || url.search || url.hash)) ||
     (browserPublic && (url.search || url.hash))
