@@ -22,6 +22,9 @@
 | `ea6f6e4b` | `chore(security): update runtime dependency audit policy` |
 | `745e418b` | `refactor(county-hunter): separate production Supabase configuration` |
 | `5377e3ad` | `security(county-hunter): add distributed PostgreSQL rate limiting` |
+| `f9dbf049` | `security(wallet): enforce production origin for wallet metadata` |
+| `081febe8` | `test(wallet): add production runtime network safety checks` |
+| `d43118e3` | `docs(security): document Reown vendor bundle risk acceptance` |
 
 ## Database artifacts
 
@@ -46,7 +49,7 @@ performed while creating the local commits recorded in this manifest.
 
 ## Validation evidence
 
-- Local tests: 198 passed.
+- Local tests: 229 passed; 9 live opt-in tests skipped as designed.
 - Distributed staging integrations: 8 passed, including multi-instance shared
   buckets, atomic concurrency, per-wallet/global limits, window rollover,
   sanitized storage, complete HTTP 429 headers, and fail-closed HTTP 503.
@@ -103,6 +106,23 @@ performed while creating the local commits recorded in this manifest.
   project reference, database URL, or connection string is recorded here.
 - This document does not authorize push, pull request, merge, deployment, or
   production enablement.
+
+## Reown production runtime controls
+
+The Reown production bundle gate is approved based on application-controlled
+configuration and runtime behavior. WalletConnect metadata is bound explicitly
+to the canonical production application origin and the same origin is used by
+SIWE. Production rejects local, loopback, test, staging, placeholder, path,
+query, fragment, and credential-bearing origins. No application-owned local or
+staging URL remains reachable in the production client bundle.
+
+Nineteen remaining local tokens were classified and documented as validation
+or development fallbacks owned by the pinned Reown, WalletConnect, RainbowKit,
+Engine.IO/MetaMask, and Next.js dependencies. A coordinated major wallet-stack
+upgrade was not performed solely to remove these inert literals. The browser
+network harness is ready, but its required first-deploy smoke on the real
+production domain remains pending and must run with all County Hunter production
+flags off. Production remains disabled.
 
 ## Distributed production preparation
 
