@@ -139,29 +139,97 @@ logout, refresh, nonce-reuse, and cross-tenant checks before enablement.
 Do not use the staging provisioner against production. Do not copy Auth users,
 memberships, runs, snapshots, test fixtures, or staging data.
 
+### Production migration runner
+
+The only approved repository entry point for the isolated County Hunter
+production database is:
+
+```powershell
+.\scripts\validate-county-hunter-production.ps1 -PreflightOnly
+.\scripts\validate-county-hunter-production.ps1 -MigrationsOnly
+.\scripts\validate-county-hunter-production.ps1 -VerifyOnly
+```
+
+The runner has no implicit mode. It loads only the administrative file
+`C:\dev\nexusclaw\.env.production.local`, which must remain ignored by Git and
+must never be copied to the frontend, Vercel, a fixture file, or a staging
+process. It never loads `.env.staging.local`, frontend development variables,
+or fixture credentials.
+
+The administrative file contains only the fields needed for the authorized
+operation:
+
+```text
+COUNTY_HUNTER_PRODUCTION_CONFIRM=I_UNDERSTAND_THIS_IS_PRODUCTION
+COUNTY_HUNTER_PRODUCTION_PROJECT_REF=
+COUNTY_HUNTER_PRODUCTION_DB_URL=
+COUNTY_HUNTER_SUPABASE_SECRET_KEY=
+```
+
+The namespaced secret key is optional unless a separately reviewed
+administrative verification needs it. The database password remains part of
+the Direct Connection URL and is passed to `psql` only through the child
+process environment. `SUPABASE_SERVICE_ROLE_KEY`, every staging/test variable,
+and every fixture private key are forbidden.
+
+The administrative confirmation above belongs only to this migration runner.
+It is intentionally different from the private Next.js runtime confirmation
+used when the application module is separately enabled. Never load the root
+administrative file into Next.js and never reuse either confirmation in the
+other context.
+
+`-PreflightOnly` is read-only but does connect to the configured database. It
+checks the production confirmation, Direct Connection identity, exact project
+ref binding, port 5432, database/user `postgres`, mandatory SSL, absence of
+poolers and staging/test variables, and whether the County Hunter schema is
+empty or complete. Do not run it until database access is explicitly
+authorized.
+
+`-MigrationsOnly` queues exactly these ten files, in order, and sends them to a
+single `psql --single-transaction` invocation with `ON_ERROR_STOP=1`:
+
+1. `202607230001_county_hunter_foundation.sql`
+2. `202607230002_county_hunter_rls.sql`
+3. `202607230003_county_hunter_seed_counties.sql`
+4. `202607230004_county_hunter_auth_hardening.sql`
+5. `202607230005_county_hunter_wallet_auth.sql`
+6. `20260726153642_county_hunter_gwinnett_discovery.sql`
+7. `20260726160827_county_hunter_gwinnett_discovery_rpc_fix.sql`
+8. `20260726174825_county_hunter_snapshot_replay.sql`
+9. `20260804181518_county_hunter_siwe_server_only_hardening.sql`
+10. `20260806081241_county_hunter_distributed_rate_limit.sql`
+
+The runner aborts if the repository contains a missing, additional, or
+transaction-unsafe County Hunter migration. It does not run the staging
+provisioner, RLS fixtures, test users, memberships, bootstrap, Discovery, or
+snapshot replay.
+
+`-VerifyOnly` is metadata/read-only verification after migrations. It checks
+the expected tables, RLS and policies, approved `SECURITY DEFINER` search paths
+and grants, server-only SIWE and rate-limit RPCs, trigger-only audit function,
+authenticated-only bootstrap/replay, private schema isolation, and absence of
+fixtures, memberships, private-key columns, or automatic Discovery data.
+
 Every SQL command must use `ON_ERROR_STOP=1`, a verified production project ref,
 an approved maintenance window, and a fresh backup:
 
 1. Create a clean, isolated Supabase production project.
 2. Record and independently verify its project ref and intended region.
 3. Take and verify the pre-migration backup.
-4. Apply the five Phase 1 migrations, in filename order:
-   `202607230001` through `202607230005`.
-5. Verify tables, functions, grants, indexes, constraints, RLS enablement, and
-   policies. Run the two-tenant RLS matrix in a rollback-only transaction using
-   temporary identities; do not retain those identities.
-6. Apply the three Phase 2 migrations, in filename order:
-   `20260726153642`, `20260726160827`, and `20260726174825`.
-7. Apply the SIWE server-only hardening migration
-   `20260804181518_county_hunter_siwe_server_only_hardening.sql` and verify that
-   privileged issue/consume RPCs remain executable only by the approved
-   server-side role.
-8. Apply `20260806081241_county_hunter_distributed_rate_limit.sql`. Verify the
-   bucket table exists only in the private schema, has no Data API grants, and
-   the consume and bounded-cleanup RPCs are executable only by `service_role`.
-   Exercise atomic same-bucket concurrency before enablement.
-9. Recheck objects, grants, RLS, function ownership/search paths, snapshot
-   lineage, replay isolation, and the source lock.
+4. Run the production runner with `-PreflightOnly` and retain only its
+   sanitized result.
+5. Run the production runner with `-MigrationsOnly` once during the approved
+   maintenance window.
+6. Run the production runner with `-VerifyOnly` and retain only its sanitized
+   metadata result.
+7. In a separately authorized test window, verify tables, functions, grants,
+   indexes, constraints, RLS, policies, function ownership/search paths,
+   private rate-limit isolation, snapshot lineage, replay isolation, and the
+   source lock. Any temporary identity matrix must roll back completely.
+8. Exercise atomic same-bucket rate-limit concurrency before enablement without
+   exposing identifiers or retaining test buckets beyond their normal expiry.
+9. Confirm again that no fixture, membership, bootstrap row, source, Discovery
+   run, or snapshot was created by migration preparation.
 10. Create exactly one pilot organization using an approved production admin
    workflow.
 11. Invite only the named pilot users and create active memberships with the
