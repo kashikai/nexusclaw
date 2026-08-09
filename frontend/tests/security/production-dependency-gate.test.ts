@@ -49,6 +49,15 @@ describe('production dependency security gate', () => {
     expect(packageJson.overrides.cuer).toEqual({ qr: '0.5.5' })
   })
 
+  it('pins the patched nanoid release accepted by the existing PostCSS range', () => {
+    expect(packageLock.packages['node_modules/nanoid'].version).toBe('3.3.18')
+    expect(
+      packageLock.packages['node_modules/postcss'].dependencies.nanoid,
+    ).toBe('^3.3.16')
+    expect(packageJson.dependencies).not.toHaveProperty('nanoid')
+    expect(packageJson.devDependencies).not.toHaveProperty('nanoid')
+  })
+
   it('does not expose Axios configuration to NexusClaw request input', () => {
     const roots = [
       'app',
