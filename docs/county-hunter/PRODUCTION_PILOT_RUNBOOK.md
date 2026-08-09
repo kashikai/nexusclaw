@@ -388,6 +388,19 @@ The Discovery UI must continue to state that:
 
 ## Disabled-mode and pilot smoke
 
+The repository-level first-deploy contract is versioned in
+`docs/county-hunter/VERCEL_FIRST_DEPLOY_OFF.md`. The only valid Vercel Project
+Root is `frontend`; it contains the sole `vercel.json`, `package.json`, lockfile,
+Next configuration, and application source. Use the Next.js preset, `npm ci`,
+the autodetected `npm run build`, the framework-default `.next` output, and
+Node.js `24.x`. Do not restore the removed legacy root `vercel.json`.
+
+The first deployment requires the exact production origin, the existing
+agents/signal-agent public Supabase settings, WalletConnect Project ID, and
+client-safe Base RPC, while all three County Hunter flags remain explicitly
+`false`. `COUNTY_HUNTER_PRODUCTION_DB_URL` remains migration-only and is never
+copied into Vercel.
+
 Before deployment authorization, build and run locally with synthetic
 placeholders and all flags false. Require Home health, RPC degradation,
 County Hunter 404/safe unavailability, Discovery/replay denial, no staging

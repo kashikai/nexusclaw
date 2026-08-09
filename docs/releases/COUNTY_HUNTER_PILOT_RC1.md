@@ -25,6 +25,10 @@
 | `f9dbf049` | `security(wallet): enforce production origin for wallet metadata` |
 | `081febe8` | `test(wallet): add production runtime network safety checks` |
 | `d43118e3` | `docs(security): document Reown vendor bundle risk acceptance` |
+| `2ef98665` | `ops(county-hunter): add fail-safe production migration runner` |
+| `a42ee853` | `ops(vercel): prepare County Hunter disabled production deployment` |
+| `c206536f` | `test(production): add first-deploy safety validation` |
+| `85f318ca` | `chore(security): patch nanoid runtime advisory` |
 
 ## Database artifacts
 
@@ -49,7 +53,7 @@ performed while creating the local commits recorded in this manifest.
 
 ## Validation evidence
 
-- Local tests: 229 passed; 9 live opt-in tests skipped as designed.
+- Local tests: 262 passed; 9 live opt-in tests skipped as designed.
 - Distributed staging integrations: 8 passed, including multi-instance shared
   buckets, atomic concurrency, per-wallet/global limits, window rollover,
   sanitized storage, complete HTTP 429 headers, and fail-closed HTTP 503.
@@ -84,6 +88,9 @@ performed while creating the local commits recorded in this manifest.
 - Critical advisories: 0.
 - High advisories: 0.
 - Moderate package-level findings: 9.
+- The high-severity `nanoid <3.3.17` availability advisory was removed by
+  resolving the existing PostCSS-compatible range to `nanoid@3.3.18`; nanoid
+  remains transitive and no major dependency changed.
 - The nine moderate findings are the documented UUID advisory propagated by
   the approved Wagmi/MetaMask connector tree. The vulnerable UUID buffer API is
   not directly called by NexusClaw, and the npm-proposed fix requires a breaking
@@ -133,7 +140,24 @@ cleanup functions have restricted execution grants and an empty search path.
 The application does not fall back to in-process memory when the production
 backend is unavailable.
 
-No production Supabase or Vercel configuration has been changed. The Vercel
-Hobby WAF rule remains a documented future manual defense-in-depth step. All
-three production feature flags remain false, and this RC does not authorize a
-push, pull request, merge, deployment, or production enablement.
+No production Supabase project or Vercel Dashboard configuration has been
+changed. The Vercel Hobby WAF rule remains a documented future manual
+defense-in-depth step. All three production feature flags remain false, and
+this RC does not authorize a push, pull request, merge, deployment, or
+production enablement.
+
+## Vercel first deployment with County Hunter off
+
+The single Vercel project root is `frontend`, using the Next.js preset,
+`npm ci`, the standard Next build and `.next` output, and Node.js `24.x`. The
+conflicting legacy root `vercel.json` was removed, local environment and backup
+files are excluded from uploads, and the public no-store health endpoint does
+not initialize Supabase, sessions, rate limiting, or Discovery.
+
+The exact production application origin is enforced at runtime. All three
+County Hunter feature flags remain explicitly false, County Hunter database
+URLs and administrative/staging/test variables are rejected from the Vercel
+runtime, and disabled pages/APIs fail before a County Hunter client is created.
+The production bundle/runtime scan passed with no application-owned local or
+staging endpoints. The documented Hobby WAF rule is still not configured, no
+Vercel Dashboard or DNS setting was changed, and no deployment was performed.

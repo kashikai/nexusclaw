@@ -408,6 +408,17 @@ The complete advisory register, reachability proof, rollback rehearsal and
 dependency-recovery procedure are in
 `docs/security/PHASE2_PRODUCTION_GATE.md`.
 
+## Vercel first-deploy audit refresh (2026-08-09)
+
+- A newly published high-severity `nanoid <3.3.17` availability advisory was
+  detected through the existing `postcss@8.5.23 -> nanoid@^3.3.16` edge.
+- The lockfile now resolves that already-compatible range to `nanoid@3.3.18`.
+  `nanoid` was not added as a direct dependency and no Next, React, wallet,
+  Supabase, PostCSS, or major package version changed.
+- No `--force`, legacy peer mode, or audit auto-fix was used. The expected gate
+  returns to 0 critical / 0 high; the existing nine moderate wallet advisories
+  remain governed by the approved risk register.
+
 ## Wallet bundle runtime risk register (2026-08-07)
 
 The production bundle contains local-development and URL-validation tokens

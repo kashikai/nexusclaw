@@ -17,7 +17,7 @@ production runtime.
 | `NEXT_PUBLIC_COUNTY_HUNTER_ENABLED` | `PUBLIC_BROWSER` | Always; defaults false | Expected | Navigation/appearance only; never grants access. |
 | `COUNTY_HUNTER_PRODUCTION_CONFIRM` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Exact production-pilot confirmation; not a secret and not reusable for staging. |
 | `COUNTY_HUNTER_PRODUCTION_PROJECT_REF` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Exactly 20 lowercase alphanumeric characters; must match the dedicated County Hunter Supabase URL. |
-| `NEXT_PUBLIC_APP_ORIGIN` | `PUBLIC_BROWSER` | When module is enabled | Expected | Exact pathless HTTPS production origin; no local/staging host, query, fragment, credential, or placeholder. |
+| `NEXT_PUBLIC_APP_ORIGIN` | `PUBLIC_BROWSER` | First deployment and later runtime | Expected | Exact `https://county-hunter.nexusclaw.tech`; no local/staging host, query, fragment, credential, or placeholder. |
 | `COUNTY_HUNTER_AUTH_ORIGIN` | `PRIVATE_SERVER_RUNTIME` | When module is enabled | Prohibited | Must equal the public origin; fixed input to SIWE, never derived from `Host`. |
 | `NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL` | `PUBLIC_BROWSER` | When module is enabled | Expected | Exact isolated County Hunter production project URL; no generic, staging, local, or placeholder fallback. |
 | `NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY` | `PUBLIC_BROWSER` | When module is enabled | Expected | Isolated project publishable key only; service-role/secret keys are rejected. |
@@ -64,8 +64,12 @@ every `NEXT_PUBLIC_*` value and rejects new secret keys or legacy
 
 ## Fail-fast rules
 
-When `NODE_ENV=production` and `COUNTY_HUNTER_ENABLED=true`, startup/request
-evaluation fails safely without echoing values if:
+When `NODE_ENV=production`, root application and County Hunter request
+evaluation always rejects forbidden administrative/staging/test variables,
+requires the exact production app origin, exact boolean values for all three
+feature flags, and the existing public agents/wallet/RPC configuration. When
+`COUNTY_HUNTER_ENABLED=true`, the full County Hunter validation additionally
+fails safely without echoing values if:
 
 - the explicit production confirmation is absent;
 - either canonical origin is absent, placeholder, HTTP, local, staging,
@@ -92,9 +96,11 @@ evaluation fails safely without echoing values if:
 - Discovery is enabled while the module is disabled;
 - a boolean security flag has a value other than exact `true`/`false`.
 
-When disabled, the server controls fail closed without requiring real
-production values, which permits a safe placeholder build and initial
-deployment. No client-public flag can override server authorization.
+When disabled, the server controls fail closed without requiring County Hunter
+Supabase or administrative values. The explicit first-deploy public values and
+three exact `false` flags are still required so wallet metadata, existing
+agents, Home RPC, and disabled routing cannot silently fall back. No
+client-public flag can override server authorization.
 
 ## Client-boundary verification
 
