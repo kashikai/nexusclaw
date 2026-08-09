@@ -23,6 +23,8 @@ import {
   enforceCountyHunterRateLimit,
 } from '../../features/county-hunter/server/rate-limit'
 import {
+  assertCountyHunterVercelRuntimeBoundary,
+  COUNTY_HUNTER_PRODUCTION_APP_ORIGIN,
   validateCountyHunterProductionEnvironment,
 } from '../../features/county-hunter/server/production-environment'
 import {
@@ -32,15 +34,32 @@ import {
   resolveWalletRuntimeConfiguration,
 } from '../../config/wallet-runtime'
 
-function validProductionEnvironment(): NodeJS.ProcessEnv {
+function firstDeployOffEnvironment(): NodeJS.ProcessEnv {
   return {
     NODE_ENV: 'production',
-    COUNTY_HUNTER_ENABLED: 'true',
+    COUNTY_HUNTER_ENABLED: 'false',
     COUNTY_HUNTER_DISCOVERY_ENABLED: 'false',
+    NEXT_PUBLIC_COUNTY_HUNTER_ENABLED: 'false',
+    NEXT_PUBLIC_APP_ORIGIN: COUNTY_HUNTER_PRODUCTION_APP_ORIGIN,
+    NEXT_PUBLIC_SUPABASE_URL:
+      'https://legacyagentsproject.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      'synthetic-legacy-agents-anon-key',
+    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
+      '0123456789abcdef0123456789abcdef',
+    NEXT_PUBLIC_BASE_RPC_URL:
+      'https://public-rpc.example.com/base',
+  }
+}
+
+function validProductionEnvironment(): NodeJS.ProcessEnv {
+  return {
+    ...firstDeployOffEnvironment(),
+    COUNTY_HUNTER_ENABLED: 'true',
+    NEXT_PUBLIC_COUNTY_HUNTER_ENABLED: 'true',
     COUNTY_HUNTER_PRODUCTION_CONFIRM: 'PRODUCTION_PILOT',
     COUNTY_HUNTER_PRODUCTION_PROJECT_REF: 'abcdefghijklmnopqrst',
-    NEXT_PUBLIC_APP_ORIGIN: 'https://pilot.example.com',
-    COUNTY_HUNTER_AUTH_ORIGIN: 'https://pilot.example.com',
+    COUNTY_HUNTER_AUTH_ORIGIN: COUNTY_HUNTER_PRODUCTION_APP_ORIGIN,
     NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_URL:
       'https://abcdefghijklmnopqrst.supabase.co',
     NEXT_PUBLIC_COUNTY_HUNTER_SUPABASE_PUBLISHABLE_KEY:
@@ -50,16 +69,8 @@ function validProductionEnvironment(): NodeJS.ProcessEnv {
     COUNTY_HUNTER_RATE_LIMIT_BACKEND: 'postgres',
     COUNTY_HUNTER_RATE_LIMIT_SECRET:
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-    NEXT_PUBLIC_SUPABASE_URL:
-      'https://legacyagentsproject.supabase.co',
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
       'sb_publishable_legacyagents1234567890123456',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY:
-      'synthetic-legacy-agents-anon-key',
-    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
-      '0123456789abcdef0123456789abcdef',
-    NEXT_PUBLIC_BASE_RPC_URL:
-      'https://public-rpc.example.com/base',
     COUNTY_HUNTER_BASE_RPC_URL:
       'https://server-rpc.example.com/base',
   }
@@ -84,9 +95,13 @@ afterEach(() => {
 })
 
 describe('County Hunter production pilot safety controls', () => {
-  it('fails closed by default in production', () => {
-    expect(isCountyHunterServerEnabled({ NODE_ENV: 'production' })).toBe(false)
-    expect(isCountyHunterDiscoveryEnabled({ NODE_ENV: 'production' })).toBe(false)
+  it('requires the explicit first-deploy boundary in production', () => {
+    expect(() =>
+      isCountyHunterServerEnabled({ NODE_ENV: 'production' }),
+    ).toThrow(/NEXT_PUBLIC_APP_ORIGIN/)
+    expect(() =>
+      isCountyHunterDiscoveryEnabled({ NODE_ENV: 'production' }),
+    ).toThrow(/NEXT_PUBLIC_APP_ORIGIN/)
   })
 
   it('accepts a complete isolated production configuration with collection disabled', () => {
@@ -261,12 +276,24 @@ describe('County Hunter production pilot safety controls', () => {
   })
 
   it('allows all County Hunter flags to remain off without an administrative secret', () => {
-    expect(isCountyHunterServerEnabled({
-      NODE_ENV: 'production',
-      COUNTY_HUNTER_ENABLED: 'false',
-      COUNTY_HUNTER_DISCOVERY_ENABLED: 'false',
-      NEXT_PUBLIC_COUNTY_HUNTER_ENABLED: 'false',
-    })).toBe(false)
+    const environment = firstDeployOffEnvironment()
+    expect(() => assertCountyHunterVercelRuntimeBoundary(environment)).not.toThrow()
+    expect(isCountyHunterServerEnabled(environment)).toBe(false)
+    expect(isCountyHunterDiscoveryEnabled(environment)).toBe(false)
+  })
+
+  it.each([
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_SECRET_KEY',
+    'DATABASE_URL',
+    'COUNTY_HUNTER_PRODUCTION_DB_URL',
+    'COUNTY_HUNTER_STAGING_PROJECT_REF',
+    'COUNTY_HUNTER_TEST_ADMIN_A_PRIVATE_KEY',
+  ])('rejects %s even while all County Hunter flags are off', (name) => {
+    const environment = firstDeployOffEnvironment()
+    environment[name] = 'sensitive-runtime-value'
+
+    expect(() => isCountyHunterServerEnabled(environment)).toThrow(name)
   })
 
   it('requires the namespaced secret when the production module is enabled', () => {
@@ -288,13 +315,12 @@ describe('County Hunter production pilot safety controls', () => {
   })
 
   it('does not allow the collection switch to bypass the module switch', () => {
-    expect(() =>
-      isCountyHunterDiscoveryEnabled({
-        NODE_ENV: 'production',
-        COUNTY_HUNTER_ENABLED: 'false',
-        COUNTY_HUNTER_DISCOVERY_ENABLED: 'true',
-      }),
-    ).toThrow(/COUNTY_HUNTER_DISCOVERY_ENABLED/)
+    const environment = firstDeployOffEnvironment()
+    environment.COUNTY_HUNTER_DISCOVERY_ENABLED = 'true'
+
+    expect(() => isCountyHunterDiscoveryEnabled(environment)).toThrow(
+      /COUNTY_HUNTER_DISCOVERY_ENABLED/,
+    )
   })
 
   it('blocks Discovery and replay when the independent kill switch is off', () => {

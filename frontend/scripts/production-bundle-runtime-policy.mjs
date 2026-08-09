@@ -6,6 +6,7 @@ const TARGET_TOKEN = /localhost|127\.0\.0\.1|county-hunter\.nexusclaw\.test/gi
 const URL_LITERAL = /https?:\/\/[^\s"'`\\)\]}]+/gi
 
 const WALLETCONNECT_PROJECT_ID = /^[a-f0-9]{32}$/i
+const EXPECTED_APP_ORIGIN = 'https://county-hunter.nexusclaw.tech'
 const PRODUCTION_ORIGIN_PLACEHOLDERS = [
   'REPLACE_WITH_PRODUCTION_ORIGIN',
   'https://localhost:3000',
@@ -110,7 +111,10 @@ export function productionInputsSatisfyGate(environment = process.env) {
     const normalized = normalizeCountyHunterSiweOrigin(configuredOrigin, {
       requireProductionOrigin: true,
     })
-    if (normalized.origin !== configuredOrigin) return false
+    if (
+      normalized.origin !== configuredOrigin ||
+      normalized.origin !== EXPECTED_APP_ORIGIN
+    ) return false
   } catch {
     return false
   }
@@ -199,13 +203,18 @@ export async function inspectProductionBundle(staticDirectory) {
 
   const configuredOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN?.trim()
   const authOrigin = process.env.COUNTY_HUNTER_AUTH_ORIGIN?.trim()
+  const countyHunterEnabled = process.env.COUNTY_HUNTER_ENABLED === 'true'
   const metadataExplicit = Boolean(
     configuredOrigin &&
     clientSources.some((source) => source.includes(configuredOrigin)),
   )
   const metadataMatchesAppOrigin = Boolean(configuredOrigin && metadataExplicit)
   const siweMatchesAppOrigin = Boolean(
-    configuredOrigin && authOrigin && configuredOrigin === authOrigin,
+    configuredOrigin && (
+      countyHunterEnabled
+        ? authOrigin === configuredOrigin
+        : !authOrigin || authOrigin === configuredOrigin
+    ),
   )
   const appOwned = findings.filter((finding) =>
     finding.category.startsWith('APP_OWNED_'),

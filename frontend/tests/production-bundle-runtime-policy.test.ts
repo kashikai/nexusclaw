@@ -67,10 +67,17 @@ describe('production bundle runtime policy', () => {
   it('requires valid explicit production inputs and rejects placeholders', () => {
     expect(productionInputsSatisfyGate({
       NODE_ENV: 'production',
-      NEXT_PUBLIC_APP_ORIGIN: 'https://pilot.example.com',
+      NEXT_PUBLIC_APP_ORIGIN: 'https://county-hunter.nexusclaw.tech',
       NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
         '0123456789abcdef0123456789abcdef',
     })).toBe(true)
+
+    expect(productionInputsSatisfyGate({
+      NODE_ENV: 'production',
+      NEXT_PUBLIC_APP_ORIGIN: 'https://unrelated.example.com',
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
+        '0123456789abcdef0123456789abcdef',
+    })).toBe(false)
 
     expect(productionInputsSatisfyGate({
       NODE_ENV: 'production',
