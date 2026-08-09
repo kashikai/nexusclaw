@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { assertCountyHunterVercelRuntimeBoundary } from '@/features/county-hunter/server/production-environment'
 import ClientProviders from './ClientProviders'
 import './globals.css'
 
@@ -21,6 +22,8 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  assertCountyHunterVercelRuntimeBoundary()
+
   return (
     <html lang="en" className="dark">
       <head>

@@ -1,0 +1,8 @@
+.env
+.env.*
+*.local
+*.bak
+*.backup
+*.old
+certificates/
+coverage/

@@ -4,6 +4,8 @@ import { Buffer } from 'node:buffer'
 import { CountyHunterHttpError } from './http-error'
 
 const PRODUCTION_CONFIRMATION = 'PRODUCTION_PILOT'
+export const COUNTY_HUNTER_PRODUCTION_APP_ORIGIN =
+  'https://county-hunter.nexusclaw.tech'
 const SUPABASE_PROJECT_REF = /^[a-z0-9]{20}$/
 const WALLETCONNECT_PROJECT_ID = /^[a-f0-9]{32}$/i
 const SUPABASE_PUBLISHABLE_KEY = /^sb_publishable_[A-Za-z0-9_-]{20,}$/
@@ -150,15 +152,76 @@ function assertNoProhibitedRuntimeVariables(
   }
 }
 
-export function validateCountyHunterProductionEnvironment(
-  environment: NodeJS.ProcessEnv = process.env,
-): CountyHunterProductionEnvironment {
-  if (environment.COUNTY_HUNTER_PRODUCTION_CONFIRM !== PRODUCTION_CONFIRMATION) {
-    throw configurationError('COUNTY_HUNTER_PRODUCTION_CONFIRM')
+function assertWalletConnectProjectId(value: string): void {
+  if (
+    !WALLETCONNECT_PROJECT_ID.test(value) ||
+    /^([a-f0-9])\1{31}$/i.test(value)
+  ) {
+    throw configurationError('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID')
   }
+}
+
+export function assertCountyHunterVercelRuntimeBoundary(
+  environment: NodeJS.ProcessEnv = process.env,
+): void {
+  if (environment.NODE_ENV !== 'production') return
 
   assertNoProhibitedRuntimeVariables(environment)
   assertNoAdministrativePublicVariables(environment)
+
+  const appOriginUrl = strictHttpsUrl(environment, 'NEXT_PUBLIC_APP_ORIGIN', {
+    originOnly: true,
+  })
+  if (appOriginUrl.origin !== COUNTY_HUNTER_PRODUCTION_APP_ORIGIN) {
+    throw configurationError('NEXT_PUBLIC_APP_ORIGIN')
+  }
+
+  for (const name of [
+    'NEXT_PUBLIC_COUNTY_HUNTER_ENABLED',
+    'COUNTY_HUNTER_ENABLED',
+    'COUNTY_HUNTER_DISCOVERY_ENABLED',
+  ] as const) {
+    if (environment[name] !== 'true' && environment[name] !== 'false') {
+      throw configurationError(name)
+    }
+  }
+  if (
+    environment.COUNTY_HUNTER_DISCOVERY_ENABLED === 'true' &&
+    environment.COUNTY_HUNTER_ENABLED !== 'true'
+  ) {
+    throw configurationError('COUNTY_HUNTER_DISCOVERY_ENABLED')
+  }
+
+  const walletConnectProjectId = required(
+    environment,
+    'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID',
+  )
+  assertWalletConnectProjectId(walletConnectProjectId)
+  strictHttpsUrl(environment, 'NEXT_PUBLIC_BASE_RPC_URL', {
+    browserPublic: true,
+  })
+  strictHttpsUrl(environment, 'NEXT_PUBLIC_SUPABASE_URL', {
+    originOnly: true,
+  })
+
+  const legacyPublicKey = required(environment, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  if (
+    legacyPublicKey.length < 20 ||
+    legacyPublicKey.startsWith('sb_secret_') ||
+    decodedJwtRole(legacyPublicKey) === 'service_role'
+  ) {
+    throw configurationError('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  }
+}
+
+export function validateCountyHunterProductionEnvironment(
+  environment: NodeJS.ProcessEnv = process.env,
+): CountyHunterProductionEnvironment {
+  assertCountyHunterVercelRuntimeBoundary(environment)
+
+  if (environment.COUNTY_HUNTER_PRODUCTION_CONFIRM !== PRODUCTION_CONFIRMATION) {
+    throw configurationError('COUNTY_HUNTER_PRODUCTION_CONFIRM')
+  }
 
   const appOriginUrl = strictHttpsUrl(environment, 'NEXT_PUBLIC_APP_ORIGIN', {
     originOnly: true,
@@ -232,12 +295,7 @@ export function validateCountyHunterProductionEnvironment(
     environment,
     'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID',
   )
-  if (
-    !WALLETCONNECT_PROJECT_ID.test(walletConnectProjectId) ||
-    /^([a-f0-9])\1{31}$/i.test(walletConnectProjectId)
-  ) {
-    throw configurationError('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID')
-  }
+  assertWalletConnectProjectId(walletConnectProjectId)
 
   const publicBaseRpcUrl = strictHttpsUrl(
     environment,

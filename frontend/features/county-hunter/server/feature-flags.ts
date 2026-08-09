@@ -1,5 +1,8 @@
 import { CountyHunterHttpError } from './http-error'
-import { validateCountyHunterProductionEnvironment } from './production-environment'
+import {
+  assertCountyHunterVercelRuntimeBoundary,
+  validateCountyHunterProductionEnvironment,
+} from './production-environment'
 
 function readFlag(
   environment: NodeJS.ProcessEnv,
@@ -20,6 +23,7 @@ function readFlag(
 export function isCountyHunterServerEnabled(
   environment: NodeJS.ProcessEnv = process.env,
 ): boolean {
+  assertCountyHunterVercelRuntimeBoundary(environment)
   const enabled = readFlag(environment, 'COUNTY_HUNTER_ENABLED')
   if (enabled && environment.NODE_ENV === 'production') {
     validateCountyHunterProductionEnvironment(environment)
