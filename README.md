@@ -45,6 +45,47 @@ node agent-core.js  # launch
 
 Full guide: [nexusclaw.tech/start-agent](https://nexusclaw.tech/start-agent)
 
+## Agent Office (`/agent-office`)
+
+An isometric live view of the Polyagent team (Scanner, Analyst, Executor, Reporter). It is a pure render of one JSON file: nothing on the page moves unless that file says an agent is working.
+
+**How it works**
+
+- `frontend/app/agent-office/AgentOfficeContent.tsx` polls the public state every 60 s via `lib/agent-office/useOfficeState.ts`.
+- `lib/agent-office/validate.ts` parses it: unknown fields are dropped, and the whole file is rejected if the raw text contains anything that looks like a secret (0x addresses/hashes, 64-char hex, 30+ digit ids, PEM keys, `private_key`/`passphrase`/`mnemonic`/`api_secret`).
+- If `updated_at` is older than 3 hours the page shows **Data stale** and renders every agent as idle and gray.
+- `mode: "dry_run"` shows a non-dismissible **DRY RUN, simulated, no real funds** banner; `live` shows a red one.
+- Win rate is hidden behind "insufficient data (n resolved)" until `resolved_trades >= 20`. Gains and losses use the same size, only the colour differs.
+- Scene: plain SVG + CSS (`components/agent-office/`), no new dependencies. Narrow screens get a card list instead of the scene. Animations are off under `prefers-reduced-motion`.
+- Strings live in `lib/agent-office/strings.ts` (EN default, PT via `?lang=pt`).
+
+**JSON contract** (`/public_state.json`)
+
+```json
+{
+  "updated_at": "ISO8601",
+  "mode": "dry_run | live",
+  "survival_tier": "normal | cautious | low_compute | critical",
+  "agents": [
+    { "id": "scanner | analyst | executor | reporter", "status": "idle | working | error",
+      "label": "max 60 chars", "last_event_at": "ISO8601" }
+  ],
+  "portfolio": {
+    "total_pnl_usd": 0, "daily_pnl_usd": 0, "total_trades": 0, "resolved_trades": 0,
+    "win_rate": null, "open_positions": 0, "profits_transferred_usd": 0
+  },
+  "recent_events": [{ "ts": "ISO8601", "agent": "scanner | analyst | executor | reporter | system", "text": "max 140 chars" }]
+}
+```
+
+Never put private keys, wallet addresses, order details or market ids of open positions in this file — the page will refuse to render it.
+
+**Mock vs real data**
+
+- In `next dev` the page defaults to `public/agent-office/public_state.mock.json` (scenarios `idle`, `working`, `error`, `stale`; timestamps are rebased to "now" on load). A dev-only panel switches scenarios; `?source=mock:error` or `?source=live` also works.
+- Production builds always read the real file. Drop it at `frontend/public/public_state.json`, or set `NEXT_PUBLIC_AGENT_OFFICE_STATE_URL` to a static URL (it must send CORS headers if it is on another origin).
+- Phase 2 (not built): a Python exporter on the Polyagent side that reads `logs/portfolio_state.json` + the agent log, aggregates and delays it, strips identifiers, and publishes `public_state.json` to that URL. The frontend validator stays as the last line of defense.
+
 ## Contracts (Base Mainnet)
 
 | Contract | Address |
