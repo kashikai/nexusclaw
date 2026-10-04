@@ -83,8 +83,26 @@ Never put private keys, wallet addresses, order details or market ids of open po
 **Mock vs real data**
 
 - In `next dev` the page defaults to `public/agent-office/public_state.mock.json` (scenarios `idle`, `working`, `error`, `stale`; timestamps are rebased to "now" on load). A dev-only panel switches scenarios; `?source=mock:error` or `?source=live` also works.
-- Production builds always read the real file. Drop it at `frontend/public/public_state.json`, or set `NEXT_PUBLIC_AGENT_OFFICE_STATE_URL` to a static URL (it must send CORS headers if it is on another origin).
-- Phase 2 (not built): a Python exporter on the Polyagent side that reads `logs/portfolio_state.json` + the agent log, aggregates and delays it, strips identifiers, and publishes `public_state.json` to that URL. The frontend validator stays as the last line of defense.
+- Production builds always read the real file from `NEXT_PUBLIC_AGENT_OFFICE_STATE_URL` (default `/public_state.json`). A cross-origin URL must send CORS headers; Supabase Storage public objects do.
+
+**Real data: the Polyagent exporter**
+
+The exporter lives next to the bot, outside this repo: `agents/polyagent/export_public_state.py` (logic in `agents/polyagent/public_export/`, tests in `agents/polyagent/tests/`). It only reads the bot's `logs/agent.log` and `logs/portfolio_state.json`; it never writes to them and never touches trading.
+
+- **Delayed:** it publishes the state as of *now − 15 min* (`AGENT_OFFICE_DELAY_MINUTES`). Anything logged after that cutoff is invisible.
+- **Aggregated:** portfolio numbers come from the bot's own `PORTFOLIO SUMMARY` log blocks, so they match the bot's reports. Resolved trades and win rate come from `Position closed` lines since the ledger was last started fresh.
+- **Sanitized:** every published string comes from a fixed template. Raw log text, market ids, trade ids, prices, sizes and addresses are never copied. The analyst's bubble can name the market it is analyzing, except markets with an open position. Before publishing, the whole file is scanned with the same forbidden patterns as the frontend validator, and nothing is published if one matches.
+- **Status rules:** an agent is `working` while it has an unfinished task and the log is alive (an unfinished task with more than 10 min of log silence does not count), or if it logged activity in the 2 min before the cutoff. `error` stays until that agent starts its next task. `updated_at` is the time of the bot's last log line, so a stopped bot goes stale after 3 h.
+- **Mode:** `live` if `DRY_RUN = False` in the bot config, or if anything live (CLOB client, live order, treasury transfer) was logged since the ledger was last started fresh. Otherwise `dry_run`.
+
+Setup with Supabase Storage:
+
+1. In Supabase Storage, create a **public** bucket named `agent-office`.
+2. On the bot machine, set `AGENT_OFFICE_SUPABASE_URL` (project URL) and `AGENT_OFFICE_SUPABASE_KEY` (service role or `sb_secret_` key). The key stays on that machine and is never written into the JSON.
+3. Next to the bot, run `python export_public_state.py --loop`. It rebuilds every 60 s and uploads only when something changed.
+4. In Vercel, set `NEXT_PUBLIC_AGENT_OFFICE_STATE_URL=https://<project>.supabase.co/storage/v1/object/public/agent-office/public_state.json` and redeploy. `NEXT_PUBLIC_` variables are inlined at build time.
+
+Local check: `python export_public_state.py --print` shows what would be published. `--out <repo>/frontend/public/public_state.json` feeds a local `next dev` (that path is gitignored), and the page's "Live file" source reads it.
 
 ## Contracts (Base Mainnet)
 
