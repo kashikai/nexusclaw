@@ -18,6 +18,7 @@ function HexLogo() {
 const NAV_LINKS = [
   { href: '/proof',   label: 'Proof' },
   { href: '/agents',  label: 'Agents' },
+  { href: '/agent-office', label: 'Office' },
   { href: '/trader',  label: 'Trader' },
   { href: '/staking', label: 'Staking' },
   { href: '/docs',    label: 'Docs' },
