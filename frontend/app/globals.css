@@ -28,3 +28,15 @@ body {
   z-index: 99999 !important;
 }
 
+
+/* Agent Office: animations only attach to agents whose status is "working"/"error" in the data. */
+@keyframes ao-typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.04px); } }
+@keyframes ao-screen { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.55; } }
+@keyframes ao-bubble-in { from { opacity: 0; } to { opacity: 1; } }
+.ao-typing { animation: ao-typing 0.7s ease-in-out infinite; }
+.ao-screen { animation: ao-screen 2.4s ease-in-out infinite; }
+.ao-bubble { animation: ao-bubble-in 0.4s ease-out both; }
+.ao-dimmed { filter: grayscale(0.6) brightness(0.8); }
+@media (prefers-reduced-motion: reduce) {
+  .ao-typing, .ao-screen, .ao-bubble { animation: none; }
+}
