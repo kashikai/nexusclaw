@@ -1,0 +1,110 @@
+{
+  "_comment": "MOCK DATA for local development. Timestamps are rebased so reference_time == now when loaded.",
+  "reference_time": "2026-10-04T12:00:00Z",
+  "scenarios": {
+    "idle": {
+      "updated_at": "2026-10-04T11:58:00Z",
+      "mode": "dry_run",
+      "survival_tier": "normal",
+      "agents": [
+        { "id": "scanner", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:02:00Z" },
+        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:10Z" },
+        { "id": "executor", "status": "idle", "label": "", "last_event_at": "2026-10-04T09:40:00Z" },
+        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:30Z" }
+      ],
+      "portfolio": {
+        "total_pnl_usd": -3.42,
+        "daily_pnl_usd": 0,
+        "total_trades": 15,
+        "resolved_trades": 6,
+        "win_rate": 0.5,
+        "open_positions": 2,
+        "profits_transferred_usd": 0
+      },
+      "recent_events": [
+        { "ts": "2026-10-04T11:03:30Z", "agent": "reporter", "text": "Cycle report saved" },
+        { "ts": "2026-10-04T11:03:10Z", "agent": "analyst", "text": "No market passed the confidence threshold" },
+        { "ts": "2026-10-04T11:02:00Z", "agent": "scanner", "text": "Fetched 100 markets, 0 candidates after filtering" },
+        { "ts": "2026-10-04T09:40:00Z", "agent": "executor", "text": "Duplicate skipped, position already open" }
+      ]
+    },
+    "working": {
+      "updated_at": "2026-10-04T11:59:30Z",
+      "mode": "dry_run",
+      "survival_tier": "normal",
+      "agents": [
+        { "id": "scanner", "status": "working", "label": "scanning markets", "last_event_at": "2026-10-04T11:59:20Z" },
+        { "id": "analyst", "status": "working", "label": "analyzing \"BTC above $70k on Friday?\"", "last_event_at": "2026-10-04T11:59:00Z" },
+        { "id": "executor", "status": "working", "label": "order sent (simulated)", "last_event_at": "2026-10-04T11:58:40Z" },
+        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:30Z" }
+      ],
+      "portfolio": {
+        "total_pnl_usd": 1.85,
+        "daily_pnl_usd": -0.4,
+        "total_trades": 16,
+        "resolved_trades": 7,
+        "win_rate": 0.571,
+        "open_positions": 3,
+        "profits_transferred_usd": 0
+      },
+      "recent_events": [
+        { "ts": "2026-10-04T11:59:20Z", "agent": "scanner", "text": "Fetched 100 markets, 4 candidates after filtering" },
+        { "ts": "2026-10-04T11:59:00Z", "agent": "analyst", "text": "Scout pass: YES, confidence HIGH, edge 0.18" },
+        { "ts": "2026-10-04T11:58:40Z", "agent": "executor", "text": "Simulated order sent, size $5.00" },
+        { "ts": "2026-10-04T11:58:10Z", "agent": "analyst", "text": "Skipped market: edge below 0.15 threshold" },
+        { "ts": "2026-10-04T11:57:30Z", "agent": "system", "text": "Cycle started" },
+        { "ts": "2026-10-04T11:03:30Z", "agent": "reporter", "text": "Cycle report saved" }
+      ]
+    },
+    "error": {
+      "updated_at": "2026-10-04T11:59:00Z",
+      "mode": "dry_run",
+      "survival_tier": "cautious",
+      "agents": [
+        { "id": "scanner", "status": "error", "label": "market API connection reset", "last_event_at": "2026-10-04T11:58:50Z" },
+        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:10Z" },
+        { "id": "executor", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:01:00Z" },
+        { "id": "reporter", "status": "working", "label": "publishing report", "last_event_at": "2026-10-04T11:58:55Z" }
+      ],
+      "portfolio": {
+        "total_pnl_usd": -7.1,
+        "daily_pnl_usd": -2.25,
+        "total_trades": 22,
+        "resolved_trades": 21,
+        "win_rate": 0.381,
+        "open_positions": 1,
+        "profits_transferred_usd": 0
+      },
+      "recent_events": [
+        { "ts": "2026-10-04T11:58:55Z", "agent": "reporter", "text": "Publishing report after failed scan" },
+        { "ts": "2026-10-04T11:58:50Z", "agent": "scanner", "text": "Error fetching markets: connection reset by remote host" },
+        { "ts": "2026-10-04T11:58:45Z", "agent": "system", "text": "Survival tier lowered to cautious" },
+        { "ts": "2026-10-04T11:01:00Z", "agent": "executor", "text": "Position resolved: loss $-1.80 (simulated)" }
+      ]
+    },
+    "stale": {
+      "updated_at": "2026-10-04T07:30:00Z",
+      "mode": "dry_run",
+      "survival_tier": "normal",
+      "agents": [
+        { "id": "scanner", "status": "working", "label": "scanning markets", "last_event_at": "2026-10-04T07:29:00Z" },
+        { "id": "analyst", "status": "working", "label": "analyzing \"ETH above $4k by month end?\"", "last_event_at": "2026-10-04T07:28:00Z" },
+        { "id": "executor", "status": "idle", "label": "", "last_event_at": "2026-10-04T06:00:00Z" },
+        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T06:05:00Z" }
+      ],
+      "portfolio": {
+        "total_pnl_usd": 0,
+        "daily_pnl_usd": 0,
+        "total_trades": 15,
+        "resolved_trades": 6,
+        "win_rate": 0.5,
+        "open_positions": 2,
+        "profits_transferred_usd": 0
+      },
+      "recent_events": [
+        { "ts": "2026-10-04T07:29:00Z", "agent": "scanner", "text": "Fetched 100 markets, 2 candidates after filtering" },
+        { "ts": "2026-10-04T07:28:00Z", "agent": "analyst", "text": "Scout pass started" }
+      ]
+    }
+  }
+}
