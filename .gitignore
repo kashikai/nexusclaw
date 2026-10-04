@@ -6,3 +6,6 @@
 /.env
 /cache/
 /broadcast/
+
+# Agent Office: real exporter output written locally for testing; production reads it from NEXT_PUBLIC_AGENT_OFFICE_STATE_URL
+/frontend/public/public_state.json

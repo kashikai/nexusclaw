@@ -10,12 +10,18 @@ export const EVENTS_MAX = 10
 export class ValidationError extends Error {}
 
 // Scanned against the raw file text, so secrets hidden in unknown fields are caught too.
+// Keep in sync with FORBIDDEN_PATTERNS in the Polyagent exporter (public_export/build.py).
 const FORBIDDEN_PATTERNS: { re: RegExp; reason: string }[] = [
   { re: /0x[0-9a-fA-F]{40}/, reason: '0x address or hash' },
   { re: /(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])/, reason: '64-char hex (private key / id)' },
   { re: /(?<!\d)\d{30,}(?!\d)/, reason: 'long numeric id (token / market id)' },
   { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, reason: 'PEM private key' },
   { re: /private[\s_-]?key|passphrase|mnemonic|seed[\s_-]?phrase|api[\s_-]?secret/i, reason: 'secret field name' },
+  { re: /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/, reason: 'JWT' },
+  { re: /sk-ant-[A-Za-z0-9_-]{8,}|\bsk-[A-Za-z0-9_-]{20,}/, reason: 'API secret key' },
+  { re: /\b\d{8,10}:[A-Za-z0-9_-]{35}\b/, reason: 'Telegram bot token' },
+  { re: /sb_secret_[A-Za-z0-9_-]{8,}/, reason: 'Supabase secret key' },
+  { re: /\b(?:DRY|LIVE)_\d+_\d+\b/, reason: 'trade id' },
 ]
 
 export function scanForSecrets(raw: string): void {
