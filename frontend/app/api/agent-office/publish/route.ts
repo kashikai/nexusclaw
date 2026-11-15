@@ -39,7 +39,8 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: {
         apikey: key,
-        Authorization: `Bearer ${key}`,
+        // Legacy JWT keys also go as bearer; the newer sb_secret_ keys are not JWTs and go only in apikey.
+        ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}),
         'Content-Type': 'application/json',
         'Cache-Control': 'max-age=0',
         'x-upsert': 'true',
