@@ -9,3 +9,6 @@
 
 # Agent Office: real exporter output written locally for testing; production reads it from NEXT_PUBLIC_AGENT_OFFICE_STATE_URL
 /frontend/public/public_state.json
+
+# Local secrets for crypto checkout (service role key etc.)
+/frontend/.env.development.local

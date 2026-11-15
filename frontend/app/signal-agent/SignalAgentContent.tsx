@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base } from 'viem/chains'
 import { PageShell } from '@/components/layout/PageShell'
+import { CryptoBuyButton } from '@/components/checkout/CryptoBuyButton'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const STAKING_ADDRESS = '0xD209c27375D1B5916f677F39d5f320E67DD4FaFe' as const
 const TOKEN_ADDRESS   = '0xFC68E8aEe3A2e717DebBBBd9f6b2Db5Dd3Ed90E6' as const
-const STRIPE_LINK     = 'https://buy.stripe.com/00w9AM2y10wub4VfpC77O02'
 const TG_CHANNEL      = 'https://t.me/nexusclaw_live'
 const SUPA_URL        = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
 const SUPA_KEY        = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -131,7 +131,7 @@ const FAQ = [
   { q: 'Do I need a Telegram signal provider?', a: 'No. NexusClaw Trader is fully autonomous — it reads the chart directly via MetaTrader 5 and decides entries on its own.' },
   { q: 'Do I need an Anthropic / Claude API key?', a: 'Yes — a free or paid Claude API key is required for the AI optimization feature. Without it, the bot still trades but won\'t self-optimize.' },
   { q: 'Does it work with any MT5 broker?', a: 'Yes — any broker that supports the MetaTrader 5 terminal on Windows.' },
-  { q: 'What is the $NEXUSCLAW holder discount?', a: 'Hold 1,000 $NEXUSCLAW tokens and get 20% off permanently. Use coupon HOLDER20 at checkout.' },
+  { q: 'What is the $NEXUSCLAW holder discount?', a: 'Hold 1,000 $NEXUSCLAW tokens and get 20% off permanently. The discount is applied automatically at checkout.' },
 ]
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -231,7 +231,6 @@ export default function SignalAgentContent() {
   const [holderStatus,   setHolderStatus]   = useState<HolderStatus>(null)
   const [holderChecking, setHolderChecking] = useState(false)
   const [holderError,    setHolderError]    = useState('')
-  const [copiedCode,     setCopiedCode]     = useState(false)
   const [openFaq,        setOpenFaq]        = useState<number | null>(null)
 
   async function handleHolderCheck() {
@@ -249,12 +248,6 @@ export default function SignalAgentContent() {
     } finally {
       setHolderChecking(false)
     }
-  }
-
-  function copyCode() {
-    navigator.clipboard.writeText('HOLDER20')
-    setCopiedCode(true)
-    setTimeout(() => setCopiedCode(false), 2000)
   }
 
   const isHolder = holderStatus?.isHolder ?? false
@@ -301,14 +294,12 @@ export default function SignalAgentContent() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <a
-              href={STRIPE_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
+            <CryptoBuyButton
+              wallet={isHolder ? holderWallet : null}
               className="inline-flex items-center gap-3 bg-yellow-400 text-black px-10 py-5 text-sm font-black uppercase tracking-widest hover:brightness-110 transition-all"
             >
-              BUY NEXUSCLAW TRADER — $49.90 →
-            </a>
+              BUY NEXUSCLAW TRADER — {isHolder ? '$39.90' : '$49.90'} →
+            </CryptoBuyButton>
             <a
               href={TG_CHANNEL}
               target="_blank"
@@ -475,17 +466,7 @@ export default function SignalAgentContent() {
                   Balance: <span className="text-white">{parseFloat(holderStatus.balance).toLocaleString('en-US', { maximumFractionDigits: 0 })} $NEXUSCLAW</span>
                   {holderStatus.isStaker && <span className="text-green-400 ml-2">+ staking active</span>}
                 </p>
-                <p className="text-[10px] text-green-500 mb-3">Apply at checkout:</p>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex-1 bg-black border border-green-700 px-6 py-4 text-2xl font-black text-green-400 tracking-[0.3em]">HOLDER20</div>
-                  <button
-                    onClick={copyCode}
-                    className="px-4 py-4 border border-green-700 text-green-400 text-[10px] uppercase tracking-widest hover:bg-green-900/30 transition-all"
-                  >
-                    {copiedCode ? 'COPIED ✓' : 'COPY'}
-                  </button>
-                </div>
-                <p className="text-[10px] text-gray-400 mb-6">Saves $10 · Final price $39.90 · Enter at Stripe checkout</p>
+                <p className="text-[10px] text-gray-400 mb-6">Saves $10 · Final price $39.90 · Applied automatically at checkout</p>
                 <button onClick={() => { setHolderStatus(null); setHolderWallet('') }} className="text-[10px] text-gray-600 hover:text-gray-400 underline">
                   Check a different wallet
                 </button>
@@ -559,7 +540,7 @@ export default function SignalAgentContent() {
                   <span className="text-gray-600 line-through text-xl">$49.90</span>
                   <span className="text-[10px] text-yellow-400 uppercase tracking-widest border border-yellow-400/40 px-2 py-1">HOLDER PRICE</span>
                 </div>
-                <p className="text-[10px] text-gray-400 mb-2">Use code <span className="text-yellow-400 font-bold">HOLDER20</span> at checkout · saves $10.00</p>
+                <p className="text-[10px] text-gray-400 mb-2">Discount applied automatically at checkout · saves $10.00</p>
               </>
             ) : (
               <>
@@ -573,20 +554,18 @@ export default function SignalAgentContent() {
 
             <div className="h-[1px] bg-[#1f2937] my-8" />
 
-            <a
-              href={STRIPE_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
+            <CryptoBuyButton
+              wallet={isHolder ? holderWallet : null}
               className={`flex w-full items-center justify-between gap-4 px-10 py-6 text-sm font-black uppercase tracking-widest hover:brightness-110 transition-all mb-3 ${
                 isHolder ? 'bg-green-400 text-black' : 'bg-yellow-400 text-black'
               }`}
             >
               <span>BUY NEXUSCLAW TRADER — {isHolder ? '$39.90 (HOLDER PRICE)' : '$49.90'} →</span>
-              <span className="font-normal text-xs">SECURE · STRIPE</span>
-            </a>
+              <span className="font-normal text-xs">PAY WITH USDC / USDT</span>
+            </CryptoBuyButton>
 
             <p className="text-[10px] text-gray-600 text-center mb-4">
-              Download link delivered instantly by email ·{' '}
+              Download unlocked automatically after on-chain payment (Base) ·{' '}
               <a href="/refund" className="hover:text-yellow-400 transition-colors">See our Refund Policy</a>
             </p>
             <p className="text-[10px] text-gray-600 text-center leading-relaxed border-t border-[#1f2937] pt-4">

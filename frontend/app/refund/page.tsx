@@ -90,7 +90,7 @@ export default function RefundPage() {
 
           <section>
             <h2 className="font-mono font-bold uppercase text-white mb-3 tracking-tight">5. Processing Time</h2>
-            <p>Approved refunds are processed within <span className="text-white">5–10 business days</span> back to the original payment method via Stripe.</p>
+            <p>Approved refunds are processed within <span className="text-white">5–10 business days</span> in USDC/USDT on Base to the wallet that sent the payment (network gas fees are not refundable).</p>
           </section>
 
           <section>

@@ -42,7 +42,7 @@ export default function PrivacyPage() {
               </div>
               <div className="border border-[#1f2937] p-4">
                 <p className="text-cyan-400 uppercase text-[10px] tracking-widest mb-2">Payment Data</p>
-                <p>Payments for NexusClaw Trader are processed by Stripe. We do not store credit card numbers or payment details. Stripe&apos;s privacy policy applies to payment processing.</p>
+                <p>Payments for NexusClaw Trader are made on-chain in USDC/USDT on Base to a unique per-order address. We do not collect card or bank details. Blockchain transactions are public by nature; if you use the holder discount we process the wallet address you enter to verify your $NEXUSCLAW balance.</p>
               </div>
               <div className="border border-[#1f2937] p-4">
                 <p className="text-cyan-400 uppercase text-[10px] tracking-widest mb-2">Usage Data</p>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
             <p className="mb-3">We do not sell your personal data. We may share data with:</p>
             <ul className="space-y-2 list-none">
               {[
-                'Stripe — for payment processing',
+                'Supabase — for order records and secure file delivery',
                 'Telegram — for internal operational notifications only',
                 'Legal authorities — if required by Japanese law',
               ].map((item) => (

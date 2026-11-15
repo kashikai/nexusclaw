@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base } from 'viem/chains'
 import { PageShell } from '@/components/layout/PageShell'
+import { CryptoBuyButton } from '@/components/checkout/CryptoBuyButton'
 import ConfigModal from '@/components/start-agent/ConfigModal'
 import SuccessScreen from '@/components/start-agent/SuccessScreen'
 
@@ -768,20 +769,8 @@ export default function StartAgentContent() {
                     Wallet balance: <span className="text-white">{parseFloat(holderStatus.balance).toLocaleString('en-US', { maximumFractionDigits: 0 })} $NEXUSCLAW</span>
                     {holderStatus.isStaker && <span className="text-green-400 ml-2">+ staking active</span>}
                   </p>
-                  <p className="font-mono text-[10px] text-green-500 mb-6">Your exclusive discount code — apply at checkout:</p>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex-1 bg-[#0a0a0a] border border-green-600/40 px-6 py-4 font-mono text-2xl font-bold text-green-400 tracking-[0.3em]">
-                      HOLDER20
-                    </div>
-                    <button
-                      onClick={() => navigator.clipboard.writeText('HOLDER20')}
-                      className="px-4 py-4 border border-green-600/40 text-green-400 font-mono text-[10px] uppercase tracking-widest hover:bg-green-900/30 transition-all flex items-center gap-2"
-                    >
-                      COPY
-                    </button>
-                  </div>
                   <p className="font-mono text-[10px] text-gray-400 mb-6">
-                    Saves $10 · Final price $39.90 · Enter code at Stripe checkout
+                    Saves $10 · Final price $39.90 · Applied automatically at checkout
                   </p>
                   <button
                     onClick={() => { setHolderStatus(null); setHolderWallet('') }}
@@ -833,38 +822,19 @@ export default function StartAgentContent() {
             </div>
 
             {/* ── BUY BUTTON — adapts to holder status ── */}
-            {holderStatus?.isHolder ? (
-              <>
-                <a
-                  href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-between gap-4 bg-green-400 text-black px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
-                >
-                  <span>BUY NEXUSCLAW TRADER — APPLY CODE HOLDER20</span>
-                  <span className="font-mono text-sm font-normal flex items-center gap-2">
-                    🔒 Secure checkout via Stripe
-                  </span>
-                </a>
-                <p className="font-mono text-[10px] text-green-600 mt-2 text-center">
-                  Copy code HOLDER20 · apply at checkout · final price $39.90
-                </p>
-              </>
-            ) : (
-              <a
-                href="https://buy.stripe.com/00w9AM2y10wub4VfpC77O02"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-between gap-4 bg-yellow-400 text-black px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all"
-              >
-                <span>BUY NEXUSCLAW TRADER — $49.90</span>
-                <span className="font-mono text-sm font-normal flex items-center gap-2">
-                  🔒 Secure checkout via Stripe
-                </span>
-              </a>
-            )}
+            <CryptoBuyButton
+              wallet={holderStatus?.isHolder ? holderWallet : null}
+              className={`inline-flex w-full items-center justify-between gap-4 text-black px-10 py-6 text-lg font-black uppercase tracking-tighter hover:brightness-110 transition-all ${
+                holderStatus?.isHolder ? 'bg-green-400' : 'bg-yellow-400'
+              }`}
+            >
+              <span>BUY NEXUSCLAW TRADER — {holderStatus?.isHolder ? '$39.90 (HOLDER)' : '$49.90'}</span>
+              <span className="font-mono text-sm font-normal flex items-center gap-2">
+                Pay with USDC / USDT
+              </span>
+            </CryptoBuyButton>
             <p className="font-mono text-[10px] text-gray-600 mt-3 text-center">
-              Download link delivered instantly by email after payment · See our{' '}
+              Download unlocked automatically after on-chain payment (Base) · See our{' '}
               <a href="/refund" className="hover:text-yellow-400 transition-colors">Refund Policy</a>
             </p>
           </div>
