@@ -55,6 +55,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('[agent-office/publish]', e)
-    return NextResponse.json({ error: 'Publish failed' }, { status: 500 })
+    const missing = e instanceof Error && /^Missing env var [A-Z_]+$/.test(e.message) ? e.message : null
+    return NextResponse.json({ error: missing ?? 'Publish failed' }, { status: 500 })
   }
 }
