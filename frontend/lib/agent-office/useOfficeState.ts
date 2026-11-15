@@ -13,7 +13,7 @@ export interface OfficeView {
   now: number
 }
 
-/** Polls the public state every 60s and re-evaluates staleness every 30s. */
+/** Polls the public state every few seconds while the tab is visible, and re-evaluates staleness every 15s. */
 export function useOfficeState(source: DataSource): OfficeView {
   const [result, setResult] = useState<LoadResult>({ status: 'loading' })
   const [now, setNow] = useState(() => Date.now())
@@ -26,19 +26,27 @@ export function useOfficeState(source: DataSource): OfficeView {
       controller = new AbortController()
       const res = await loadPublicState(source, controller.signal)
       if (!controller.signal.aborted) {
-        setResult(res)
+        // A failed poll keeps the last good state on screen; if it keeps failing, the staleness check takes over.
+        setResult(prev => (res.status === 'error' && prev.status === 'ok' ? prev : res))
         setNow(Date.now())
       }
     }
     setResult({ status: 'loading' })
     load()
-    const id = setInterval(load, POLL_INTERVAL_MS)
-    return () => { clearInterval(id); controller.abort() }
+    // A hidden tab does not poll; it reloads as soon as it is shown again.
+    const tick = () => { if (document.visibilityState === 'visible') load() }
+    const id = setInterval(tick, POLL_INTERVAL_MS)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
+      controller.abort()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceKey])
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000)
+    const id = setInterval(() => setNow(Date.now()), 15_000)
     return () => clearInterval(id)
   }, [])
 

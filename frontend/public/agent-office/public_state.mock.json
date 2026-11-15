@@ -1,74 +1,78 @@
 {
-  "_comment": "MOCK DATA for local development. Timestamps are rebased so reference_time == now when loaded.",
+  "_comment": "MOCK DATA for local development. Timestamps are rebased so reference_time == now when loaded. Texts match the fixed templates of the signal bot exporter (public_state.py).",
   "reference_time": "2026-10-04T12:00:00Z",
   "scenarios": {
     "idle": {
-      "updated_at": "2026-10-04T11:58:00Z",
+      "updated_at": "2026-10-04T11:59:50Z",
       "mode": "dry_run",
       "survival_tier": "normal",
       "agents": [
-        { "id": "scanner", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:02:00Z" },
-        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:10Z" },
+        { "id": "scanner", "status": "working", "label": "listening for signals", "last_event_at": "2026-10-04T11:02:00Z" },
+        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:02:01Z" },
         { "id": "executor", "status": "idle", "label": "", "last_event_at": "2026-10-04T09:40:00Z" },
-        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:30Z" }
+        { "id": "reporter", "status": "working", "label": "result recorded", "last_event_at": "2026-10-04T09:40:00Z" }
       ],
       "portfolio": {
-        "total_pnl_usd": -3.42,
+        "total_pnl_usd": -342,
         "daily_pnl_usd": 0,
+        "pnl_currency": "JPY",
         "total_trades": 15,
-        "resolved_trades": 6,
-        "win_rate": 0.5,
-        "open_positions": 2,
+        "resolved_trades": 15,
+        "win_rate": 0.533,
+        "open_positions": 0,
         "profits_transferred_usd": 0
       },
       "recent_events": [
-        { "ts": "2026-10-04T11:03:30Z", "agent": "reporter", "text": "Cycle report saved" },
-        { "ts": "2026-10-04T11:03:10Z", "agent": "analyst", "text": "No market passed the confidence threshold" },
-        { "ts": "2026-10-04T11:02:00Z", "agent": "scanner", "text": "Fetched 100 markets, 0 candidates after filtering" },
-        { "ts": "2026-10-04T09:40:00Z", "agent": "executor", "text": "Duplicate skipped, position already open" }
+        { "ts": "2026-10-04T11:02:01Z", "agent": "analyst", "text": "Entry skipped: signal too old" },
+        { "ts": "2026-10-04T11:02:00Z", "agent": "scanner", "text": "Signal detected" },
+        { "ts": "2026-10-04T09:40:00Z", "agent": "reporter", "text": "Trade closed: XAUUSD SELL, loss" },
+        { "ts": "2026-10-04T09:39:30Z", "agent": "executor", "text": "Position closed at stop" },
+        { "ts": "2026-10-04T08:00:00Z", "agent": "system", "text": "Bot online, listening for signals" }
       ]
     },
     "working": {
-      "updated_at": "2026-10-04T11:59:30Z",
+      "updated_at": "2026-10-04T11:59:58Z",
       "mode": "dry_run",
       "survival_tier": "normal",
       "agents": [
-        { "id": "scanner", "status": "working", "label": "scanning markets", "last_event_at": "2026-10-04T11:59:20Z" },
-        { "id": "analyst", "status": "working", "label": "analyzing \"BTC above $70k on Friday?\"", "last_event_at": "2026-10-04T11:59:00Z" },
-        { "id": "executor", "status": "working", "label": "order sent (simulated)", "last_event_at": "2026-10-04T11:58:40Z" },
-        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:30Z" }
+        { "id": "scanner", "status": "working", "label": "listening for signals", "last_event_at": "2026-10-04T11:55:00Z" },
+        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:55:01Z" },
+        { "id": "executor", "status": "working", "label": "managing open trade", "last_event_at": "2026-10-04T11:59:30Z" },
+        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T10:20:00Z" }
       ],
       "portfolio": {
-        "total_pnl_usd": 1.85,
-        "daily_pnl_usd": -0.4,
-        "total_trades": 16,
-        "resolved_trades": 7,
-        "win_rate": 0.571,
-        "open_positions": 3,
+        "total_pnl_usd": 1850,
+        "daily_pnl_usd": 640,
+        "pnl_currency": "JPY",
+        "total_trades": 24,
+        "resolved_trades": 23,
+        "win_rate": 0.609,
+        "open_positions": 1,
         "profits_transferred_usd": 0
       },
       "recent_events": [
-        { "ts": "2026-10-04T11:59:20Z", "agent": "scanner", "text": "Fetched 100 markets, 4 candidates after filtering" },
-        { "ts": "2026-10-04T11:59:00Z", "agent": "analyst", "text": "Scout pass: YES, confidence HIGH, edge 0.18" },
-        { "ts": "2026-10-04T11:58:40Z", "agent": "executor", "text": "Simulated order sent, size $5.00" },
-        { "ts": "2026-10-04T11:58:10Z", "agent": "analyst", "text": "Skipped market: edge below 0.15 threshold" },
-        { "ts": "2026-10-04T11:57:30Z", "agent": "system", "text": "Cycle started" },
-        { "ts": "2026-10-04T11:03:30Z", "agent": "reporter", "text": "Cycle report saved" }
+        { "ts": "2026-10-04T11:59:30Z", "agent": "executor", "text": "Stop moved to break-even" },
+        { "ts": "2026-10-04T11:59:29Z", "agent": "executor", "text": "Target 1 reached" },
+        { "ts": "2026-10-04T11:55:03Z", "agent": "executor", "text": "Order placed (4 positions)" },
+        { "ts": "2026-10-04T11:55:01Z", "agent": "analyst", "text": "Entry approved" },
+        { "ts": "2026-10-04T11:55:00Z", "agent": "scanner", "text": "Signal detected" },
+        { "ts": "2026-10-04T10:20:00Z", "agent": "reporter", "text": "Trade closed: XAUUSD BUY, win" }
       ]
     },
     "error": {
-      "updated_at": "2026-10-04T11:59:00Z",
+      "updated_at": "2026-10-04T11:59:55Z",
       "mode": "dry_run",
-      "survival_tier": "cautious",
+      "survival_tier": "normal",
       "agents": [
-        { "id": "scanner", "status": "error", "label": "market API connection reset", "last_event_at": "2026-10-04T11:58:50Z" },
-        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:03:10Z" },
-        { "id": "executor", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:01:00Z" },
-        { "id": "reporter", "status": "working", "label": "publishing report", "last_event_at": "2026-10-04T11:58:55Z" }
+        { "id": "scanner", "status": "working", "label": "listening for signals", "last_event_at": "2026-10-04T11:58:40Z" },
+        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:58:41Z" },
+        { "id": "executor", "status": "error", "label": "order rejected by broker", "last_event_at": "2026-10-04T11:58:43Z" },
+        { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:01:00Z" }
       ],
       "portfolio": {
-        "total_pnl_usd": -7.1,
-        "daily_pnl_usd": -2.25,
+        "total_pnl_usd": -710,
+        "daily_pnl_usd": -225,
+        "pnl_currency": "JPY",
         "total_trades": 22,
         "resolved_trades": 21,
         "win_rate": 0.381,
@@ -76,34 +80,35 @@
         "profits_transferred_usd": 0
       },
       "recent_events": [
-        { "ts": "2026-10-04T11:58:55Z", "agent": "reporter", "text": "Publishing report after failed scan" },
-        { "ts": "2026-10-04T11:58:50Z", "agent": "scanner", "text": "Error fetching markets: connection reset by remote host" },
-        { "ts": "2026-10-04T11:58:45Z", "agent": "system", "text": "Survival tier lowered to cautious" },
-        { "ts": "2026-10-04T11:01:00Z", "agent": "executor", "text": "Position resolved: loss $-1.80 (simulated)" }
+        { "ts": "2026-10-04T11:58:43Z", "agent": "executor", "text": "Order failed" },
+        { "ts": "2026-10-04T11:58:41Z", "agent": "analyst", "text": "Entry approved, waiting for a better price" },
+        { "ts": "2026-10-04T11:58:40Z", "agent": "scanner", "text": "Signal detected" },
+        { "ts": "2026-10-04T11:01:00Z", "agent": "reporter", "text": "Trade closed: XAUUSD BUY, loss" }
       ]
     },
     "stale": {
-      "updated_at": "2026-10-04T07:30:00Z",
+      "updated_at": "2026-10-04T11:40:00Z",
       "mode": "dry_run",
       "survival_tier": "normal",
       "agents": [
-        { "id": "scanner", "status": "working", "label": "scanning markets", "last_event_at": "2026-10-04T07:29:00Z" },
-        { "id": "analyst", "status": "working", "label": "analyzing \"ETH above $4k by month end?\"", "last_event_at": "2026-10-04T07:28:00Z" },
-        { "id": "executor", "status": "idle", "label": "", "last_event_at": "2026-10-04T06:00:00Z" },
+        { "id": "scanner", "status": "working", "label": "listening for signals", "last_event_at": "2026-10-04T11:39:00Z" },
+        { "id": "analyst", "status": "idle", "label": "", "last_event_at": "2026-10-04T11:28:00Z" },
+        { "id": "executor", "status": "working", "label": "managing open trade", "last_event_at": "2026-10-04T11:30:00Z" },
         { "id": "reporter", "status": "idle", "label": "", "last_event_at": "2026-10-04T06:05:00Z" }
       ],
       "portfolio": {
         "total_pnl_usd": 0,
         "daily_pnl_usd": 0,
+        "pnl_currency": "JPY",
         "total_trades": 15,
-        "resolved_trades": 6,
+        "resolved_trades": 14,
         "win_rate": 0.5,
-        "open_positions": 2,
+        "open_positions": 1,
         "profits_transferred_usd": 0
       },
       "recent_events": [
-        { "ts": "2026-10-04T07:29:00Z", "agent": "scanner", "text": "Fetched 100 markets, 2 candidates after filtering" },
-        { "ts": "2026-10-04T07:28:00Z", "agent": "analyst", "text": "Scout pass started" }
+        { "ts": "2026-10-04T11:30:00Z", "agent": "executor", "text": "Order placed (2 positions)" },
+        { "ts": "2026-10-04T11:28:00Z", "agent": "analyst", "text": "Entry approved" }
       ]
     }
   }

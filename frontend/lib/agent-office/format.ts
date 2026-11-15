@@ -1,13 +1,14 @@
 import { INTL_LOCALE, type Locale } from './strings'
 
-export function formatUsd(value: number, locale: Locale, signed = false): string {
-  return new Intl.NumberFormat(INTL_LOCALE[locale], {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    signDisplay: signed ? 'exceptZero' : 'auto',
-  }).format(value)
+/** Formats an amount in the account currency. Decimals follow the currency (USD 2, JPY 0). */
+export function formatMoney(value: number, locale: Locale, currency = 'USD', signed = false): string {
+  const options: Intl.NumberFormatOptions = { style: 'currency', currency, signDisplay: signed ? 'exceptZero' : 'auto' }
+  try {
+    return new Intl.NumberFormat(INTL_LOCALE[locale], options).format(value)
+  } catch {
+    // Unknown currency code: Intl throws a RangeError.
+    return new Intl.NumberFormat(INTL_LOCALE[locale], { ...options, currency: 'USD' }).format(value)
+  }
 }
 
 export function pnlColor(value: number): string {

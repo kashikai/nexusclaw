@@ -5,11 +5,12 @@ export type Locale = (typeof LOCALES)[number]
 
 const en = {
   pageTitle: 'Agent Office',
-  pageSubtitle: 'Live view of the Polyagent team. Every movement on this page is driven by a real logged event.',
-  dryRunBadge: 'DRY RUN, simulated, no real funds',
+  pageSubtitle: 'Live view of the signal desk. Every movement on this page is driven by a real event from the trading bot. ' +
+    'Entry details stay private while a trade is open; results are published when it closes.',
+  dryRunBadge: 'DEMO ACCOUNT, simulated, no real funds',
   liveBadge: 'LIVE, real funds at risk',
-  dataStale: 'Data stale',
-  dataStaleDetail: 'Last update is older than 3 hours. All agents are shown as idle until fresh data arrives.',
+  dataStale: 'Bot offline',
+  dataStaleDetail: 'No update in the last 5 minutes. All agents are shown as idle until the bot is back online.',
   loading: 'Loading office state…',
   missingTitle: 'Public state unavailable',
   missingDetail: 'The public_state.json file was not found. No activity is shown.',
@@ -24,10 +25,10 @@ const en = {
     reporter: 'Reporter',
   } satisfies Record<AgentId, string>,
   roles: {
-    scanner: 'Scans Polymarket for candidate markets',
-    analyst: 'Estimates probabilities and edge',
+    scanner: 'Listens for incoming trade signals',
+    analyst: 'Checks price, spread and timing before entry',
     executor: 'Places orders and manages positions',
-    reporter: 'Publishes logs and daily reports',
+    reporter: 'Records the result of every closed trade',
   } satisfies Record<AgentId, string>,
   status: {
     idle: 'Idle',
@@ -44,18 +45,18 @@ const en = {
   panel: {
     title: 'Track record',
     mode: 'Mode',
-    modeDryRun: 'Dry run',
+    modeDryRun: 'Demo account',
     modeLive: 'Live',
     tier: 'Survival tier',
     totalPnl: 'Total PnL',
     dailyPnl: 'Daily PnL',
     trades: 'Trades',
-    resolved: 'resolved',
+    resolved: 'closed',
     winRate: 'Win rate',
-    insufficientData: (n: number) => `insufficient data (${n} resolved)`,
-    openPositions: 'Open positions',
+    insufficientData: (n: number) => `insufficient data (${n} closed)`,
+    openPositions: 'Open trades',
     transferred: 'Transferred to treasury',
-    simulatedNote: 'All figures are simulated while in dry run.',
+    simulatedNote: 'Demo account: all figures are simulated, no real funds.',
   },
   feed: {
     title: 'Event log',
@@ -63,7 +64,7 @@ const en = {
     system: 'System',
   },
   wall: {
-    desk: 'POLYAGENT DESK',
+    desk: 'SIGNAL DESK',
     mode: 'MODE',
     tier: 'TIER',
     activity: 'RECENT ACTIVITY',
@@ -80,20 +81,21 @@ const en = {
     } satisfies Record<MockScenario, string>,
   },
   disclaimer:
-    'Experimental software. Prediction-market trading carries a substantial risk of loss, including total loss. ' +
-    'Past activity does not indicate future results, and nothing on this page is financial advice. ' +
-    'This page exists to show a verifiable track record of what the agents actually did.',
+    'Experimental software. Leveraged trading in forex, gold and CFDs carries a substantial risk of loss, including total loss. ' +
+    'Past activity does not indicate future results, and nothing on this page is financial advice or a trade signal. ' +
+    'This page exists to show a track record of what the agents actually did.',
 }
 
 export type Strings = typeof en
 
 const pt: Strings = {
   pageTitle: 'Escritório dos Agentes',
-  pageSubtitle: 'Visão ao vivo da equipe Polyagent. Todo movimento nesta página vem de um evento real registrado.',
-  dryRunBadge: 'DRY RUN, simulado, sem fundos reais',
+  pageSubtitle: 'Visão ao vivo da mesa de sinais. Todo movimento nesta página vem de um evento real do bot de trading. ' +
+    'Os detalhes da entrada ficam privados enquanto o trade está aberto; os resultados são publicados quando ele fecha.',
+  dryRunBadge: 'CONTA DEMO, simulado, sem fundos reais',
   liveBadge: 'LIVE, fundos reais em risco',
-  dataStale: 'Dados desatualizados',
-  dataStaleDetail: 'A última atualização tem mais de 3 horas. Todos os agentes aparecem ociosos até chegarem dados novos.',
+  dataStale: 'Bot offline',
+  dataStaleDetail: 'Nenhuma atualização nos últimos 5 minutos. Todos os agentes aparecem ociosos até o bot voltar.',
   loading: 'Carregando estado do escritório…',
   missingTitle: 'Estado público indisponível',
   missingDetail: 'O arquivo public_state.json não foi encontrado. Nenhuma atividade é exibida.',
@@ -103,10 +105,10 @@ const pt: Strings = {
   updated: 'Atualizado',
   agents: { scanner: 'Scanner', analyst: 'Analista', executor: 'Executor', reporter: 'Repórter' },
   roles: {
-    scanner: 'Varre o Polymarket em busca de mercados candidatos',
-    analyst: 'Estima probabilidades e edge',
+    scanner: 'Escuta os sinais de trade que chegam',
+    analyst: 'Confere preço, spread e tempo antes de entrar',
     executor: 'Envia ordens e gerencia posições',
-    reporter: 'Publica logs e relatórios diários',
+    reporter: 'Registra o resultado de cada trade fechado',
   },
   status: { idle: 'Ocioso', working: 'Trabalhando', error: 'Erro' },
   restingInLounge: 'descansando no lounge',
@@ -114,22 +116,22 @@ const pt: Strings = {
   panel: {
     title: 'Histórico verificável',
     mode: 'Modo',
-    modeDryRun: 'Dry run',
+    modeDryRun: 'Conta demo',
     modeLive: 'Live',
     tier: 'Nível de sobrevivência',
     totalPnl: 'PnL total',
     dailyPnl: 'PnL diário',
     trades: 'Trades',
-    resolved: 'resolvidos',
+    resolved: 'fechados',
     winRate: 'Taxa de acerto',
-    insufficientData: (n: number) => `dados insuficientes (${n} resolvidos)`,
-    openPositions: 'Posições abertas',
+    insufficientData: (n: number) => `dados insuficientes (${n} fechados)`,
+    openPositions: 'Trades abertos',
     transferred: 'Transferido ao tesouro',
-    simulatedNote: 'Todos os números são simulados enquanto em dry run.',
+    simulatedNote: 'Conta demo: todos os números são simulados, sem fundos reais.',
   },
   feed: { title: 'Log de eventos', empty: 'Nenhum evento registrado ainda.', system: 'Sistema' },
   wall: {
-    desk: 'MESA POLYAGENT',
+    desk: 'MESA DE SINAIS',
     mode: 'MODO',
     tier: 'NÍVEL',
     activity: 'ATIVIDADE RECENTE',
@@ -141,9 +143,9 @@ const pt: Strings = {
     scenarios: { idle: 'Mock: ocioso', working: 'Mock: trabalhando', error: 'Mock: erro', stale: 'Mock: desatualizado' },
   },
   disclaimer:
-    'Software experimental. Operar em mercados de previsão envolve risco substancial de perda, inclusive total. ' +
-    'Atividade passada não indica resultados futuros, e nada nesta página é recomendação financeira. ' +
-    'Esta página existe para mostrar um histórico verificável do que os agentes realmente fizeram.',
+    'Software experimental. Operar forex, ouro e CFDs com alavancagem envolve risco substancial de perda, inclusive total. ' +
+    'Atividade passada não indica resultados futuros, e nada nesta página é recomendação financeira nem sinal de trade. ' +
+    'Esta página existe para mostrar um histórico do que os agentes realmente fizeram.',
 }
 
 const DICTS: Record<Locale, Strings> = { en, pt }

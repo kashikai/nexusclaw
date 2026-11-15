@@ -47,15 +47,16 @@ Full guide: [nexusclaw.tech/start-agent](https://nexusclaw.tech/start-agent)
 
 ## Agent Office (`/agent-office`)
 
-An isometric live view of the Polyagent team (Scanner, Analyst, Executor, Reporter). It is a pure render of one JSON file: nothing on the page moves unless that file says an agent is working.
+An isometric live view of the signal desk (Scanner, Analyst, Executor, Reporter): the Telegram-to-MT5 signal bot. It is a pure render of one JSON file: nothing on the page moves unless that file says an agent is working.
 
 **How it works**
 
-- `frontend/app/agent-office/AgentOfficeContent.tsx` polls the public state every 60 s via `lib/agent-office/useOfficeState.ts`.
+- `frontend/app/agent-office/AgentOfficeContent.tsx` polls the public state every 5 s while the tab is visible, via `lib/agent-office/useOfficeState.ts`. A failed poll keeps the last good state on screen.
 - `lib/agent-office/validate.ts` parses it: unknown fields are dropped, and the whole file is rejected if the raw text contains anything that looks like a secret (0x addresses/hashes, 64-char hex, 30+ digit ids, PEM keys, `private_key`/`passphrase`/`mnemonic`/`api_secret`).
-- If `updated_at` is older than 3 hours the page shows **Data stale** and renders every agent as idle and gray.
-- `mode: "dry_run"` shows a non-dismissible **DRY RUN, simulated, no real funds** banner; `live` shows a red one.
-- Win rate is hidden behind "insufficient data (n resolved)" until `resolved_trades >= 20`. Gains and losses use the same size, only the colour differs.
+- If `updated_at` is older than 5 minutes the page shows **Bot offline** and renders every agent as idle and gray (the bot republishes every 30 s even when idle).
+- `mode: "dry_run"` shows a non-dismissible **DEMO ACCOUNT, simulated, no real funds** banner; `live` shows a red one.
+- Win rate is hidden behind "insufficient data (n closed)" until `resolved_trades >= 20`. Gains and losses use the same size, only the colour differs.
+- PnL is shown in `portfolio.pnl_currency` (the account currency; the `*_usd` field names are historical).
 - Scene: plain SVG + CSS (`components/agent-office/`), no new dependencies. Narrow screens get a card list instead of the scene. Animations are off under `prefers-reduced-motion`.
 - Strings live in `lib/agent-office/strings.ts` (EN default, PT via `?lang=pt`).
 
@@ -71,7 +72,8 @@ An isometric live view of the Polyagent team (Scanner, Analyst, Executor, Report
       "label": "max 60 chars", "last_event_at": "ISO8601" }
   ],
   "portfolio": {
-    "total_pnl_usd": 0, "daily_pnl_usd": 0, "total_trades": 0, "resolved_trades": 0,
+    "total_pnl_usd": 0, "daily_pnl_usd": 0, "pnl_currency": "USD (optional, ISO 4217)",
+    "total_trades": 0, "resolved_trades": 0,
     "win_rate": null, "open_positions": 0, "profits_transferred_usd": 0
   },
   "recent_events": [{ "ts": "ISO8601", "agent": "scanner | analyst | executor | reporter | system", "text": "max 140 chars" }]
@@ -85,9 +87,26 @@ Never put private keys, wallet addresses, order details or market ids of open po
 - In `next dev` the page defaults to `public/agent-office/public_state.mock.json` (scenarios `idle`, `working`, `error`, `stale`; timestamps are rebased to "now" on load). A dev-only panel switches scenarios; `?source=mock:error` or `?source=live` also works.
 - Production builds always read the real file from `NEXT_PUBLIC_AGENT_OFFICE_STATE_URL` (default `/public_state.json`). A cross-origin URL must send CORS headers; Supabase Storage public objects do.
 
-**Real data: the Polyagent exporter**
+**Real data: the signal bot (current source)**
 
-The exporter lives next to the bot, outside this repo: `agents/polyagent/export_public_state.py` (logic in `agents/polyagent/public_export/`, tests in `agents/polyagent/tests/`). It only reads the bot's `logs/agent.log` and `logs/portfolio_state.json`; it never writes to them and never touches trading.
+The publisher is built into the Telegram-to-MT5 signal bot, outside this repo (`Copy Telegram/`: `public_state.py`, `public_publisher.py`, `public_targets.py`, hooked into `signal_copier.py`; tests in `tests/test_public_state.py` and `tests/test_public_feed_integration.py`).
+
+- **Live status, no numbers:** each real bot event (signal detected, entry approved or skipped, order placed, target reached, stop moved, trade closed) updates the state and is uploaded about a second later, off the trading path. A failed upload is logged and never delays or blocks an order.
+- **Private while open:** no symbol, direction, price, level, lot or ticket is published while a trade is open. Symbol, direction and outcome (win / loss / break-even) appear only after the whole trade has closed. The channel's message text is never published.
+- **Sanitized:** every published string is a fixed template in `public_state.py`, and the file is scanned with the same forbidden patterns as the frontend validator before upload.
+- **Track record:** trade counts, win rate and net PnL (profit + swap + commission, in the account currency) are kept in `data/public_ledger.json` next to the bot, so they survive restarts. Trades that were open when the bot restarted are not resolved.
+- **Mode:** `dry_run` when the MT5 account is a demo account, otherwise `live`.
+
+Setup:
+
+1. Supabase Storage: the same public `agent-office` bucket and bucket-scoped write key described below.
+2. In the bot's `.env`: `AGENT_OFFICE_SUPABASE_URL` and `AGENT_OFFICE_SUPABASE_KEY` (optional `AGENT_OFFICE_SUPABASE_ANON_KEY`, `AGENT_OFFICE_BUCKET`). With neither set, the public feed is off and the bot behaves exactly as before.
+3. Local check without Supabase: set `PUBLIC_STATE_FILE=<repo>/frontend/public/public_state.json` in the bot's `.env` (that path is gitignored), run `next dev`, and open `/agent-office?source=live`. Delete that file before any deploy made from the local folder.
+4. Vercel: `NEXT_PUBLIC_AGENT_OFFICE_STATE_URL` as in step 4 below.
+
+**Real data: the Polyagent exporter (earlier source, not running)**
+
+The page was first built for Polyagent, and that exporter still exists. Only one source should write `public_state.json` at a time. It lives next to that bot, outside this repo: `agents/polyagent/export_public_state.py` (logic in `agents/polyagent/public_export/`, tests in `agents/polyagent/tests/`). It only reads the bot's `logs/agent.log` and `logs/portfolio_state.json`; it never writes to them and never touches trading.
 
 - **Delayed:** it publishes the state as of *now − 15 min* (`AGENT_OFFICE_DELAY_MINUTES`). Anything logged after that cutoff is invisible.
 - **Aggregated:** portfolio numbers come from the bot's own `PORTFOLIO SUMMARY` log blocks, so they match the bot's reports. Resolved trades and win rate come from `Position closed` lines since the ledger was last started fresh.

@@ -10,7 +10,7 @@ export const EVENTS_MAX = 10
 export class ValidationError extends Error {}
 
 // Scanned against the raw file text, so secrets hidden in unknown fields are caught too.
-// Keep in sync with FORBIDDEN_PATTERNS in the Polyagent exporter (public_export/build.py).
+// Keep in sync with FORBIDDEN_PATTERNS in the exporters: the signal bot (public_state.py) and Polyagent (public_export/build.py).
 const FORBIDDEN_PATTERNS: { re: RegExp; reason: string }[] = [
   { re: /0x[0-9a-fA-F]{40}/, reason: '0x address or hash' },
   { re: /(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])/, reason: '64-char hex (private key / id)' },
@@ -82,6 +82,8 @@ function parsePortfolio(v: unknown): Portfolio {
   return {
     total_pnl_usd: num(v.total_pnl_usd, 'total_pnl_usd'),
     daily_pnl_usd: num(v.daily_pnl_usd, 'daily_pnl_usd'),
+    // Optional; anything that is not a plain 3-letter code falls back to USD.
+    pnl_currency: typeof v.pnl_currency === 'string' && /^[A-Z]{3}$/.test(v.pnl_currency) ? v.pnl_currency : 'USD',
     total_trades: total,
     resolved_trades: resolved,
     win_rate: winRate as number | null,
@@ -131,7 +133,8 @@ export function parsePublicState(raw: string): PublicState {
   }
 }
 
-export const STALE_AFTER_MS = 3 * 60 * 60 * 1000
+// The bot republishes every 30s even when nothing happens, so a few missed heartbeats means it is offline.
+export const STALE_AFTER_MS = 5 * 60 * 1000
 
 export function isStale(state: PublicState, now: number): boolean {
   return now - Date.parse(state.updated_at) > STALE_AFTER_MS

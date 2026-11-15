@@ -20,6 +20,8 @@ export interface AgentState {
 export interface Portfolio {
   total_pnl_usd: number
   daily_pnl_usd: number
+  /** ISO 4217 code of the account the PnL figures are in (the *_usd field names are historical). */
+  pnl_currency: string
   total_trades: number
   resolved_trades: number
   win_rate: number | null

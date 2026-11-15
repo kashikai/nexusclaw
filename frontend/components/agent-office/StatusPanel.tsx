@@ -1,4 +1,4 @@
-import { formatUsd, pnlColor } from '@/lib/agent-office/format'
+import { formatMoney, pnlColor } from '@/lib/agent-office/format'
 import type { Locale, Strings } from '@/lib/agent-office/strings'
 import type { PublicState } from '@/lib/agent-office/types'
 
@@ -20,12 +20,12 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
-function Pnl({ label, value, locale }: { label: string; value: number; locale: Locale }) {
+function Pnl({ label, value, currency, locale }: { label: string; value: number; currency: string; locale: Locale }) {
   // Same size and weight for gains and losses; only the colour changes.
   return (
-    <div className="border border-[#1f2937] bg-[#0d0d0d] p-3">
+    <div className="border border-[#1f2937] bg-[#0d0d0d] p-3 min-w-0">
       <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">{label}</div>
-      <div className={`text-2xl font-bold tabular-nums ${pnlColor(value)}`}>{formatUsd(value, locale, true)}</div>
+      <div className={`text-xl font-bold tabular-nums break-words ${pnlColor(value)}`}>{formatMoney(value, locale, currency, true)}</div>
     </div>
   )
 }
@@ -40,8 +40,8 @@ export function StatusPanel({ state, t, locale }: { state: PublicState; t: Strin
     <section className="border border-[#2a2a2a] bg-[#111111] p-4" aria-labelledby="ao-panel-title">
       <h2 id="ao-panel-title" className="text-xs uppercase tracking-widest text-[#f5c542] mb-3">{t.panel.title}</h2>
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <Pnl label={t.panel.totalPnl} value={p.total_pnl_usd} locale={locale} />
-        <Pnl label={t.panel.dailyPnl} value={p.daily_pnl_usd} locale={locale} />
+        <Pnl label={t.panel.totalPnl} value={p.total_pnl_usd} currency={p.pnl_currency} locale={locale} />
+        <Pnl label={t.panel.dailyPnl} value={p.daily_pnl_usd} currency={p.pnl_currency} locale={locale} />
       </div>
       <Row label={t.panel.mode}>
         <span className={state.mode === 'live' ? 'text-red-400' : 'text-[#f5c542]'}>
@@ -55,9 +55,11 @@ export function StatusPanel({ state, t, locale }: { state: PublicState; t: Strin
       </Row>
       <Row label={t.panel.winRate}>{winRate}</Row>
       <Row label={t.panel.openPositions}><span className="text-white tabular-nums">{p.open_positions}</span></Row>
-      <Row label={t.panel.transferred}>
-        <span className="text-white tabular-nums">{formatUsd(p.profits_transferred_usd, locale)}</span>
-      </Row>
+      {p.profits_transferred_usd > 0 && (
+        <Row label={t.panel.transferred}>
+          <span className="text-white tabular-nums">{formatMoney(p.profits_transferred_usd, locale, p.pnl_currency)}</span>
+        </Row>
+      )}
       {state.mode === 'dry_run' && <p className="mt-3 text-[11px] text-[#f5c542]/80">{t.panel.simulatedNote}</p>}
     </section>
   )

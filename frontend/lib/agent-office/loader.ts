@@ -1,10 +1,16 @@
 import { parsePublicState, ValidationError } from './validate'
 import type { DataSource, LoadResult, MockScenario } from './types'
 
-// Phase 2: point this at the static URL the Polyagent exporter publishes to (must allow CORS if cross-origin).
+// The static URL the signal bot publishes to (must allow CORS if cross-origin; Supabase Storage public objects do).
 export const PUBLIC_STATE_URL = process.env.NEXT_PUBLIC_AGENT_OFFICE_STATE_URL || '/public_state.json'
 export const MOCK_URL = '/agent-office/public_state.mock.json'
-export const POLL_INTERVAL_MS = 60_000
+// The bot uploads within about a second of each event, so this is the visible delay.
+export const POLL_INTERVAL_MS = 5_000
+
+// A changing query string keeps a CDN in front of the file from serving an old copy.
+function withCacheBuster(url: string): string {
+  return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`
+}
 
 const TS_KEYS = new Set(['updated_at', 'last_event_at', 'ts'])
 
@@ -39,7 +45,7 @@ export async function loadPublicState(source: DataSource, signal: AbortSignal): 
     if (source.kind === 'mock') {
       raw = await loadMockRaw(source.scenario, signal)
     } else {
-      const res = await fetch(PUBLIC_STATE_URL, { cache: 'no-store', signal })
+      const res = await fetch(withCacheBuster(PUBLIC_STATE_URL), { cache: 'no-store', signal })
       if (res.status === 404) return { status: 'missing', fetchedAt }
       if (!res.ok) return { status: 'error', reason: `HTTP ${res.status}`, fetchedAt }
       raw = await res.text()

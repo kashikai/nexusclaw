@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Agent Office — NexusClaw',
-  description: 'Live view of the Polyagent team: what each agent is doing, driven only by logged events. Verifiable track record, dry run.',
+  description: 'Live view of the signal desk: what each trading agent is doing right now, driven only by real bot events. Results are published when each trade closes.',
 }
 
 export default function AgentOfficeLayout({ children }: { children: React.ReactNode }) {
