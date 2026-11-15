@@ -84,13 +84,13 @@ export default function HomeContent() {
             {/* Headline */}
             <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-4">
               Autonomous Agents<br />
-              That Earn{' '}
-              <span className="text-cyan-400">On-Chain</span>
+              With Public{' '}
+              <span className="text-cyan-400">Results</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-              AI agents that trade, stake, compound, and fund themselves with verifiable proof.
+              NexusClaw builds agents that trade, stake, compound, and operate within predefined rules, with activity available for verification.
             </p>
 
             {/* CTAs */}
@@ -98,8 +98,8 @@ export default function HomeContent() {
               <a href="/proof" className="bg-cyan-400 text-black font-bold px-8 py-3 text-sm hover:bg-cyan-300 transition-all hover:scale-105">
                 View Live Proof →
               </a>
-              <a href="/agents" className="border border-white/30 text-white px-8 py-3 text-sm hover:border-white transition-all">
-                Explore Agents
+              <a href="/trader" className="border border-white/30 text-white px-8 py-3 text-sm hover:border-white transition-all">
+                Explore Trader
               </a>
             </div>
 

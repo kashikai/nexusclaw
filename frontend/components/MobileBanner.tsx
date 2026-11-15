@@ -82,7 +82,7 @@ export function MobileBanner({ forceOpen, onForceClose }: MobileBannerProps) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-['Space_Grotesk'] font-bold text-[#e5e2e1] uppercase tracking-tight">
-              Connect Wallet
+              Open Wallet
             </h3>
             <p className="text-[10px] font-['JetBrains_Mono'] text-[#8b919f] uppercase tracking-widest mt-1">
               Open in your wallet browser

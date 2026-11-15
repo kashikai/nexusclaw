@@ -37,7 +37,7 @@ Last updated: April 2026
 | No external audit | Medium | Multisig 3/5 controls all admin functions |
 | Reward pool is finite | Low | rewardPoolRunway() monitored, pool refillable |
 | Token has 1% transfer fee | Low | Documented, agents account for burn in compound logic |
-| No timelock on admin | Medium | 3/5 multisig threshold provides equivalent protection |
+| No timelock on admin | Medium | Admin operations secured by a 3/5 Safe multisig; administrative timelock planned |
 
 ## Security Features
 
@@ -53,7 +53,7 @@ Last updated: April 2026
 
 ## Next Steps
 
-- [ ] External audit by certified firm (planned for Phase 5)
+- [ ] External security audit (planned for Phase 5)
 - [ ] Bug bounty program (planned with community growth)
 - [ ] Timelock implementation (Phase 5)
 

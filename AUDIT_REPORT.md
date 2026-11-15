@@ -50,7 +50,7 @@ _transfer(from, stakingRewardsAddress, stakingAmount);
 **Severity**: HIGH
 **Location**: `NexusClaw.sol` — Missing entirely
 **Issue**:
-- Launch strategy promises "24h timelock on critical operations"
+- Launch strategy previously promised an administrative timelock on critical operations
 - Contract has **zero timelock logic**.
 - **Impact**: Multisig can change burn fee, blacklist, or drain treasury instantly (no safety delay).
 - **Fix Required**: Integrate OpenZeppelin Timelock or custom implementation:
@@ -118,7 +118,7 @@ function executeMintRoleChange(address newMinter) external {
 | Burn Fee | 1% (toggle ON/OFF) | 1% (toggle ON/OFF) | ✅ |
 | Fee Distribution | 50% burn / 15% buyback / 20% treasury / 15% staking | 100% burn only | ❌ CRITICAL |
 | Anti-Snipe | 0.5% max buy 24h | Implemented but incomplete | ⚠️ HIGH |
-| Timelock | 24h on critical ops | Not implemented | ❌ CRITICAL |
+| Administrative delay | Critical privileged ops | Not implemented | ❌ CRITICAL |
 | Staking APY | 20% bootstrap | Configurable `setRewardRate()` | ✅ (with math fix) |
 | Launch Function | Yes, gates transfers | Yes, `launch()` exists | ✅ |
 
@@ -154,7 +154,7 @@ function executeMintRoleChange(address newMinter) external {
 
 **Blockers** (must fix before deploy):
 1. ❌ Fee distribution logic (currently all fees burn, should split 50/15/20/15)
-2. ❌ Timelock implementation (24h delay on critical operations)
+2. ❌ Administrative delay implementation for critical operations
 3. ❌ Auto-whitelist DEX pairs (or manual setup + testing)
 
 **Pre-Launch Checklist**:

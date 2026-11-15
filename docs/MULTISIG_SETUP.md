@@ -40,13 +40,12 @@ Signer Count: 5
 
 ## Phase 2 — Test Multisig on Sepolia
 
-### Test 1: Queue & Execute Timelock (24h)
+### Test 1: Administrative Timelock (Planned)
 ```
-✅ One signer queues: queueToggleBurnFee(false)
-⏳ Wait 24h (simulated: skip time if needed)
-✅ 3/5 signers approve execution
-✅ Execute: executeToggleBurnFee(false)
-✅ Verify burnFeeEnabled = false on-chain
+⏳ Design administrative timelock for privileged operations
+⏳ Implement queue + execute flow
+⏳ Require 3/5 signers to approve execution
+⏳ Verify delayed execution on-chain before marking operational
 ```
 
 ### Test 2: Whitelist DEX Pair
@@ -71,7 +70,7 @@ https://sepolia.basescan.org/address/0xb7Df4A46455594923150628cEA54f0a173f1b68a#
 Check:
 - DEFAULT_ADMIN_ROLE holder: SAFE_ADDRESS
 - TREASURY_ROLE holder: SAFE_ADDRESS
-- burnFeeEnabled: false (after timelock test)
+- burnFeeEnabled: false (after administrative control test)
 - dexWhitelist[UNISWAP]: true (after DEX test)
 ```
 
@@ -192,7 +191,7 @@ mintingDisabled() → should return TRUE
 - [ ] Safe deployed on Sepolia (record address)
 - [ ] 5 signers added + confirmed
 - [ ] Multisig funded for gas (0.5 ETH)
-- [ ] Test 1: Timelock queue/execute ✅
+- [ ] Test 1: Administrative timelock queue/execute
 - [ ] Test 2: DEX whitelist ✅
 - [ ] Test 3: Treasury withdraw ✅
 - [ ] Test 4: Basescan verification ✅
