@@ -13,6 +13,7 @@
     "@rainbow-me/rainbowkit": "2.1.3",
     "@scure/bip32": "1.3.2",
     "@tanstack/react-query": "5.51.1",
+    "@vercel/analytics": "^2.0.1",
     "encoding": "^0.1.13",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
