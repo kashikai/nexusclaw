@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base } from 'viem/chains'
 import { PageShell } from '@/components/layout/PageShell'
@@ -56,6 +56,15 @@ async function checkHolderStatus(wallet: string) {
 
 // ── Supabase live data ────────────────────────────────────────────────────────
 
+interface TradeParamsMeta {
+  mode?: 'shadow' | 'live' | string
+  source?: string
+  symbol?: string
+  playbook?: string
+  return_r?: number
+  [key: string]: unknown
+}
+
 interface LiveTrade {
   ticket: number
   direction: 'BUY' | 'SELL'
@@ -65,12 +74,22 @@ interface LiveTrade {
   was_reversal: boolean
   entry_time: string
   duration_min: number
+  params?: TradeParamsMeta | null
 }
 
 interface StatTrade {
   result: 'TP' | 'SL' | 'MANUAL'
   profit_pts: number
   profit_jpy: number
+  params?: TradeParamsMeta | null
+}
+
+/** Ledger a trade belongs to. Only 'live' is real money; demo-account and shadow (simulated) never mix with it. */
+function tradeLedger(trade: { params?: TradeParamsMeta | null }): ResultTab {
+  const mode = String(trade.params?.mode ?? '').toLowerCase()
+  if (mode === 'shadow') return 'shadow'
+  if (mode === 'demo') return 'demo'
+  return 'live'
 }
 
 interface LiveParams {
@@ -78,6 +97,7 @@ interface LiveParams {
   win_rate: number
   sample_size: number
   created_at: string
+  params?: TradeParamsMeta | null
 }
 
 function useLiveData() {
@@ -91,13 +111,13 @@ function useLiveData() {
     const load = async () => {
       try {
         const headers = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
-        const [tr10, trAll, pr] = await Promise.all([
-          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&limit=10`, { headers }),
-          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&select=result,profit_jpy,profit_pts`, { headers }),
+        const [trRecent, trAll, pr] = await Promise.all([
+          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&limit=60`, { headers }),
+          fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&select=result,profit_jpy,profit_pts,params`, { headers }),
           fetch(`${SUPA_URL}/rest/v1/fimathe_params?order=created_at.desc&limit=1`, { headers }),
         ])
         if (alive) {
-          setTrades(tr10.ok ? await tr10.json() : [])
+          setTrades(trRecent.ok ? await trRecent.json() : [])
           setAllTrades(trAll.ok ? await trAll.json() : [])
           const p = pr.ok ? await pr.json() : []
           setLatestParams(p[0] ?? null)
@@ -138,87 +158,182 @@ const FAQ = [
 
 type HolderStatus = { balance: string; staked: string; isHolder: boolean; isStaker: boolean } | null
 
+type ResultTab = 'live' | 'demo' | 'shadow'
+const RESULT_TABS: readonly ResultTab[] = ['live', 'demo', 'shadow']
+
+const RESULT_TAB_INFO: Record<ResultTab, { label: string; tone: 'green' | 'cyan' | 'yellow'; status: string; empty: string }> = {
+  live: {
+    label: 'Live Account',
+    tone: 'green',
+    status: 'Real account · Auto-refreshes every 30s',
+    empty: 'Bot is running — first real-account trades will appear here automatically.',
+  },
+  demo: {
+    label: 'Demo Account',
+    tone: 'cyan',
+    status: 'Demo account · Real broker execution · No real funds',
+    empty: 'No demo-account trades recorded yet — they will appear here separately from real funds.',
+  },
+  shadow: {
+    label: 'Shadow Mode · Simulated',
+    tone: 'yellow',
+    status: 'Shadow mode · Simulated only · No real funds',
+    empty: 'No shadow-mode trades recorded yet — simulated closures will appear here separately from real funds.',
+  },
+}
+const TONE_CLASSES = {
+  green: { text: 'text-green-400', dot: 'bg-green-400', active: 'text-green-400 bg-green-950/20 border-b-2 border-green-400' },
+  cyan: { text: 'text-cyan-400', dot: 'bg-cyan-400', active: 'text-cyan-400 bg-cyan-950/20 border-b-2 border-cyan-400' },
+  yellow: { text: 'text-yellow-400', dot: 'bg-yellow-400', active: 'text-yellow-400 bg-yellow-950/20 border-b-2 border-yellow-400' },
+} as const
+
 function LiveResultsSection() {
   const { trades, allTrades, latestParams, loading } = useLiveData()
+  const [tab, setTab] = useState<ResultTab>('live')
+  const tabRefs = useRef<Partial<Record<ResultTab, HTMLButtonElement | null>>>({})
 
-  const wins     = allTrades.filter(t => t.result === 'TP').length
-  const winRate  = allTrades.length > 0 ? Math.round(wins / allTrades.length * 100) : 0
-  const totalPnl = allTrades.reduce((s, t) => s + (t.profit_jpy ?? 0), 0)
-  const avgPts   = allTrades.length > 0 ? Math.round(allTrades.reduce((s, t) => s + (t.profit_pts ?? 0), 0) / allTrades.length) : 0
+  const byLedger = (l: ResultTab) => allTrades.filter(t => tradeLedger(t) === l)
+  const counts: Record<ResultTab, number> = { live: byLedger('live').length, demo: byLedger('demo').length, shadow: byLedger('shadow').length }
+  const activeAll = byLedger(tab)
+  const activeRecent = trades.filter(t => tradeLedger(t) === tab).slice(0, 10)
+  const info = RESULT_TAB_INFO[tab]
+  const tone = TONE_CLASSES[info.tone]
+
+  const wins     = activeAll.filter(t => t.result === 'TP').length
+  const winRate  = activeAll.length > 0 ? Math.round(wins / activeAll.length * 100) : 0
+  const totalPnl = activeAll.reduce((s, t) => s + (t.profit_jpy ?? 0), 0)
+  const avgPts   = activeAll.length > 0 ? Math.round(activeAll.reduce((s, t) => s + (t.profit_pts ?? 0), 0) / activeAll.length) : 0
+
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, idx: number) => {
+    let nextIdx: number | null = null
+    if (e.key === 'ArrowRight') nextIdx = (idx + 1) % RESULT_TABS.length
+    else if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + RESULT_TABS.length) % RESULT_TABS.length
+    else if (e.key === 'Home') nextIdx = 0
+    else if (e.key === 'End') nextIdx = RESULT_TABS.length - 1
+    if (nextIdx === null) return
+    e.preventDefault()
+    const nextTab = RESULT_TABS[nextIdx]
+    setTab(nextTab)
+    tabRefs.current[nextTab]?.focus()
+  }
 
   return (
     <section className="border-y border-[#1f2937] bg-[#0a0a0a] px-6 md:px-16 py-24">
       <div className="max-w-[1200px] mx-auto">
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex flex-wrap items-center gap-4 mb-4">
           <div className="text-[10px] text-yellow-400 tracking-[0.4em] uppercase">// LIVE RESULTS</div>
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />
-            <span className="text-[10px] text-green-400 uppercase tracking-widest">Real account · Auto-refreshes every 30s</span>
+            <span className={`w-1.5 h-1.5 animate-pulse ${tone.dot}`} />
+            <span className={`text-[10px] uppercase tracking-widest ${tone.text}`}>{info.status}</span>
           </div>
         </div>
-        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-12">
+        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-8">
           No backtest theater.<br /><span className="text-yellow-400">Real trades. Live data.</span>
         </h2>
 
-        {loading ? (
-          <div className="text-[10px] text-gray-600 font-mono animate-pulse">Loading live data…</div>
-        ) : allTrades.length === 0 ? (
-          <div className="text-[10px] text-gray-600 font-mono">Bot is running — first trades will appear here automatically.</div>
-        ) : (
-          <>
-            {/* Stats row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-[#1f2937] mb-8">
-              {[
-                { label: 'Total Trades',  value: allTrades.length.toString(),                                         color: 'white' },
-                { label: 'Win Rate',      value: `${winRate}%`,                                                   color: winRate >= 50 ? '#4ddbc9' : '#ffb4ab' },
-                { label: 'Total P&L',     value: `$${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: totalPnl >= 0 ? '#4ddbc9' : '#ffb4ab' },
-                { label: 'Avg Points',    value: `${avgPts >= 0 ? '+' : ''}${avgPts}pts`,                        color: avgPts >= 0 ? '#4ddbc9' : '#ffb4ab' },
-              ].map(s => (
-                <div key={s.label} className="bg-[#111111] p-8">
-                  <div className="text-[9px] text-gray-600 uppercase tracking-widest font-mono mb-2">{s.label}</div>
-                  <div className="text-3xl font-black" style={{ color: s.color }}>{s.value}</div>
-                </div>
-              ))}
-            </div>
+        {/* Accessible Live / Demo / Shadow scoreboard separation: only Live is real money */}
+        <div
+          role="tablist"
+          aria-label="Execution ledger mode"
+          className="flex flex-wrap gap-2 border-b border-[#1f2937] mb-8"
+        >
+          {RESULT_TABS.map((key, idx) => {
+            const selected = tab === key
+            return (
+              <button
+                key={key}
+                id={`trader-tab-${key}`}
+                ref={el => { tabRefs.current[key] = el }}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setTab(key)}
+                onKeyDown={e => handleTabKeyDown(e, idx)}
+                className={`px-4 py-3 font-mono text-xs uppercase tracking-widest transition-colors -mb-[1px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400 ${
+                  selected ? TONE_CLASSES[RESULT_TAB_INFO[key].tone].active : 'text-gray-400 hover:text-white border-b-2 border-transparent'
+                }`}
+              >
+                {RESULT_TAB_INFO[key].label} ({counts[key]})
+              </button>
+            )
+          })}
+        </div>
 
-            {/* Trade table */}
-            <div className="bg-[#111111] border border-[#1f2937]">
-              <div className="grid grid-cols-5 gap-2 px-6 py-3 border-b border-[#1f2937]">
-                {['Date (JST)', 'Side', 'Result', 'Points', 'P&L (USD)'].map(h => (
-                  <span key={h} className="text-[8px] uppercase tracking-widest text-gray-600 font-mono">{h}</span>
+        <div role="tabpanel" aria-labelledby={`trader-tab-${tab}`} tabIndex={0} className="focus-visible:outline-none">
+          {tab === 'demo' && (
+            <div role="note" className="mb-6 border border-cyan-700/60 bg-cyan-950/30 px-4 py-3 font-mono text-[11px] text-cyan-300">
+              DEMO ACCOUNT — Orders are executed by the broker on a demo account (Quant Desk · XAUUSD &amp; NAS100). No real funds. Never mixed into real-account P&amp;L.
+            </div>
+          )}
+          {tab === 'shadow' && (
+            <div role="note" className="mb-6 border border-yellow-600/60 bg-yellow-950/30 px-4 py-3 font-mono text-[11px] text-yellow-300">
+              SIMULATED / SHADOW MODE — Paper execution logged from the Quant Desk (XAUUSD &amp; NAS100) for validation. Never mixed into real-account P&amp;L.
+            </div>
+          )}
+
+          {loading ? (
+            <div className="text-[10px] text-gray-600 font-mono animate-pulse">Loading live data…</div>
+          ) : activeAll.length === 0 ? (
+            <div className="text-[10px] text-gray-600 font-mono">{info.empty}</div>
+          ) : (
+            <>
+              {/* Stats row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-[#1f2937] mb-8">
+                {[
+                  { label: tab === 'shadow' ? 'Shadow Trades' : tab === 'demo' ? 'Demo Trades' : 'Total Trades', value: activeAll.length.toString(), color: 'white' },
+                  { label: 'Win Rate',      value: `${winRate}%`,                                                   color: winRate >= 50 ? '#4ddbc9' : '#ffb4ab' },
+                  { label: tab === 'shadow' ? 'Simulated P&L' : tab === 'demo' ? 'Demo P&L' : 'Total P&L', value: `$${totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: totalPnl >= 0 ? '#4ddbc9' : '#ffb4ab' },
+                  { label: 'Avg Points',    value: `${avgPts >= 0 ? '+' : ''}${avgPts}pts`,                        color: avgPts >= 0 ? '#4ddbc9' : '#ffb4ab' },
+                ].map(s => (
+                  <div key={s.label} className="bg-[#111111] p-8">
+                    <div className="text-[9px] text-gray-600 uppercase tracking-widest font-mono mb-2">{s.label}</div>
+                    <div className="text-3xl font-black" style={{ color: s.color }}>{s.value}</div>
+                  </div>
                 ))}
               </div>
-              {trades.slice(0, 10).map((t, i) => {
-                const isWin = t.result === 'TP'
-                const dt    = new Date(t.entry_time)
-                return (
-                  <div key={t.ticket ?? i} className="grid grid-cols-5 gap-2 px-6 py-3 border-b border-[#1f2937] font-mono text-[10px]">
-                    <span className="text-gray-400">
-                      {dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'Asia/Tokyo' })}
-                      {' '}<span className="text-gray-600">{dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' })}</span>
-                    </span>
-                    <span className={t.direction === 'BUY' ? 'text-cyan-400' : 'text-red-400'}>
-                      {t.direction}{t.was_reversal ? ' ↺' : ''}
-                    </span>
-                    <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.result}</span>
-                    <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.profit_pts >= 0 ? '+' : ''}{t.profit_pts}pts</span>
-                    <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>${t.profit_jpy >= 0 ? '+' : ''}{t.profit_jpy.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                )
-              })}
-            </div>
 
-            {/* AI reasoning */}
-            {latestParams && (
-              <div className="mt-6 border-l-2 border-yellow-900 pl-6 py-2">
-                <div className="text-[8px] text-gray-600 uppercase tracking-widest font-mono mb-1">
-                  Last AI adjustment · {latestParams.win_rate?.toFixed(1)}% win rate · {latestParams.sample_size} trades analyzed
+              {/* Trade table */}
+              <div className="bg-[#111111] border border-[#1f2937]">
+                <div className="grid grid-cols-5 gap-2 px-6 py-3 border-b border-[#1f2937]">
+                  {['Date (JST)', 'Side', 'Result', 'Points', 'P&L (USD)'].map(h => (
+                    <span key={h} className="text-[8px] uppercase tracking-widest text-gray-600 font-mono">{h}</span>
+                  ))}
                 </div>
-                <div className="text-xs text-white font-mono italic">{latestParams.reasoning}</div>
+                {activeRecent.map((t, i) => {
+                  const isWin = t.result === 'TP'
+                  const dt    = new Date(t.entry_time)
+                  const sym   = typeof t.params?.symbol === 'string' ? t.params.symbol : null
+                  return (
+                    <div key={t.ticket ?? i} className="grid grid-cols-5 gap-2 px-6 py-3 border-b border-[#1f2937] font-mono text-[10px]">
+                      <span className="text-gray-400">
+                        {dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'Asia/Tokyo' })}
+                        {' '}<span className="text-gray-600">{dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' })}</span>
+                      </span>
+                      <span className={t.direction === 'BUY' ? 'text-cyan-400' : 'text-red-400'}>
+                        {sym ? <span className="text-yellow-400 mr-1.5">{sym}</span> : null}
+                        {t.direction}{t.was_reversal ? ' ↺' : ''}
+                      </span>
+                      <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.result}</span>
+                      <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.profit_pts >= 0 ? '+' : ''}{t.profit_pts}pts</span>
+                      <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>${t.profit_jpy >= 0 ? '+' : ''}{t.profit_jpy.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )
+                })}
               </div>
-            )}
-          </>
-        )}
+
+              {/* AI reasoning */}
+              {latestParams && tradeLedger(latestParams) === tab && (
+                <div className="mt-6 border-l-2 border-yellow-900 pl-6 py-2">
+                  <div className="text-[8px] text-gray-600 uppercase tracking-widest font-mono mb-1">
+                    Last AI adjustment · {latestParams.win_rate?.toFixed(1)}% win rate · {latestParams.sample_size} trades analyzed
+                  </div>
+                  <div className="text-xs text-white font-mono italic">{latestParams.reasoning}</div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </section>
   )

@@ -23,6 +23,13 @@ interface FimateTrade {
   entry_time: string
   duration_min: number
   created_at: string
+  params?: { mode?: string; symbol?: string; [key: string]: unknown } | null
+}
+
+/** Not real money: shadow (simulated) and demo-account trades. They never count in the Live ledger. */
+function isShadowTrade(t: FimateTrade): boolean {
+  const mode = String(t.params?.mode ?? '').toLowerCase()
+  return mode === 'shadow' || mode === 'demo'
 }
 
 interface FimateParams {
@@ -37,7 +44,7 @@ async function fetchFimathe(): Promise<{ trades: FimateTrade[]; latestParams: Fi
   const headers = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
 
   const [tradesRes, paramsRes] = await Promise.all([
-    fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&limit=20`, { headers }),
+    fetch(`${SUPA_URL}/rest/v1/fimathe_trades?currency=eq.USD&order=created_at.desc&limit=60`, { headers }),
     fetch(`${SUPA_URL}/rest/v1/fimathe_params?order=created_at.desc&limit=1`, { headers }),
   ])
 
@@ -107,11 +114,13 @@ function TradeRow({ t }: { t: FimateTrade }) {
   const dt      = new Date(t.entry_time)
   const dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' })
+  const sym     = typeof t.params?.symbol === 'string' ? t.params.symbol : null
 
   return (
     <div className="grid grid-cols-5 gap-2 py-2 border-b border-[#1f2937] text-[10px] font-mono">
       <span className="text-gray-400">{dateStr} <span className="text-gray-600">{timeStr}</span></span>
       <span className={t.direction === 'BUY' ? 'text-cyan-400' : 'text-red-400'}>
+        {sym ? <span className="text-yellow-400 mr-1">{sym}</span> : null}
         {t.direction}{t.was_reversal ? ' ↺' : ''}
       </span>
       <span className={isWin ? 'text-cyan-400' : 'text-red-400'}>{t.result}</span>
@@ -129,6 +138,11 @@ function TradeRow({ t }: { t: FimateTrade }) {
 
 function FimateCard() {
   const { trades, latestParams, loading } = useFimatheData()
+  const [modeTab, setModeTab] = useState<'live' | 'shadow'>('live')
+
+  const liveTrades = trades.filter(t => !isShadowTrade(t))
+  const shadowTrades = trades.filter(t => isShadowTrade(t))
+  const visibleTrades = modeTab === 'shadow' ? shadowTrades : liveTrades
 
   return (
     <div className="border border-[#1f2937] bg-[#111111] p-6 flex flex-col gap-6">
@@ -137,13 +151,15 @@ function FimateCard() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h3 className="font-mono font-black text-lg uppercase tracking-tight">NEXUSCLAW TRADER</h3>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 border border-cyan-900 bg-cyan-950/20">
-              <span className="w-1.5 h-1.5 animate-pulse bg-cyan-400" />
-              <span className="font-mono text-[8px] uppercase tracking-widest text-cyan-400">Live</span>
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 border ${modeTab === 'shadow' ? 'border-yellow-700 bg-yellow-950/20' : 'border-cyan-900 bg-cyan-950/20'}`}>
+              <span className={`w-1.5 h-1.5 animate-pulse ${modeTab === 'shadow' ? 'bg-yellow-400' : 'bg-cyan-400'}`} />
+              <span className={`font-mono text-[8px] uppercase tracking-widest ${modeTab === 'shadow' ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                {modeTab === 'shadow' ? 'Shadow / Demo' : 'Live'}
+              </span>
             </div>
           </div>
           <p className="font-mono text-[10px] text-gray-400 leading-relaxed max-w-sm">
-            Autonomous trading agent on XAUUSD M1. Detects its own entries and self-optimizes parameters via Claude AI after every 5 trades.
+            Autonomous trading agent on XAUUSD &amp; NAS100. Live real-account and Shadow simulated ledgers are strictly separated.
           </p>
         </div>
         <span className="font-mono text-[8px] uppercase tracking-widest px-2 py-1 shrink-0 text-cyan-400 border border-cyan-900 bg-cyan-950/20">
@@ -151,28 +167,76 @@ function FimateCard() {
         </span>
       </div>
 
-      {/* Stats */}
-      {loading ? (
-        <div className="font-mono text-[10px] text-gray-600 animate-pulse">Loading trades…</div>
-      ) : (
-        <FimateStats trades={trades} />
-      )}
+      {/* Live vs Shadow switcher */}
+      <div role="tablist" aria-label="Trader execution mode" className="flex gap-2 border-b border-[#1f2937]">
+        <button
+          id="agents-fimathe-live"
+          type="button"
+          role="tab"
+          aria-selected={modeTab === 'live'}
+          tabIndex={modeTab === 'live' ? 0 : -1}
+          onClick={() => setModeTab('live')}
+          onKeyDown={e => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'End') {
+              e.preventDefault()
+              setModeTab('shadow')
+              document.getElementById('agents-fimathe-shadow')?.focus()
+            }
+          }}
+          className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest -mb-[1px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 ${
+            modeTab === 'live' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-500 hover:text-white border-b-2 border-transparent'
+          }`}
+        >
+          Live ({liveTrades.length})
+        </button>
+        <button
+          id="agents-fimathe-shadow"
+          type="button"
+          role="tab"
+          aria-selected={modeTab === 'shadow'}
+          tabIndex={modeTab === 'shadow' ? 0 : -1}
+          onClick={() => setModeTab('shadow')}
+          onKeyDown={e => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home') {
+              e.preventDefault()
+              setModeTab('live')
+              document.getElementById('agents-fimathe-live')?.focus()
+            }
+          }}
+          className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest -mb-[1px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-400 ${
+            modeTab === 'shadow' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white border-b-2 border-transparent'
+          }`}
+        >
+          Shadow / Demo ({shadowTrades.length})
+        </button>
+      </div>
 
-      {/* Trade table */}
-      {!loading && trades.length > 0 && (
-        <div>
-          <div className="grid grid-cols-5 gap-2 pb-1 mb-1 border-b border-[#1f2937]">
-            {['Date (JST)', 'Side', 'Result', 'Points', 'P&L'].map(h => (
-              <span key={h} className="font-mono text-[8px] uppercase tracking-widest text-gray-600">{h}</span>
-            ))}
+      <div role="tabpanel" aria-labelledby={`agents-fimathe-${modeTab}`} tabIndex={0} className="focus-visible:outline-none space-y-6">
+        {/* Stats */}
+        {loading ? (
+          <div className="font-mono text-[10px] text-gray-600 animate-pulse">Loading trades…</div>
+        ) : (
+          <FimateStats trades={visibleTrades} />
+        )}
+
+        {/* Trade table */}
+        {!loading && visibleTrades.length > 0 && (
+          <div>
+            <div className="grid grid-cols-5 gap-2 pb-1 mb-1 border-b border-[#1f2937]">
+              {['Date (JST)', 'Side', 'Result', 'Points', 'P&L'].map(h => (
+                <span key={h} className="font-mono text-[8px] uppercase tracking-widest text-gray-600">{h}</span>
+              ))}
+            </div>
+            {visibleTrades.slice(0, 10).map((t, i) => <TradeRow key={t.ticket ?? i} t={t} />)}
           </div>
-          {trades.slice(0, 10).map((t, i) => <TradeRow key={t.ticket ?? i} t={t} />)}
-        </div>
-      )}
+        )}
 
-      {!loading && trades.length === 0 && (
-        <div className="font-mono text-[10px] text-gray-600">No trades yet — bot is running.</div>
-      )}
+        {!loading && visibleTrades.length === 0 && (
+          <div className="font-mono text-[10px] text-gray-600">
+            {modeTab === 'shadow' ? 'No shadow or demo-account trades logged yet.' : 'No live trades yet — bot is running.'}
+          </div>
+        )}
+      </div>
 
       {/* Agent reasoning */}
       {latestParams && (

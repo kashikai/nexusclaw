@@ -44,6 +44,10 @@ export interface PublicState {
   recent_events: OfficeEvent[]
 }
 
+/** Every bot on the trading floor, in display order. desk1 is the original signal copier (public_state.json). */
+export const DESKS = ['desk1', 'desk2', 'quantbot', 'desk3'] as const
+export type DeskId = (typeof DESKS)[number]
+
 export const MOCK_SCENARIOS = ['idle', 'working', 'error', 'stale'] as const
 export type MockScenario = (typeof MOCK_SCENARIOS)[number]
 

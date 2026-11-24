@@ -1,11 +1,25 @@
 import { parsePublicState, ValidationError } from './validate'
-import type { DataSource, LoadResult, MockScenario } from './types'
+import { DESK_STATE_OBJECTS } from './desks'
+import type { DataSource, DeskId, LoadResult, MockScenario } from './types'
 
-// The static URL the signal bot publishes to (must allow CORS if cross-origin; Supabase Storage public objects do).
+// The static URL desk1 publishes to (must allow CORS if cross-origin; Supabase Storage public objects do).
+// The other desks live next to it in the same bucket.
 export const PUBLIC_STATE_URL = process.env.NEXT_PUBLIC_AGENT_OFFICE_STATE_URL || '/public_state.json'
+const QUANTBOT_STATE_URL_OVERRIDE = process.env.NEXT_PUBLIC_AGENT_OFFICE_QUANTBOT_STATE_URL || ''
 export const MOCK_URL = '/agent-office/public_state.mock.json'
 // The bot uploads within about a second of each event, so this is the visible delay.
 export const POLL_INTERVAL_MS = 5_000
+
+const PUBLIC_STATE_FILE = /public_state\.json(\?.*)?$/
+
+export function resolveStateUrl(desk: DeskId = 'desk1'): string {
+  if (desk === 'quantbot' && QUANTBOT_STATE_URL_OVERRIDE) return QUANTBOT_STATE_URL_OVERRIDE
+  const object = DESK_STATE_OBJECTS[desk]
+  if (object === DESK_STATE_OBJECTS.desk1) return PUBLIC_STATE_URL
+  return PUBLIC_STATE_FILE.test(PUBLIC_STATE_URL)
+    ? PUBLIC_STATE_URL.replace(PUBLIC_STATE_FILE, `${object}$1`)
+    : `/${object}`
+}
 
 // A changing query string keeps a CDN in front of the file from serving an old copy.
 function withCacheBuster(url: string): string {
@@ -38,14 +52,18 @@ async function loadMockRaw(scenario: MockScenario, signal: AbortSignal): Promise
   return JSON.stringify(rebaseTimestamps(scenarioData, offset))
 }
 
-export async function loadPublicState(source: DataSource, signal: AbortSignal): Promise<LoadResult> {
+export async function loadPublicState(
+  source: DataSource,
+  signal: AbortSignal,
+  desk: DeskId = 'desk1',
+): Promise<LoadResult> {
   const fetchedAt = Date.now()
   try {
     let raw: string
     if (source.kind === 'mock') {
       raw = await loadMockRaw(source.scenario, signal)
     } else {
-      const res = await fetch(withCacheBuster(PUBLIC_STATE_URL), { cache: 'no-store', signal })
+      const res = await fetch(withCacheBuster(resolveStateUrl(desk)), { cache: 'no-store', signal })
       if (res.status === 404) return { status: 'missing', fetchedAt }
       if (!res.ok) return { status: 'error', reason: `HTTP ${res.status}`, fetchedAt }
       raw = await res.text()

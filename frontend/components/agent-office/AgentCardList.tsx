@@ -1,7 +1,7 @@
 import { AGENT_COLORS } from './AgentDesk'
 import { formatRelative } from '@/lib/agent-office/format'
 import type { Locale, Strings } from '@/lib/agent-office/strings'
-import type { AgentState } from '@/lib/agent-office/types'
+import type { AgentState, DeskId } from '@/lib/agent-office/types'
 
 const STATUS_STYLE: Record<AgentState['status'], string> = {
   idle: 'border-gray-700 text-gray-400',
@@ -10,9 +10,10 @@ const STATUS_STYLE: Record<AgentState['status'], string> = {
 }
 
 /** Text fallback for narrow screens; same data as the isometric scene. */
-export function AgentCardList({ agents, dimmed, now, t, locale }: {
-  agents: AgentState[]; dimmed: boolean; now: number; t: Strings; locale: Locale
+export function AgentCardList({ agents, dimmed, now, t, locale, desk = 'desk1' }: {
+  agents: AgentState[]; dimmed: boolean; now: number; t: Strings; locale: Locale; desk?: DeskId
 }) {
+  const roles = desk === 'quantbot' ? t.quantRoles : t.roles
   return (
     <ul className="grid gap-2">
       {agents.map(a => {
@@ -35,7 +36,7 @@ export function AgentCardList({ agents, dimmed, now, t, locale }: {
                 {status === 'idle' ? t.restingInLounge : a.label || t.status[status]}
               </p>
               <p className="text-[10px] text-gray-600 mt-1">
-                {t.roles[a.id]} · {formatRelative(a.last_event_at, now, locale)}
+                {roles[a.id]} · {formatRelative(a.last_event_at, now, locale)}
               </p>
             </div>
           </li>

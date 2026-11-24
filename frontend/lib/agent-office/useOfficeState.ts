@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { loadPublicState, POLL_INTERVAL_MS } from './loader'
 import { isStale } from './validate'
-import type { DataSource, LoadResult, PublicState } from './types'
+import type { DataSource, DeskId, LoadResult, PublicState } from './types'
 
 export interface OfficeView {
   result: LoadResult
@@ -14,17 +14,17 @@ export interface OfficeView {
 }
 
 /** Polls the public state every few seconds while the tab is visible, and re-evaluates staleness every 15s. */
-export function useOfficeState(source: DataSource): OfficeView {
+export function useOfficeState(source: DataSource, desk: DeskId = 'desk1'): OfficeView {
   const [result, setResult] = useState<LoadResult>({ status: 'loading' })
   const [now, setNow] = useState(() => Date.now())
-  const sourceKey = source.kind === 'mock' ? `mock:${source.scenario}` : 'live'
+  const sourceKey = `${desk}:${source.kind === 'mock' ? `mock:${source.scenario}` : 'live'}`
 
   useEffect(() => {
     let controller = new AbortController()
     const load = async () => {
       controller.abort()
       controller = new AbortController()
-      const res = await loadPublicState(source, controller.signal)
+      const res = await loadPublicState(source, controller.signal, desk)
       if (!controller.signal.aborted) {
         // A failed poll keeps the last good state on screen; if it keeps failing, the staleness check takes over.
         setResult(prev => (res.status === 'error' && prev.status === 'ok' ? prev : res))
