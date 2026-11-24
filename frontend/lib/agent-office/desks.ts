@@ -9,7 +9,7 @@ export const DESK_STATE_OBJECTS: Record<DeskId, string> = {
 }
 
 /** Desks that are announced but not trading yet: shown as "coming soon" and never polled. */
-export const COMING_SOON_DESKS: ReadonlySet<DeskId> = new Set<DeskId>(['desk3'])
+export const COMING_SOON_DESKS: ReadonlySet<DeskId> = new Set<DeskId>([])
 
 /** Identity colour of each bot on the floor (character, nameplate, card accent). */
 export const DESK_COLORS: Record<DeskId, string> = {
